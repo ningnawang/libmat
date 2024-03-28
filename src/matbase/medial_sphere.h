@@ -420,6 +420,10 @@ class MedialSphere {
   // updated by update_sphere_covered_sf_fids()
   std::vector<std::vector<v2int>> covered_sf_fids_in_group;
   void print_covered_sf_fids_in_group() const;
+
+  // [no use]
+  // updated by RPD3D_Wrapper::update_pcell_samples_sf_fids()
+  std::vector<std::set<int>> pcell_samples_sf_fids_in_group;
 };
 
 void update_power_cells(const SurfaceMesh& sf_mesh,

@@ -25,6 +25,40 @@ void generate_RT_geogram(const int& n_site, const std::vector<float>& site,
   }
 }
 
+void generate_RT_CGAL_given_spheres(const Parameter& params,
+                                    const std::vector<float>& spheres,
+                                    RegularTriangulationNN& rt, bool is_debug) {
+  int num_spheres = spheres.size() / 4;
+  if (is_debug)
+    printf("[RT spheres] generate RT for %d spheres\n", num_spheres);
+  rt.clean();
+  // add all medial spheres
+  for (int mid = 0; mid < num_spheres; mid++) {
+    Point_rt p(spheres.at(mid * 4 + 0), spheres.at(mid * 4 + 1),
+               spheres.at(mid * 4 + 2));
+    Weight weight = std::pow(spheres.at(mid * 4 + 3), 2);
+    Vertex_handle_rt vh;
+    vh = rt.insert(Weighted_point(p, weight));
+    if (vh == nullptr) continue;  // THIS IS IMPORTANT
+    // update RT
+    vh->info().all_id = mid;
+  }
+
+  // add 8 bbox, vh->info().all_id = -1
+  assert(params.bb_points.size() / 3 == 8);
+  for (int i = 0; i < 8; i++) {
+    Point_rt p(params.bb_points[i * 3], params.bb_points[i * 3 + 1],
+               params.bb_points[i * 3 + 2]);
+    Weight weight = SCALAR_FEATURE_RADIUS;
+    Vertex_handle_rt vh;
+    vh = rt.insert(Weighted_point(p, weight));
+    if (vh == nullptr) continue;  // THIS IS IMPORTANT
+  }
+  if (is_debug)
+    printf("[RT] number_of_vertices - 8: %ld, number_of_finite_edges: %ld\n",
+           rt.number_of_vertices() - 8, rt.number_of_finite_edges());
+}
+
 void generate_RT_CGAL_and_mark_valid_spheres(
     const Parameter& params, std::vector<MedialSphere>& all_medial_spheres,
     RegularTriangulationNN& rt, std::set<int>& valid_sphere_ids) {

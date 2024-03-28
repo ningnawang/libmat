@@ -113,7 +113,7 @@ class TetMesh {
   // format: <tid, lfid_min, lfid_max> -> <fe_type, fe_id, fe_line_id>.
   // the mapping can be many-to-one (multiple tets share same sharp edge).
   //
-  // fe_type:     matching EdgeType, 1 - sharp edge, 2 - concave edge
+  // fe_type:     matching EdgeType, 1 sharp edge, 2 concave edge
   // fe_id:       matching FeatureEdge::id in TetMesh::feature_edges.
   // fe_line_id:  a local id for sharp lines, matching FeatureLine::id in
   //              TetMesh::se_lines or TetMesh::ce_lines
@@ -182,9 +182,15 @@ class AABBWrapper {
     Vector3 nearest_p;
     double sq_dist = std::numeric_limits<double>::max();  //??
     int fidx = sf_tree->nearest_facet(p, nearest_p, sq_dist);
-    p[0] = nearest_p[0];
-    p[1] = nearest_p[1];
-    p[2] = nearest_p[2];
+    p = nearest_p;
+    return fidx;
+  }
+
+  inline int project_to_sf_get_nearest_face(Vector3 &p, double &sq_dist) const {
+    Vector3 nearest_p;
+    sq_dist = std::numeric_limits<double>::max();  //??
+    int fidx = sf_tree->nearest_facet(p, nearest_p, sq_dist);
+    p = nearest_p;
     return fidx;
   }
 
@@ -238,6 +244,14 @@ class AABBWrapper {
     Vector3 nearest_p;
     double sq_dist = std::numeric_limits<double>::max();  //??
     se_tree->nearest_facet(p, nearest_p, sq_dist);
+    return sq_dist;
+  }
+
+  inline double project_to_ce(Vector3 &p) const {
+    Vector3 nearest_p;
+    double sq_dist = std::numeric_limits<double>::max();  //??
+    se_tree->nearest_facet(p, nearest_p, sq_dist);
+    p = nearest_p;
     return sq_dist;
   }
 
