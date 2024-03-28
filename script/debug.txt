@@ -1,0 +1,49 @@
+========= COMPUTE-SANITIZER
+loaded tet_mesh #v: 1420, #t: 4206
+tet has v: 1420, e: 6914, f: 9696, t: 4206, and euler: -4
+surface path: ../../models/abc_test_2048_70/0008315_partstudio_05_model_ste_00_2048.obj__sf.geogram
+Loading mesh at../../models/abc_test_2048_70/0008315_partstudio_05_model_ste_00_2048.obj__sf.geogram
+loaded surface_mesh #v: 1276, #f: 2568
+loaded #adjacent cells for v: 1420, and e: 1008911, and f 16824
+Detecting sharp/concave edges and corners_se using threshold: 0.200000 
+#concave_edges = 277 
+#sharp_edges = 514 
+#corners_se  = 15 
+#corners_ce  = 0 
+#corners_fake  = 15 
+Marked feature attributes in GEO::Mesh 
+corner: [197, 264, 492, 495, 496, 524, 527, 567, 594, 625, 657, 660, 769, 1075, 1098, ]
+[Feature] stored SphereType::SE line size: 22 
+[Feature] stored SphereType::CE line size: 46 
+se_edges size 514, ce_edges: 277 
+saved sf_mesh with extf at: ../../models/abc_test_2048_70/0008315_partstudio_05_model_ste_00_2048.obj__extf.ma 
+[shrink] msphere 3 too close to concave lines 0.000000, bad 
+[shrink] msphere 12 too close to concave lines 0.000000, bad 
+[shrink] msphere 19 too close to concave lines 0.000000, bad 
+[shrink] msphere 21 too close to concave lines 0.000000, bad 
+[shrink] msphere 43 too close to concave lines 0.000000, bad 
+[shrink] msphere 44 too close to concave lines 0.000000, bad 
+[shrink] msphere 46 too close to concave lines 0.000000, bad 
+[shrink] msphere 51 too close to concave lines 0.000000, bad 
+[shrink] msphere 54 too close to concave lines 0.000000, bad 
+[shrink] msphere 57 too close to concave lines 0.000000, bad 
+[shrink] msphere 139 too close to concave lines 0.000000, bad 
+[shrink] msphere 144 too close to concave lines 0.002628, bad 
+[shrink] msphere 147 too close to concave lines 0.000000, bad 
+[shrink] msphere 152 too close to concave lines 0.000000, bad 
+[shrink] msphere 158 too close to concave lines 0.000000, bad 
+[shrink] msphere 182 too close to concave lines 0.000000, bad 
+[CC Sphere] cc_len_eps: 20.406372
+-------- Cal RPD Partial -- num_itr_global 0, num_sphere_added:496
+[RT] generate RT for 496 spheres
+[RT] number_of_vertices - 8: 480, number_of_finite_edges: 3581
+[RT] marked valid spheres 480/496, rt.number_of_vertices: 488
+maximum 35 neighbors per sphere
+[ChangeStatus] changed_spheres: 480, invalid_spheres: 0 
+[ChangeStatus] changed_spheres: 480 after adding invalid_spheres's neighbors 
+[Partial RT Neighbors] sphere_ids 480 to get parital neighbors
+[RT Neigh] site_neighbors size 480, map_site2msphere: 480, map_spheres_and_12rings: 480 
+[RT Neigh] maximum 33 neighbors per sphere
+n_site: 480, dim: 4
+load_partial_spheres_to_sites done, n_site: 480
+loaded #adjacent cells for v: 1420, and e: 1008911, and f 16824
