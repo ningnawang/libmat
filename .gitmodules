@@ -1,7 +1,9 @@
 [submodule "extern/geogram"] 
   path = extern/geogram
   url = https://github.com/alicevision/geogram.git
+  branch = v1.7.5
 
 [submodule "extern/polyscope"]
   path = extern/polyscope
   url = https://github.com/nmwsharp/polyscope.git
+  branch = eb07f8acaf5c8dba30de9587f84b14ba0c411ca1
