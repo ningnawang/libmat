@@ -1,0 +1,3 @@
+[submodule "extern/geogram"] 
+  path = extern/geogram
+  url = https://github.com/alicevision/geogram.git
