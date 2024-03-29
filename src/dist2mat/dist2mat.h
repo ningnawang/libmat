@@ -11,8 +11,8 @@
 #include <iostream>
 #include <vector>
 
-#include "dist2mat_cuda_utils.h"
-#include "dist2mat_helper_math.h"
+#include "cuda_helper_math.h"
+#include "cuda_utils.h"
 
 #define kWarpSize 32
 

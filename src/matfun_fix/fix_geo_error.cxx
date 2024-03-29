@@ -295,7 +295,7 @@ void sample2slab_cone_and_write(
 
 // -------------------------------------------------------------------------------------------------
 
-#include "dist2mat_cuda_utils.h"
+#include "cuda_utils.h"
 // call GPU to compute the distance
 void load_and_compute_sample_dist2mat_gpubuffer(
     const std::vector<MedialSphere>& all_medial_spheres,
