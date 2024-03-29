@@ -232,6 +232,94 @@ void generate_RT_CGAL_and_purge_spheres(
   // }
 }
 
+// -------------------------------------------------------------------------------------------
+//  helper function
+void convert_to_flat_site_knn(
+    const int& n_site, const int& num_neigh_max,
+    const std::map<int, std::set<int>>& sphere_neighbors,
+    std::vector<int>& site_knn) {
+  // convert to flat 2D matrix
+  // 1. dim: (num_neigh_max+1) x n_site
+  // 2. each column j store all neighbors of sphere all_medial_spheres.at(j)
+  // 3. init as -1
+  site_knn.clear();
+  site_knn.resize((num_neigh_max + 1) * n_site, -1);
+  for (int site_id = 0; site_id < n_site; site_id++) {
+    if (sphere_neighbors.find(site_id) == sphere_neighbors.end()) {
+      // not find, non-valie spheres
+      // keep -1
+      continue;
+    }
+    const std::set<int>& neighbors = sphere_neighbors.at(site_id);
+    for (int lneigh_id = 0; lneigh_id < neighbors.size(); lneigh_id++) {
+      site_knn[lneigh_id * n_site + site_id] =
+          *std::next(neighbors.begin(), lneigh_id);
+    }
+  }
+
+  // printf("site_knn matrix: \n\t");
+  // for (uint sid = 0; sid < n_site; sid++) {     // column
+  //   for (uint i = 0; i < num_neigh_max; i++) {  // row
+  //     printf("%d ", site_knn[i * n_site + sid]);
+  //   }
+  //   printf("\n\t ");
+  // }
+  // printf("\n");
+}
+
+// return num_neigh_max
+// site_knn size:         (num_neigh_max+1) x n_site
+// is_sphere_valid size:  num_spheres
+int get_RT_spheres_and_neighbors(const int num_spheres,
+                                 const RegularTriangulationNN& rt,
+                                 std::vector<int>& site_knn,
+                                 std::vector<int>& is_sphere_valid,
+                                 bool is_debug) {
+  is_sphere_valid.clear();
+  is_sphere_valid.resize(num_spheres, 0);
+  int num_neigh_max = 0;
+  std::map<int, std::set<int>> sphere_neighbors;
+  std::vector<Vertex_handle_rt> one_neighs;
+  if (is_debug) printf("[RT Neighbors] loading num_spheres %d \n", num_spheres);
+  for (Finite_vertices_iterator_rt vit = rt.finite_vertices_begin();
+       vit != rt.finite_vertices_end(); ++vit) {
+    int all_id = vit->info().all_id;
+    // skip 8 bbox points
+    if (all_id == -1) continue;
+    // mark valid spheres
+    is_sphere_valid[all_id] = 1;
+    // get neighbors
+    one_neighs.clear();
+    rt.finite_adjacent_vertices(vit, std::back_inserter(one_neighs));
+    if (one_neighs.size() > num_neigh_max) {
+      num_neigh_max = one_neighs.size();
+    }
+
+    if (is_debug)
+      printf("[RT Neighbors] given sphere %d has neighbors: [", all_id);
+    // save neighbor all_ids
+    for (auto& neigh_handle : one_neighs) {
+      int neigh_all_id = neigh_handle->info().all_id;
+      // skip 8 bbox points
+      if (neigh_all_id == -1) continue;
+      sphere_neighbors[all_id].insert(neigh_all_id);
+      sphere_neighbors[neigh_all_id].insert(all_id);  // both sides
+      if (is_debug) printf("%d, ", neigh_all_id);
+    }
+    if (is_debug) printf("]\n");
+  }
+
+  // convert to flat 2D matrix
+  // update site_knn
+  convert_to_flat_site_knn(num_spheres, num_neigh_max, sphere_neighbors,
+                           site_knn);
+
+  if (is_debug)
+    printf("[RT Neigh] maximum %d neighbors per sphere\n", num_neigh_max);
+  return num_neigh_max;
+}
+
+// -------------------------------------------------------------------------------------------
 // helper function
 void convert_to_flat_site_knn(
     const int& n_site, const int& num_neigh_max,

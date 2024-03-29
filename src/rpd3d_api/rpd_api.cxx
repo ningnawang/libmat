@@ -136,10 +136,10 @@ void RPD3D_GPU::calculate() {
   // merge old convex_cells and current convex_cells
   // (keep only sphere + 1ring, NO 2ring)
   std::vector<ConvexCellHost> merged_cells =
-      merge_convex_cells(valid_sphere_ids, spheres_and_1rings, cells_to_show,
+      merge_convex_cells(valid_sphere_ids, spheres_and_1rings, powercells,
                          cells_partials, is_debug);
-  cells_to_show.clear();
-  cells_to_show = merged_cells;
+  powercells.clear();
+  powercells = merged_cells;
   this->num_itr_rpd++;
 }
 
@@ -294,17 +294,17 @@ void RPD3D_GPU::calculate_partial(int& num_itr_global, int& num_sphere_added,
                                        cells_partials, is_debug);
 
   if (is_debug)
-    printf("#cells_to_show: %zu, #cells_partials: %zu \n", cells_to_show.size(),
+    printf("#powercells: %zu, #cells_partials: %zu \n", powercells.size(),
            cells_partials.size());
 
   // re-assign ConvexCellHost::id
   // merge old convex_cells and current convex_cells
   // (keep only sphere + 1ring, NO 2ring)
   std::vector<ConvexCellHost> merged_cells =
-      merge_convex_cells(valid_sphere_ids, spheres_and_1rings, cells_to_show,
+      merge_convex_cells(valid_sphere_ids, spheres_and_1rings, powercells,
                          cells_partials, is_debug);
-  cells_to_show.clear();
-  cells_to_show = merged_cells;
+  powercells.clear();
+  powercells = merged_cells;
 
   this->update_spheres_power_cells();
   num_itr_global++;
@@ -327,7 +327,7 @@ void RPD3D_GPU::update_spheres_power_cells() {
                            true /*is_clear_existing*/);
 
   // update powercells in multi-threads
-  update_power_cells(*this->sf_mesh, this->cells_to_show,
+  update_power_cells(*this->sf_mesh, this->powercells,
                      *this->all_medial_spheres, this->tet_mesh->tet_es2fe_map,
                      this->is_debug);
 }

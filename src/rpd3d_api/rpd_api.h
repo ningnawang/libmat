@@ -17,7 +17,7 @@ class RPD3D_GPU {
   void calculate_partial(int& num_itr_global, int& num_sphere_added,
                          const bool is_given_all_tets);
 
- private:
+ public:
   void update_spheres_power_cells();
   void load_partial_spheres_to_sites(const std::vector<int>& map_site2msphere,
                                      const std::set<int>& spheres_and_1rings);
@@ -41,10 +41,10 @@ class RPD3D_GPU {
       bool is_debug);
 
  public:
-  std::vector<ConvexCellHost> cells_to_show;
+  std::vector<ConvexCellHost> powercells;
   bool is_debug = false;
 
- private:
+ public:
   const TetMesh* tet_mesh;
   const SurfaceMesh* sf_mesh;
   const Parameter* params;
