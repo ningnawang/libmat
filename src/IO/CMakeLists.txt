@@ -5,6 +5,8 @@ add_library(IO STATIC
     io_utils.cpp
     io.h
     io.cxx
+    Predicates.cxx
+    Predicates.hpp
 )
 
 # add lib

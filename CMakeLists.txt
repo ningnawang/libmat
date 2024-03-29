@@ -50,6 +50,7 @@ add_subdirectory(src/matbase)
 add_subdirectory(src/matfun)
 add_subdirectory(src/matfun_fix)
 add_subdirectory(src/IO)
+add_subdirectory(src/CPU)
 
 # ###############################################################################
 # For VolumeVoronoiGPU binary
@@ -89,6 +90,7 @@ target_link_libraries(${PROJECT_NAME}
     optimized matfun
     optimized matfun_fix
     optimized IO
+    optimized cpu_fallback
     optimized mshloader
     optimized polyscope
     optimized geogram
