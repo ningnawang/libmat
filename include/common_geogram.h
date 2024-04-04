@@ -363,3 +363,7 @@ inline Matrix3 vec_vec_trans(Vector3 A, Vector3 B) {
                                    A[2] * B[0], A[2] * B[1], A[2] * B[2]}};
   return Matrix3(result.data());
 }
+
+inline Vector3 convert_std2geo(const adouble3& p) {
+  return Vector3(p[0], p[1], p[2]);
+}

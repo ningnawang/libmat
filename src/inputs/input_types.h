@@ -298,6 +298,8 @@ class SurfaceMesh : public GEO::Mesh {
                              std::vector<v2int> &one_group_fids) const;
   bool collect_kring_neighbors_given_fid(const int k, int tan_fid,
                                          std::set<int> &kring_neighbors) const;
+  bool collect_kring_neighbors_given_fid_se_only(
+      const int k, int tan_fid, std::set<int> &kring_neighbors) const;
 
  public:
   AABBWrapper aabb_wrapper;
@@ -312,6 +314,9 @@ class SurfaceMesh : public GEO::Mesh {
   // updated in reload_sf_fid_neighs_no_cross(), after calling
   // detect_mark_sharp_features()
   std::map<int, std::set<int>> sf_fid_neighs_no_cross;
+
+  // same as fe_sf_fs_pairs, but only for SE
+  std::set<aint2> fe_sf_fs_pairs_se_only;
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,

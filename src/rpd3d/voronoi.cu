@@ -185,7 +185,7 @@ __global__ void tet_sphere_relations_dev(
           break;
         }
       }  // 4 tet vertices
-    }    // for site_k (all neighbor spheres)
+    }  // for site_k (all neighbor spheres)
 
     int is_relate = num_relate_hp == site_real_k ? 1 : 0;
     tet_sphere_relate_dev[tid + si_idx * tet_sphere_relate_pitch] = is_relate;

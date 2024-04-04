@@ -29,6 +29,7 @@ typedef std::array<int, 2> aint2;  //  unique id of powercell edge, medial edge
 typedef std::array<int, 3> aint3;  //  medial face
 typedef std::array<int, 4> aint4;
 typedef std::array<int, 5> aint5;
+typedef std::array<double, 3> adouble2;
 typedef std::array<double, 3> adouble3;  // for gui
 
 // === Math utilities

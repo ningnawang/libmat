@@ -112,6 +112,15 @@ bool SurfaceMesh::collect_kring_neighbors_given_fid(
   return kring_neighbors.empty() ? false : true;
 }
 
+bool SurfaceMesh::collect_kring_neighbors_given_fid_se_only(
+    const int k, int tan_fid, std::set<int>& kring_neighbors) const {
+  kring_neighbors.clear();
+  get_k_ring_neighbors_no_cross(*this, this->fe_sf_fs_pairs_se_only, tan_fid, k,
+                                kring_neighbors, true /*is_clear_cur*/,
+                                false /*is_debug*/);
+  return kring_neighbors.empty() ? false : true;
+}
+
 void SurfaceMesh::collect_fid_centroids(
     const std::set<int>& given_fids, std::vector<v2int>& one_group_fids) const {
   one_group_fids.clear();
@@ -269,7 +278,7 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh& sf_mesh,
         k_ring_fids.insert(nfid);
         new_added_fids.insert(nfid);
       }  // for facets.nb_vertices
-    }    // for k_ring_fids
+    }  // for k_ring_fids
     i++;
   }  // while (i < k)
   if (is_debug) {

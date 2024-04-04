@@ -113,7 +113,8 @@ void find_feature_edges(const Parameter& args,
                         std::set<aint2>& s_edges, std::set<aint2>& cc_edges,
                         std::set<int>& corners_se, std::set<int>& corners_ce,
                         std::set<int>& corners_fake,
-                        std::set<aint2>& fe_sf_fs_pairs) {
+                        std::set<aint2>& fe_sf_fs_pairs,
+                        std::set<aint2>& fe_sf_fs_pairs_se_only) {
   printf("Detecting sharp/concave edges and corners_se using threshold: %f \n",
          args.thres_concave);
   s_edges.clear();
@@ -121,6 +122,7 @@ void find_feature_edges(const Parameter& args,
   corners_se.clear();
   corners_ce.clear();
   fe_sf_fs_pairs.clear();
+  fe_sf_fs_pairs_se_only.clear();
 
   std::vector<aint2> edges;
   std::map<int, std::unordered_set<int>> conn_tris;
@@ -215,10 +217,11 @@ void find_feature_edges(const Parameter& args,
           // logger().debug("sharp edge: theta is {}", tmp_convex);
           s_edges.insert(e);
           fe_sf_fs_pairs.insert(ref_fs_pair);
+          fe_sf_fs_pairs_se_only.insert(ref_fs_pair);
         }
       }
     }  // for n12_f_ids
-  }    // for edges
+  }  // for edges
 
   // vector_unique(s_edges);
 
@@ -474,7 +477,7 @@ int get_grouped_feature_edges(const std::set<aint2>& fe_to_visit,
         }
         if (is_pushed) break;
       }  // for one_fe
-    }    // for while
+    }  // for while
     // fe_line_id++;
     fe_groups.push_back(one_fe_group);  // store cell ids in one CC
     one_fe_group.clear();
@@ -650,7 +653,7 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   std::set<int> corners_se_sf, corners_ce_sf, corners_fake_sf;
   find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
                      corners_se_sf, corners_ce_sf, corners_fake_sf,
-                     sf_mesh.fe_sf_fs_pairs);
+                     sf_mesh.fe_sf_fs_pairs, sf_mesh.fe_sf_fs_pairs_se_only);
   mark_feature_attributes(s_edges_sf, cc_edges_sf, corners_se_sf, sf_mesh);
 
   // map back to tet mesh

@@ -53,8 +53,8 @@ enum Status {
 #define _MAX_T_ 96
 #elif 3 == PRESET  // ninwang setting
 #define VORO_BLOCK_SIZE 16
-#define KNN_BLOCK_SIZE 32
-#define _K_ 150  // for testing
+#define KNN_BLOCK_SIZE 32  // no use
+#define _K_ 150            // for testing
 #define _MAX_P_ 64
 #define _MAX_T_ 96
 #define _MAX_E_ 152
