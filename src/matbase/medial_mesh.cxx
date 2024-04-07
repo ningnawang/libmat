@@ -238,7 +238,7 @@ void MedialMesh::compute_faces_st_meta(const AABBWrapper& aabb_wrapper) {
           mface.st[i].centroid, mface.st[i].nearest_point, sq_dist);
       mface.st[i].dist_to_sf = std::sqrt(sq_dist);
     }  // for st
-  }    // for mfaces
+  }  // for mfaces
 }
 
 bool MedialMesh::ValidVertex(int vid) {
@@ -416,8 +416,8 @@ int MedialMesh::create_tet(const std::array<int, 4>& vids, int dcnt, int tid,
         tet.neigh_tets_.insert(face.tets_.begin(), face.tets_.end());
         fids.push_back(fid);
       }  // k
-    }    // j
-  }      // i
+    }  // j
+  }  // i
 
   if (fids.size() != 4) {
     printf("[MAT TET] error creating tet %d, fids size not 4: %ld \n", tid,
@@ -711,7 +711,7 @@ void MedialMesh::check_and_store_unthin_tets_in_mat() {
       possible_tets.insert(
           {{tet_vids[0], tet_vids[1], tet_vids[2], tet_vids[3]}});
     }  // for intersections
-  }    // for faces
+  }  // for faces
 
   // printf("[UNTHIN CHECK] found %ld possible_tets\n", possible_tets.size());
 
@@ -983,6 +983,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
   while (visited.size() != this->faces.size()) {
     int rand_fid = RANDOM_INT(0, this->faces.size());
     const auto& mface = this->faces.at(rand_fid);
+    if (mface.is_deleted) continue;
     if (is_debug)
       printf("[MedialStruc] checking mface %d (%d,%d,%d), visited: %zu\n",
              mface.fid, mface.vertices_[0], mface.vertices_[1],
@@ -998,6 +999,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
     while (!visit_queue.empty()) {
       int cur_fid = visit_queue.front();
       visit_queue.pop();
+      assert(!this->faces.at(cur_fid).is_deleted);
       if (visited.find(cur_fid) != visited.end()) continue;
       visited.insert(cur_fid);
       mstruct.m_face_ids.insert(cur_fid);
@@ -1007,6 +1009,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
       for (int eid : this->faces.at(cur_fid).edges_) {
         for (int nxt_fid : this->edges.at(eid).faces_) {
           if (nxt_fid == cur_fid) continue;
+          if (this->faces.at(nxt_fid).is_deleted) continue;
           if (visited.find(nxt_fid) != visited.end()) continue;
           // check cur_fid and nxt_fid
           bool is_add = is_add_neigh_fid(*this, cur_fid, nxt_fid);
