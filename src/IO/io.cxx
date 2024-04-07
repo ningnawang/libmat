@@ -807,7 +807,8 @@ bool save_sf_mesh_geogram(const std::string sf_path, GEO::Mesh& sf_mesh) {
 void get_one_convex_cell_faces(
     const ConvexCellHost& cc_trans, std::vector<float3>& voro_points,
     std::vector<std::vector<unsigned>>& one_voro_cell_faces,
-    std::vector<int>& voro_faces_sites, bool is_triangle) {
+    std::vector<int>& voro_faces_sites, bool is_triangle, int max_sf_fid,
+    bool is_boundary_only) {
   int row = voro_points.size();  // index from 0
   assert(one_voro_cell_faces.size() == voro_faces_sites.size());  // not clean!!
 
@@ -841,6 +842,18 @@ void get_one_convex_cell_faces(
   FOR(plane, cc_trans.nb_p) {
     if (active_clipping_planes[plane] <= 0) continue;
     cint2 hp = cc_trans.clip_id2_const(plane);
+
+    // check if only shown boundary or not
+    // 1. halfplane; 2. on sf_mesh fid
+    bool is_shown = true;
+    if (is_boundary_only) {
+      is_shown = false;
+      if ((hp.y != -1) || (hp.y == -1 && hp.x < max_sf_fid)) {
+        is_shown = true;
+      }
+    }
+    if (!is_shown) continue;
+
     std::vector<int> tab_v;   // index of dual vertex
     std::vector<int> tab_lp;  // local index of dual vertex in dual triangle
     // for each dual triangle
@@ -909,86 +922,6 @@ void get_one_convex_cell_faces(
   }
 }
 
-// [no use]
-// save file as xx.cells, for CSG union later
-void save_convex_cells_for_union(
-    const std::vector<MedialSphere>& all_medial_spheres,
-    const std::vector<ConvexCellHost>& convex_cells_returned,
-    const std::string filename) {
-  std::string cells_path =
-      "../out/rpd/cells_" + filename + "_" + get_timestamp() + ".cells";
-  int n_site = all_medial_spheres.size();
-  std::vector<float3> voro_points;
-  std::vector<std::vector<unsigned>> all_voro_faces;
-  std::vector<int> voro_faces_sites;
-  std::set<int> cell_visited;
-  std::queue<int> cell_to_visit;
-
-  std::fstream file;
-  file.open(cells_path, std::ios_base::out);
-  file << n_site << std::endl;
-  for (const auto& msphere : all_medial_spheres) {
-    // [format] site_id, #cells \n
-    file << msphere.id << " ";
-    if (msphere.is_deleted || msphere.pcell.cell_ids.empty())
-      file << "0";
-    else
-      file << msphere.pcell.cell_ids.size();
-    file << std::endl;
-
-    for (const auto& one_cc_group : msphere.pcell.cc_cells) {
-      cell_to_visit.push(*one_cc_group.begin());
-      while (!cell_to_visit.empty()) {
-        int cell_id = cell_to_visit.front();
-        cell_to_visit.pop();
-
-        // check not visited
-        if (cell_visited.find(cell_id) != cell_visited.end()) continue;
-        cell_visited.insert(cell_id);
-
-        // [format] cell_id, #cell_cc \n
-        file << cell_id << " " << msphere.pcell.cc_cells.size() << std::endl;
-        // add cell's neighbors to queue
-        for (const auto& neigh_id : msphere.pcell.cell_neighbors.at(cell_id)) {
-          if (one_cc_group.find(neigh_id) != one_cc_group.end() &&
-              cell_visited.find(neigh_id) == cell_visited.end())
-            cell_to_visit.push(neigh_id);
-        }
-        // printf("saving cell_id: %d... cell_to_visit: %zu \n", cell_id,
-        //        cell_to_visit.size());
-
-        // [format] c #v, #f \n
-        const auto& cc_trans = convex_cells_returned.at(cell_id);
-        voro_points.clear();  // always index from 0
-        all_voro_faces.clear();
-        voro_faces_sites.clear();
-        get_one_convex_cell_faces(cc_trans, voro_points, all_voro_faces,
-                                  voro_faces_sites, true /*is_triangle*/);
-        file << "c " << voro_points.size() << " " << all_voro_faces.size()
-             << std::endl;
-
-        // [format] v x x x \n
-        for (const auto& v : voro_points)
-          file << "v " << std::setiosflags(std::ios::fixed)
-               << std::setprecision(15) << v.x << " " << v.y << " " << v.z
-               << std::endl;
-
-        // [format] f x x x \n
-        for (const auto& f : all_voro_faces) {
-          // file << "f " << f.size() << " ";
-          // for (const auto fv : f) file << fv << " " << std::endl;
-          assert(f.size() == 3);
-          file << "f " << f[0] << " " << f[1] << " " << f[2] << std::endl;
-        }
-      }  // while cell_to_visit
-    }  // msphere.pcell.cc_cells
-    printf("saving msphere %d ...\n", msphere.id);
-  }
-
-  file.close();
-  printf("saved .cells file %s\n", cells_path.c_str());
-}
-
 bool is_slice_by_plane(const Vector3& bary, const Parameter& params) {
   Vector3 slice_pl_pos(params.xmax / 2.2, 0, 0);
   Vector3 slice_pl_normal(-1, 0, 0);
@@ -1019,7 +952,8 @@ Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans) {
 bool save_convex_cells_houdini(
     const Parameter params, const std::vector<MedialSphere>& all_medial_spheres,
     const std::vector<ConvexCellHost>& convex_cells_returned,
-    std::string rpd_name, bool is_slice_plane) {
+    std::string rpd_name, const int max_sf_fid, const bool is_boundary_only,
+    bool is_slice_plane) {
   IO::Geometry geometry;
   IO::GeometryWriter geometry_writer(".");
   std::string rpd_path = "../out/rpd/rpd_" + rpd_name + "_" + get_timestamp();
@@ -1033,7 +967,8 @@ bool save_convex_cells_houdini(
     Vector3 last_bary = compute_cell_barycenter(cc_trans);
     if (is_slice_plane && is_slice_by_plane(last_bary, params)) continue;
     get_one_convex_cell_faces(cc_trans, voro_points, all_voro_faces,
-                              voro_faces_sites, false /*is_triangle*/);
+                              voro_faces_sites, false /*is_triangle*/,
+                              max_sf_fid, is_boundary_only);
   }
   geometry.AddParticleAttribute("P", voro_points);
   geometry.AddPolygon(all_voro_faces);

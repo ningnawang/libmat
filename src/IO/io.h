@@ -91,15 +91,11 @@ bool save_sf_mesh_geogram(const std::string sf_path, GEO::Mesh& sf_mesh);
 bool is_slice_by_plane(const Vector3& bary, const Parameter& params);
 Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans);
 
-void save_convex_cells_for_union(
-    const std::vector<MedialSphere>& all_medial_spheres,
-    const std::vector<ConvexCellHost>& convex_cells_returned,
-    const std::string filename);
-
 bool save_convex_cells_houdini(
     const Parameter params, const std::vector<MedialSphere>& all_medial_spheres,
     const std::vector<ConvexCellHost>& convex_cells_returned,
-    std::string rpd_name, bool is_slice_plane = false);
+    std::string rpd_name, const int max_sf_fid, const bool is_boundary_only,
+    bool is_slice_plane = false);
 
 // load ma
 void unnormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp);
