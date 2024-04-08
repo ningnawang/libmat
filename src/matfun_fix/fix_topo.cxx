@@ -497,8 +497,8 @@ int fix_topo_by_adding_new_sphere(
 
   // fix by adding new spheres
   for (int mid : spheres_to_fix) {
-    auto &msphere = all_medial_spheres[mid];  // yes, coppy
-    if (msphere.is_deleted) continue;         // dont care
+    auto &msphere = all_medial_spheres.at(mid);  // yes, coppy
+    if (msphere.is_deleted) continue;            // dont care
     assert(msphere.pcell.topo_status != Topo_Status::unkown &&
            msphere.pcell.topo_status != Topo_Status::ok);
 
@@ -622,6 +622,10 @@ int fix_topo_by_adding_new_sphere(
           bool is_good = add_new_sphere_given_v2fid(
               num_itr_global, sf_mesh, tet_mesh, v2fid_chosen,
               all_medial_spheres, is_merge_to_ce, is_debug);
+          // Note: to make sure msphere is still valid
+          // add_new_sphere_given_v2fid() add new sphere to all_medial_spheres
+          // which make msphere access not stable
+          auto &msphere = all_medial_spheres.at(mid);
           // if (is_debug)
           printf("[Fix] msphere %d newly added sphere %d is_good: %d\n",
                  msphere.id, all_medial_spheres.back().id, is_good);
@@ -634,6 +638,8 @@ int fix_topo_by_adding_new_sphere(
               fcc_cells_in_group.size(), fcc_v2fids_in_group.size(),
               cc_trans.id);
         }
+        // Note: to make sure msphere is still valid
+        auto &msphere = all_medial_spheres.at(mid);
         // to makes sure sphere neigh_id won't repeatly add a new sphere
         all_medial_spheres.at(neigh_id).fcc_fixed(msphere.id);
       }  // for each halfplane

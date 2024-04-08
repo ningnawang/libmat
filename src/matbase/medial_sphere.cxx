@@ -1294,7 +1294,7 @@ void update_sphere_surf_v2fids(const SurfaceMesh& sf_mesh,
       //   printf("[UpdateVoro] fid %d has neighbor face nfid %d\n", fid, nfid);
       sf_fid_neighbors[fid].insert(nfid);
     }  // for facets.nb_vertices
-  }    // for sf_fids_to_visit
+  }  // for sf_fids_to_visit
 
   // find fids in groups
   std::vector<std::set<int>> covered_sf_fids_in_groups;
@@ -1459,7 +1459,7 @@ void update_sphere_type_based_on_pcells(const SurfaceMesh& input_mesh,
           }
         }
       }  // num_surf_cc < 3
-    }    // for msphere.pcell.cc_surf_v2fids
+    }  // for msphere.pcell.cc_surf_v2fids
   }
 
   // TODO: update T_N_c
