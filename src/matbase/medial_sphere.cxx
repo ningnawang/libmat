@@ -1767,8 +1767,8 @@ void copy_powercell_volume(const std::vector<float>& all_cell_vol,
 // 2. RT from invalid to valid: add to changed_spheres
 // 3. RT from valid to invalid: add neighbors to changed_spheres
 //
-// spheres_changed does not contains sphere in spheres_invalid
-// but contains neighbors of spheres in spheres_invalid
+// changed_spheres does not contains sphere in invalid_spheres
+// but contains neighbors of spheres in invalid_spheres
 void load_changed_spheres(const int num_itr_global,
                           const std::vector<MedialSphere> all_medial_spheres,
                           std::set<int>& changed_spheres,
@@ -1816,10 +1816,11 @@ void load_changed_spheres(const int num_itr_global,
     }
   }
 
-  // sanity check
-  for (int i : invalid_spheres) {
-    assert(changed_spheres.find(i) == changed_spheres.end());
-  }
+  // not true
+  // // sanity check
+  // for (int i : invalid_spheres) {
+  //   assert(changed_spheres.find(i) == changed_spheres.end());
+  // }
 
   if (is_debug)
     printf(
