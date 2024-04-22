@@ -73,8 +73,8 @@ constexpr unsigned int GEO_SAMPLE_MAX = 1000;
 constexpr int INTF_ITR_MAX = 5;
 constexpr int EXTF_ITR_MAX = 5;
 
-#define RAN_SEED 200  // random seed
-#define SCALAR_FEATURE_RADIUS 1e-1
-#define SCALAR_SE_MERGE_RADIUS 1 /* scaled to [0,1000]^3 */
+#define RAN_SEED 200                // random seed
+#define SCALAR_FEATURE_RADIUS 1e-1  // for SE sphere
+#define SCALAR_SE_MERGE_RADIUS 1    /* scaled to [0,1000]^3 */
 #define SCALAR_CE_PIN_RADIUS 30
 #define SQ_DIST_TO_CC 1e-2

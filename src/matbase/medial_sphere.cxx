@@ -1483,7 +1483,8 @@ void update_power_cells(const SurfaceMesh& sf_mesh,
     if (msphere.is_deleted) return;
     const std::set<int>& all_cell_ids = msphere.pcell.cell_ids;
     if (all_cell_ids.empty()) {
-      printf("[UpdateVoro] sphere %d has zero convex cells!!\n", msphere.id);
+      if (is_debug)
+        printf("[UpdateVoro] sphere %d has zero convex cells!!\n", msphere.id);
       msphere.is_deleted = true;  // delete?
       return;
     }

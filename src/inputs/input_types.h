@@ -1,4 +1,5 @@
 #pragma once
+#include <assert.h>
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_AABB.h>
 #include <geogram/mesh/mesh_geometry.h>
@@ -21,6 +22,7 @@ class FeatureEdge {
       : id(_id), type(_t), t2vs_group(_t2vs_group){};
   ~FeatureEdge(){};
   void print_info() const;
+  inline int get_fl_id() const { return t2vs_group[2]; }
 
   int id;
   EdgeType type;
@@ -89,6 +91,10 @@ class FeatureLine {
 class TetMesh {
  public:
   TetMesh(std::string path) : tet_path_with_ext(path){};
+  inline int get_fl_id(const int fe_id) const {
+    assert(fe_id >= 0 && fe_id < feature_edges.size());
+    return feature_edges[fe_id].get_fl_id();
+  };
 
  public:
   std::string tet_path_with_ext;
@@ -247,13 +253,23 @@ class AABBWrapper {
     return sq_dist;
   }
 
-  inline double project_to_ce(Vector3 &p) const {
+  inline int project_to_se(Vector3 &p) const {
+    if (!is_se_mesh_exist) return UNK_FACE;
     Vector3 nearest_p;
     double sq_dist = std::numeric_limits<double>::max();  //??
-    se_tree->nearest_facet(p, nearest_p, sq_dist);
+    int eid = se_tree->nearest_facet(p, nearest_p, sq_dist);
     p = nearest_p;
-    return sq_dist;
+    GEO::Attribute<int> attr_fe_ids(se_mesh.facets.attributes(), "fe_id");
+    return attr_fe_ids[eid];
   }
+
+  // inline double project_to_se(Vector3 &p) const {
+  //   Vector3 nearest_p;
+  //   double sq_dist = std::numeric_limits<double>::max();  //??
+  //   se_tree->nearest_facet(p, nearest_p, sq_dist);
+  //   p = nearest_p;
+  //   return sq_dist;
+  // }
 
   /////////////////////
   // for concave lines

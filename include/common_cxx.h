@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -238,6 +239,15 @@ inline std::string get_only_file_name(std::string filePath, bool withExtension,
   if (withExtension) return filename_ext;
   size_t lastindex = filename_ext.find_last_of(".");
   return filename_ext.substr(0, lastindex);
+}
+
+namespace fs = std::filesystem;
+inline bool create_dir(const std::string& dir) {
+  // if dir not exists, create it
+  if (!fs::is_directory(dir.c_str())) {
+    return fs::create_directories(dir.c_str());
+  }
+  return true;
 }
 
 // using .geogram for saving vertex attributes

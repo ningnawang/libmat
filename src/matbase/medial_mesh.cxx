@@ -556,7 +556,7 @@ void MedialMesh::compute_common_diff_for_medge(const SurfaceMesh& sf_mesh,
 }
 
 void MedialMesh::generate_medial_edges(const SurfaceMesh& sf_mesh,
-                                       bool is_update_tan_pls) {
+                                       bool is_compute_common_diff_sfids) {
   assert(vertices != nullptr);
   printf("[MedialMesh] generating medial edges ...\n");
   // aint2 is sorted -> num of created medial edge
@@ -598,7 +598,7 @@ void MedialMesh::generate_medial_edges(const SurfaceMesh& sf_mesh,
     //   me.first[0], me.first[1], me.second);
     // }
 
-    if (is_update_tan_pls) {
+    if (is_compute_common_diff_sfids) {
       // for computing common/diff tangent planes
       compute_common_diff_for_medge(sf_mesh, me, eid);
     }
@@ -1190,6 +1190,10 @@ int compute_Euler(const MedialMesh& mat) {
     connected_faces.insert(face.fid);
     std::vector<int> f_vs;
     for (const auto v : face.vertices_) {
+      if (mat.vertices->at(v).is_deleted) {
+        printf("mat face %d has deleted vertex %d\n", face.fid, v);
+        assert(false);
+      }
       assert(!mat.vertices->at(v).is_deleted);
       connected_vertices.insert(v);
       f_vs.push_back(v);

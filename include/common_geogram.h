@@ -364,6 +364,39 @@ inline Matrix3 vec_vec_trans(Vector3 A, Vector3 B) {
   return Matrix3(result.data());
 }
 
+/**
+ * @brief Compute A * transpose(B)
+ *
+ * @param A 4x4 vector
+ * @param B 4x4 vector
+ * @return Matrix4
+ */
+inline Matrix4 vec_vec_trans(Vector4 A, Vector4 B) {
+  // by rows
+  std::array<double, 16> result = {{
+      A[0] * B[0],
+      A[0] * B[1],
+      A[0] * B[2],
+      A[0] * B[3],
+      //
+      A[1] * B[0],
+      A[1] * B[1],
+      A[1] * B[2],
+      A[1] * B[3],
+      //
+      A[2] * B[0],
+      A[2] * B[1],
+      A[2] * B[2],
+      A[2] * B[3],
+      //
+      A[3] * B[0],
+      A[3] * B[1],
+      A[3] * B[2],
+      A[3] * B[3],
+  }};
+  return Matrix4(result.data());
+}
+
 inline Vector3 convert_std2geo(const adouble3& p) {
   return Vector3(p[0], p[1], p[2]);
 }

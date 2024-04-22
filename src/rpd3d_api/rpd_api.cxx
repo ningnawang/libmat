@@ -314,17 +314,19 @@ void RPD3D_GPU::calculate_partial(int& num_itr_global, int& num_sphere_added,
 // ------------------------------------------------------------------------------------
 // private functions
 // ------------------------------------------------------------------------------------
-void RPD3D_GPU::update_spheres_power_cells() {
-  // for SE spheres and corners
-  // also update covered sf_mesh fids
-  //
-  // call before update_power_cells()
-  // to make sure TangentPlane::sf_fids_covered will be updated
-  //
-  // TODO: move this function to a better place!!!!
-  update_se_tangent_planes(*this->sf_mesh, this->tet_mesh->feature_edges,
-                           *this->all_medial_spheres,
-                           true /*is_clear_existing*/);
+void RPD3D_GPU::update_spheres_power_cells(bool is_compute_se_sfids) {
+  if (is_compute_se_sfids) {
+    // for SE spheres and corners
+    // also update covered sf_mesh fids
+    //
+    // call before update_power_cells()
+    // to make sure TangentPlane::sf_fids_covered will be updated
+    //
+    // TODO: move this function to a better place!!!!
+    update_se_tangent_planes(*this->sf_mesh, this->tet_mesh->feature_edges,
+                             *this->all_medial_spheres,
+                             true /*is_clear_existing*/);
+  }
 
   // update powercells in multi-threads
   update_power_cells(*this->sf_mesh, this->powercells,

@@ -18,7 +18,7 @@ class RPD3D_GPU {
                          const bool is_given_all_tets);
 
  public:
-  void update_spheres_power_cells();
+  void update_spheres_power_cells(bool is_compute_se_sfids = true);
   void load_partial_spheres_to_sites(const std::vector<int>& map_site2msphere,
                                      const std::set<int>& spheres_and_1rings);
   void update_convex_cells_voro_and_tet_ids(
