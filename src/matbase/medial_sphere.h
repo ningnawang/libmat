@@ -134,6 +134,8 @@ enum Topo_Status {
 // each PowerCell contains multiple ConvexCellHost
 struct PowerCell {
   PowerCell(){};
+  int voro_id = -1;
+
   // sum of all convex cell volumes
   float pcell_vol = -1;
 
@@ -144,8 +146,8 @@ struct PowerCell {
   /** For PowerCell Cells **/
   // cell_id -> {neighboring cell ids}
   std::map<int, std::set<int>> cell_neighbors;
-  // original tet fid -> 1 or 2 cell ids
-  std::map<int, std::set<int>> tfid_to_cells;
+  // // original tet fid -> 1 or 2 cell ids
+  // std::map<int, std::set<int>> tfid_to_cells;
   // cell id -> orignal tet fids
   // first #sf_mesh.facets.nb()-1 matches GEO::Mesh, later are unique fids
   // from orignal tet
@@ -167,10 +169,10 @@ struct PowerCell {
   /** For PowerCell Facets **/
   // halfplane seed_neigh_id -> list of cell ids
   // (all cells that clipped by the halfplane)
-  std::map<int, std::set<int>> neigh_seed_to_cells;
+  std::map<int, std::set<int>> facet_neigh_to_cells;
   // store seed_neigh_id that needs to add new spheres around
   // neigh_id -> fixed (true) or not fixed (false)
-  std::map<int, bool> neigh_seed_is_fixed;
+  std::map<int, bool> facet_neigh_is_fixed;
   // neigh_id -> { set of cell_ids in one facet CC }
   // sorted based on the size of group (in set)
   std::map<int, std::vector<std::set<int>>> facet_cc_cells;
@@ -342,7 +344,7 @@ class MedialSphere {
   void pcell_insert(int cell_id);
   // We only consider Topo_Status::high_facet_cc as true
   // iff both spheres have Topo_Status::high_facet_cc
-  bool fcc_is_to_fix(int neigh_id);
+  bool fcc_is_to_fix(int neigh_id) const;
   void fcc_fixed(int neigh_id);
 
   bool operator<(const MedialSphere& m2) const;

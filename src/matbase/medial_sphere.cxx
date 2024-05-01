@@ -739,12 +739,12 @@ void MedialSphere::topo_clear() {
   // pcell.cc_bfids.clear();
   pcell.cc_surf_v2fids.clear();
   // facets
-  pcell.tfid_to_cells.clear();
-  pcell.neigh_seed_to_cells.clear();
+  // pcell.tfid_to_cells.clear();
+  pcell.facet_neigh_to_cells.clear();
   pcell.cell_to_tfids.clear();
   pcell.facet_cc_cells.clear();
   pcell.facet_cc_surf_v2fids.clear();
-  pcell.neigh_seed_is_fixed.clear();
+  pcell.facet_neigh_is_fixed.clear();
   // powercell edges
   pcell.e_to_cells.clear();
   pcell.e_is_fixed.clear();
@@ -769,17 +769,17 @@ void MedialSphere::topo_clear() {
 
 // We only consider Topo_Status::high_facet_cc as true
 // iff both spheres have Topo_Status::high_facet_cc
-bool MedialSphere::fcc_is_to_fix(int neigh_id) {
-  return pcell.neigh_seed_is_fixed.find(neigh_id) !=
-         pcell.neigh_seed_is_fixed.end();
+bool MedialSphere::fcc_is_to_fix(int neigh_id) const {
+  return pcell.facet_neigh_is_fixed.find(neigh_id) !=
+         pcell.facet_neigh_is_fixed.end();
 }
 
 void MedialSphere::fcc_fixed(int neigh_id) {
   // only update when the topo_type is the same
   // if (pcell.topo_status == Topo_Status::high_facet_cc)
-  // assert(pcell.neigh_seed_is_fixed.find(neigh_id) !=
-  //        pcell.neigh_seed_is_fixed.end());
-  pcell.neigh_seed_is_fixed[neigh_id] = true;
+  // assert(pcell.facet_neigh_is_fixed.find(neigh_id) !=
+  //        pcell.facet_neigh_is_fixed.end());
+  pcell.facet_neigh_is_fixed[neigh_id] = true;
 }
 
 /**
@@ -1014,11 +1014,12 @@ void get_all_voro_info(const std::vector<ConvexCellHost>& voro_convex_cells,
   // cell_id -> {neighboring cell ids}
   auto& cell_neighbors = powercell.cell_neighbors;
   // original tet fid -> 1 or 2 cell ids
-  auto& tfid_to_cells = powercell.tfid_to_cells;
+  // auto& tfid_to_cells = powercell.tfid_to_cells;
+  std::map<int, std::set<int>> tfid_to_cells;
   // cell id -> orignal tet fids
   auto& cell_to_tfids = powercell.cell_to_tfids;
   // halfplane seed_neigh_id -> list of cell ids
-  auto& neigh_seed_to_cells = powercell.neigh_seed_to_cells;
+  auto& facet_neigh_to_cells = powercell.facet_neigh_to_cells;
   // halfplane [seed_neigh_min, seed_neigh_max] -> list of cell ids
   auto& e_to_cells = powercell.e_to_cells;
   // [neigh_id_min, neigh_id_max] ->
@@ -1054,7 +1055,7 @@ void get_all_voro_info(const std::vector<ConvexCellHost>& voro_convex_cells,
       cint2 hp = cc_trans.clip_id2_const(plane);
       if (hp.y != -1) {  // store halfplanes
         int neigh_seed_id = hp.x == cc_trans.voro_id ? hp.y : hp.x;
-        neigh_seed_to_cells[neigh_seed_id].insert(cell_id);
+        facet_neigh_to_cells[neigh_seed_id].insert(cell_id);
       } else {
         // centroid-facet pairs on surface (matching GEO::Mesh)
         if (hp.x <= max_surf_fid) {
@@ -1136,7 +1137,7 @@ void get_all_voro_info(const std::vector<ConvexCellHost>& voro_convex_cells,
       // store covered feature edges (sharp/concave)
       // bool is_debug = cc_trans.voro_id == 1707 ? true : false;
       bool is_debug = false;
-      if (hp1.y == -1 && hp2.y == -1) {  // edge on surface boundary
+      if (hp1.y == -1 && hp2.y == -1) {  // edge on orignal tet
         // store local fid, not tet fid
         aint2 edge_lfids = {{e_fid2.x, e_fid2.y}};
         std::sort(edge_lfids.begin(), edge_lfids.end());
@@ -1224,6 +1225,10 @@ void get_all_voro_info(const std::vector<ConvexCellHost>& voro_convex_cells,
       edge_2endvertices[e_unique_id].push_back({{end_v1_key, end_v2_key}});
     }  // for cc_trans.nb_e
 
+    // if (cc_trans.id == 4039 ||
+    //     (cc_trans.voro_id == 1483 && cc_trans.tet_id == 1107)) {
+    //   cc_trans.print_info();
+    // }
   }  // for voro_convex_cells
 
   // update cell_neighbors
@@ -1240,6 +1245,26 @@ void get_all_voro_info(const std::vector<ConvexCellHost>& voro_convex_cells,
     cell_neighbors[cell1].insert(cell2);
     cell_neighbors[cell2].insert(cell1);
   }  // for tfid_to_cells
+
+  // // print cell_neighbors
+  // if (powercell.voro_id == 1478 || powercell.voro_id == 1483) {
+  //   printf("--------------- powercell %d\n", powercell.voro_id);
+
+  //   // print facet_neigh_to_cells
+  //   for (const auto& pair : facet_neigh_to_cells) {
+  //     printf("neigh_seed %d has cells: (", pair.first);
+  //     for (const auto& c : pair.second) printf("%d, ", c);
+  //     printf(")\n");
+  //   }
+
+  //   printf("----\n");
+  //   for (const auto& pair : cell_neighbors) {
+  //     // if (pair.first != 4039) continue;
+  //     printf("cell %d has neighbors: (", pair.first);
+  //     for (const auto& n : pair.second) printf("%d, ", n);
+  //     printf(")\n");
+  //   }
+  // }
 
   // printf("voro_convex_cells: %ld, cell_neighbors: %ld \n",
   //        voro_convex_cells.size(), cell_neighbors.size());
@@ -1311,7 +1336,7 @@ void update_sphere_surf_v2fids(const SurfaceMesh& sf_mesh,
   }
 }
 
-// helper function for update_powercell_facet_cc_info()
+// helper function for update_pc_facet_cc_info()
 void get_facet_CC_surf_v2fids(
     const std::map<int, std::vector<v2int>>& cell_to_surfv2fid,
     const std::map<int, std::vector<std::set<int>>>& facet_cc_cells,
@@ -1343,8 +1368,8 @@ void get_facet_CC_surf_v2fids(
 // 2. PowerCell::facet_cc_surf_v2fids
 // call after get_all_voro_info()
 void update_pc_facet_cc_info(PowerCell& pcell, const int msphere_id) {
-  assert(!pcell.neigh_seed_to_cells.empty());
-  for (auto& pair : pcell.neigh_seed_to_cells) {
+  assert(!pcell.facet_neigh_to_cells.empty());
+  for (auto& pair : pcell.facet_neigh_to_cells) {
     // halfplane defined by [msphere.id, neigh_id]
     const int neigh_id = pair.first;
     const std::set<int>& halfplane_cells = pair.second;
@@ -1412,7 +1437,7 @@ void update_pc_cc_info(PowerCell& pcell) {
 // PowerCell::edge_cc_cells
 // call after get_all_voro_info()
 void update_pc_edge_cc_info(PowerCell& pcell) {
-  assert(!pcell.neigh_seed_to_cells.empty());
+  assert(!pcell.facet_neigh_to_cells.empty());
   for (auto& pair : pcell.e_to_cells) {
     // two halfplane defined by:
     // 1. [msphere.id, neigh_id_min]
@@ -1495,6 +1520,8 @@ void update_power_cells(const SurfaceMesh& sf_mesh,
       auto& convex_cell = convex_cells_host.at(cell_id);
       all_ccells.push_back(convex_cell);
     }
+
+    msphere.pcell.voro_id = msphere.id;
     get_all_voro_info(all_ccells, msphere.pcell, max_surf_fid, tet_es2fe_map);
     update_sphere_surf_v2fids(sf_mesh, msphere, is_debug);
     update_pc_cc_info(msphere.pcell);
@@ -1800,12 +1827,12 @@ void load_changed_spheres(const int num_itr_global,
   //
   // Note: invalid spheres NOT EXIST in RT anymore,
   //       so we cannot use RT to trace their neighboring spheres,
-  //       here we use MedialSpheres::pcell::neigh_seed_to_cells instead
+  //       here we use MedialSpheres::pcell::facet_neigh_to_cells instead
   for (const auto& invalid_id : invalid_spheres) {
     const auto& inval_sphere = all_medial_spheres.at(invalid_id);
-    if (inval_sphere.pcell.neigh_seed_to_cells.empty()) continue;
+    if (inval_sphere.pcell.facet_neigh_to_cells.empty()) continue;
     // neigh_id -> { set of cell_ids in one facet CC }
-    for (const auto& pair : inval_sphere.pcell.neigh_seed_to_cells) {
+    for (const auto& pair : inval_sphere.pcell.facet_neigh_to_cells) {
       // already mapped to MedialSphere::id during previous call of
       // function update_convex_cells_voro_and_tet_ids()
       const int& seed_neigh_id = pair.first;

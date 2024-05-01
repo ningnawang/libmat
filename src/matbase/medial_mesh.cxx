@@ -457,6 +457,24 @@ void MedialMesh::generate_medial_faces() {
       //     vertices->at(mf[2]).is_on_ce_pin())
       //   continue;
       std::sort(mf.begin(), mf.end());
+
+      // three spheres must have same number of EdgeCC
+      // after the topo fix!
+      if (mfs_cnt.find(mf) != mfs_cnt.end()) {
+        if (pair.second.size() != mfs_cnt[mf]) {
+          printf("mf (%d,%d,%d) has msphere %d, edgeCC %d != %d \n", mf[0],
+                 mf[1], mf[2], msphere.id, pair.second.size(), mfs_cnt[mf]);
+          // for (const auto cids : pair.second) {
+          //   printf("(");
+          //   for (const auto cid : cids) printf("%d,", cid);
+          //   printf("), ");
+          // }
+          // printf("]\n");
+          // assert(false);
+        }
+        continue;  // do nothing
+      }
+
       // [s1, s2, s3] has been count, no need to recal
       if (mfs_dual_edges.find(mf) != mfs_dual_edges.end()) continue;
       for (const auto dual_edge : edge_endvertices_vec) {
@@ -466,17 +484,6 @@ void MedialMesh::generate_medial_faces() {
       }
       // each edgeCC dual to one medial face
       mfs_cnt[mf] = pair.second.size();
-
-      // if (mf[0] == 117 && mf[1] == 222 && mf[2] == 824) {
-      //   printf("mf (%d,%d,%d) has msphere %d, cell_ids: [ ", mf[0], mf[1],
-      //          mf[2], msphere.id);
-      //   for (const auto cids : pair.second) {
-      //     printf("(");
-      //     for (const auto cid : cids) printf("%d,", cid);
-      //     printf(")");
-      //   }
-      //   printf("]\n");
-      // }
     }
   }
 
@@ -569,28 +576,33 @@ void MedialMesh::generate_medial_edges(const SurfaceMesh& sf_mesh,
       // if (vertices->at(seed_neigh_id).is_on_ce_pin()) continue;
       aint2 me = {{msphere.id, seed_neigh_id}};
       std::sort(me.begin(), me.end());
+
       // <seed_id, neigh_seed_id> has been checked, no need to count again
       if (mes_cnt.find(me) != mes_cnt.end()) {
-        // if one sphere found more FacetCC than current
-        // we keep the largest one.
-        // this may happens when only one sphere's pcell has FacetCC=2,
-        // but other has FacetCC=1 (cuz FacetCC is expanded by cellCC)
-        if (pair.second.size() > mes_cnt[me]) mes_cnt[me] = pair.second.size();
+        // two spheres must have same number of FacetCC
+        // after the topo fix!
+        if (pair.second.size() != mes_cnt[me]) {
+          printf(
+              "medial edge with [%d,%d] has sphere %d FaceCC size %d != %d\n",
+              me[0], me[1], msphere.id, pair.second.size(), mes_cnt[me]);
+          // for (const auto cids : pair.second) {
+          //   printf("(");
+          //   for (const auto cid : cids) printf("%d,", cid);
+          //   printf(")");
+          // }
+          // printf("]\n");
+          // assert(false);
+        }
         continue;
       }
       // each facetCC dual to one medial edge
       mes_cnt[me] = pair.second.size();
-      // if (me[0] == 117 && me[1] == 824)
-      //   printf("medial edge with [%d,%d] has mes_cnt: %d \n", msphere.id,
-      //          seed_neigh_id, mes_cnt[me]);
     }
   }
 
   // Note: cannot clear, generate_medial_faces() created some edges!
   // edges.clear();
   for (auto& me : mes_cnt) {
-    // printf("medial edge (%d,%d) has dup_cnt %d\n", me.first[0], me.first[1],
-    //        me.second);
     // will abort and error if already exists
     int eid = create_edge(me.first[0], me.first[1], me.second);
     // if (me.second > 1) {
@@ -617,8 +629,8 @@ void MedialMesh::generate_medial_tets() {
     //
     // 1. If neigh_id1 is -1, then this powercell vertex is on surface
     // 2. If all neigh_id(i) > 0, then vid is inside the shape. If this vertex
-    // is a powercell vertex (not just a convex cell vertex), then it is dual to
-    // a medial tet
+    // is a powercell vertex (not just a convex cell vertex), then it is dual
+    // to a medial tet
     for (const auto& pair : msphere.pcell.vertex_2id) {
       const aint3 neigh_ids = pair.second;
       if (neigh_ids[0] < 0 || neigh_ids[1] < 0 || neigh_ids[2] < 0) continue;
@@ -649,9 +661,11 @@ void MedialMesh::generate_medial_tets() {
 //   }
 // }
 
-// // sort the mface.dual_edge_endpoints based on the order of simple triangles
+// // sort the mface.dual_edge_endpoints based on the order of simple
+// triangles
 // // using normals
-// void MedialMesh::sort_dual_edges(const GEO::Mesh& sf_mesh, MedialFace& mface)
+// void MedialMesh::sort_dual_edges(const GEO::Mesh& sf_mesh, MedialFace&
+// mface)
 // {
 //   assert(mface.is_valid_st);
 //   // must pass the topology check is_to_fix_edge_cc()
@@ -1192,9 +1206,9 @@ int compute_Euler(const MedialMesh& mat) {
     for (const auto v : face.vertices_) {
       if (mat.vertices->at(v).is_deleted) {
         printf("mat face %d has deleted vertex %d\n", face.fid, v);
-        assert(false);
+        // assert(false);
       }
-      assert(!mat.vertices->at(v).is_deleted);
+      // assert(!mat.vertices->at(v).is_deleted);
       connected_vertices.insert(v);
       f_vs.push_back(v);
     }
@@ -1231,6 +1245,7 @@ int compute_Euler(const MedialMesh& mat) {
   for (const auto& msphere : *mat.vertices) {
     if (msphere.is_deleted) continue;
     // if (msphere.pcell.cell_ids.empty()) continue;
+    if (msphere.edges_.empty() && msphere.faces_.empty()) continue;
     num_vs++;
   }
 

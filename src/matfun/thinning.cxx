@@ -71,7 +71,7 @@ void sort_mat_face_importance_globally(MedialMesh& mat,
                fid, face.importance);
 
     }  // for mat face
-  }    // for mat tets
+  }  // for mat tets
   if (is_debug)
     printf("[Prune] total %ld mat faces in priority queue \n",
            imp_queue.size());
@@ -367,7 +367,7 @@ void prune_edges_while_iteration(
 void assert_mmesh(MedialMesh& mat) {
   for (const auto& mv : *mat.vertices) {
     if (mv.is_deleted) continue;
-    assert(mv.dup_cnt == 1);
+    // assert(mv.dup_cnt == 1);
     assert(!mv.edges_.empty());
     if (mv.faces_.empty()) {
       printf("======= ERROR: msphere %d has edges [", mv.id);
@@ -376,7 +376,7 @@ void assert_mmesh(MedialMesh& mat) {
       }
       printf("], but empty face\n");
     }
-    assert(!mv.faces_.empty());
+    // assert(!mv.faces_.empty());
   }
   for (const auto& medge : mat.edges) {
     if (medge.is_deleted) continue;

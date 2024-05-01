@@ -67,7 +67,7 @@ constexpr int K_NEIGH = 3;
 constexpr int TOPO_ITR_MAX = 21;
 // Geo fix
 constexpr int GEO_ITR_MAX = 5;
-constexpr unsigned int GEO_SAMPLE_MAX = 1000;
+constexpr unsigned int GEO_SAMPLE_MAX = 10000;
 // Intf/Extf fix
 // for non_cad models
 constexpr int INTF_ITR_MAX = 5;
