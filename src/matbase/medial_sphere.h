@@ -487,4 +487,8 @@ v2int get_v2fid_min_to_point(const GEO::Mesh& sf_mesh,
                              const std::vector<v2int> surf_v2fids,
                              const Vector3& point);
 
+// for degenerated medial spheres
+int delete_degenerated_medial_spheres(
+    std::vector<MedialSphere>& all_medial_spheres, bool is_debug);
+
 #endif  // __H_medial_sphere_H__

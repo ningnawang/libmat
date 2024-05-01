@@ -2092,3 +2092,158 @@ v2int get_v2fid_min_to_point(const GEO::Mesh& sf_mesh,
   }
   return v2fid_min_dist;
 }
+
+int delete_degenerated_medial_spheres(
+    std::vector<MedialSphere>& all_medial_spheres, bool is_debug) {
+  // for tracking deleted spheres
+  std::vector<bool> is_sphere_deleted_this_turn(all_medial_spheres.size(),
+                                                false);
+  auto run_thread_deletion = [&](int sphere_id) {
+    MedialSphere& msphere = all_medial_spheres.at(sphere_id);
+    // do not update is_sphere_deleted_this_turn
+    if (msphere.is_deleted) return;
+    if (msphere.pcell.cell_ids.empty()) {
+      printf("[Degenerate] sphere %d has zero convex cells, return\n",
+             msphere.id);
+      return;
+    }
+
+    // -----------------------------------------------------------------------
+    // Powercell FaceCC
+    // make sure the number of FacetCC is the same for msphere.id and neigh_id
+    // [msphere.id, neigh_id] -> { set of cell_ids in one facet CC }
+    // -----------------------------------------------------------------------
+    for (const auto& cur_facet_cc : msphere.pcell.facet_cc_cells) {
+      const int& neigh_id = cur_facet_cc.first;
+      if (all_medial_spheres.at(neigh_id).is_deleted) continue;
+      const auto& neigh_facet_cc_cells =
+          all_medial_spheres.at(neigh_id).pcell.facet_cc_cells;
+
+      // neigh_id must also have this halfplane
+      // if not, then delete msphere
+      if (neigh_facet_cc_cells.find(msphere.id) == neigh_facet_cc_cells.end()) {
+        // delete msphere.id
+        printf(
+            "[Degenerate] halfplane [%d,%d] not exist for sphere %d, delete "
+            "sphere %d  \n",
+            msphere.id, neigh_id, neigh_id, msphere.id);
+        // msphere.fcc_fixed(neigh_id);  // no need to fix
+        msphere.is_deleted = true;
+        is_sphere_deleted_this_turn[msphere.id] = true;
+        return;
+      }
+
+      // if the count of FacetCC for [msphere.id, neigh_id] is different,
+      // then delete one of them
+      if (cur_facet_cc.second.size() !=
+          neigh_facet_cc_cells.at(msphere.id).size()) {
+        int sphere_id_to_delete = msphere.id;
+        if (cur_facet_cc.second.size() >
+            neigh_facet_cc_cells.at(msphere.id).size()) {
+          // delete msphere.id
+          // msphere.fcc_fixed(neigh_id);  // no need to fix
+          msphere.is_deleted = true;
+        } else {
+          // delete neigh_id
+          sphere_id_to_delete = neigh_id;
+          // all_medial_spheres.at(neigh_id).fcc_fixed(
+          //     msphere.id);  // no need to fix
+          all_medial_spheres.at(neigh_id).is_deleted = true;
+        }
+        printf(
+            "[Degenerate] halfplane [%d,%d] has FacetCC: (%d,%d), degenerate "
+            "happens delete %d \n",
+            msphere.id, neigh_id, cur_facet_cc.second.size(),
+            neigh_facet_cc_cells.at(msphere.id).size(), sphere_id_to_delete);
+        is_sphere_deleted_this_turn[sphere_id_to_delete] = true;
+        return;
+      }
+    }  // powercel faceCC
+
+    // -----------------------------------------------------------------------
+    // Powercell EdgeCC
+    // make sure the number of EdgeCC is the same for sphere1, sphere2 and
+    // sphere3 [sphere0, sphere1, sphere2] -> {set of cell_ids in one edge CC}
+    // -----------------------------------------------------------------------
+    for (const auto& cur_edge_cc : msphere.pcell.edge_cc_cells) {
+      const aint2& neigh_min_max = cur_edge_cc.first;
+      if (all_medial_spheres.at(neigh_min_max[0]).is_deleted ||
+          all_medial_spheres.at(neigh_min_max[1]).is_deleted)
+        continue;
+
+      // two neigh sphere1 and sphere2
+      int num_edge_cc12[2] = {-1, -1};
+      for (int i = 0; i < 2; i++) {
+        int neigh1_id = neigh_min_max[i];
+        int neigh2_id = neigh_min_max[(i + 1) % 2];
+        const auto& neigh_edge_cc_cells =
+            all_medial_spheres.at(neigh1_id).pcell.edge_cc_cells;
+        aint2 neigh_neigh_min_max = {{msphere.id, neigh2_id}};
+        std::sort(neigh_neigh_min_max.begin(), neigh_neigh_min_max.end());
+
+        // cannot find other two
+        // delete neigh1_id
+        if (neigh_edge_cc_cells.find(neigh_neigh_min_max) ==
+            neigh_edge_cc_cells.end()) {
+          printf(
+              "[Degenerate] poweredge [%d,%d,%d], sphere %d cannot find other "
+              "two [%d,%d], delete %d\n ",
+              msphere.id, neigh_min_max[0], neigh_min_max[1], neigh1_id,
+              neigh_neigh_min_max[0], neigh_neigh_min_max[1], neigh1_id);
+          all_medial_spheres.at(neigh1_id).is_deleted = true;
+          is_sphere_deleted_this_turn[neigh1_id] = true;
+          return;
+        }
+        // else: update num_edge_cc12
+        num_edge_cc12[i] = neigh_edge_cc_cells.at(neigh_neigh_min_max).size();
+      }  // for two neigh spheres
+      assert(num_edge_cc12[0] != -1 && num_edge_cc12[1] != -1);
+
+      // if the count of EdgeCC for [sphere0, sphere1, sphere2] is different,
+      int num_edge_cc0 = cur_edge_cc.second.size();
+      if (num_edge_cc0 != num_edge_cc12[0] ||
+          num_edge_cc0 != num_edge_cc12[1]) {
+        // int my_num_edge_cc[3] = {num_edge_cc0, num_edge_cc12[0],
+        // num_edge_cc12[1]}; int my_spheres[3] = {msphere.id,
+        // neigh_min_max[0], neigh_min_max[1]}; int sphere_to_delete =
+        //     my_spheres[*std::max_element(my_num_edge_cc, my_num_edge_cc +
+        //     3)];
+        // all_medial_spheres.at(sphere_to_delete).is_deleted = true;
+        // num_sphere_change++;
+        // printf(
+        //     "[Degenerate] poweredge [%d,%d,%d] has FacetCC: (%d,%d,%d),
+        //     degenerate, " "delete sphere %d\n", msphere.id, neigh_min_max[0],
+        //     neigh_min_max[1], num_edge_cc0, num_edge_cc12[0],
+        //     num_edge_cc12[1], sphere_to_delete);
+
+        // delete them all
+        msphere.is_deleted = true;
+        all_medial_spheres.at(neigh_min_max[0]).is_deleted = true;
+        all_medial_spheres.at(neigh_min_max[1]).is_deleted = true;
+        is_sphere_deleted_this_turn[msphere.id] = true;
+        is_sphere_deleted_this_turn[neigh_min_max[0]] = true;
+        is_sphere_deleted_this_turn[neigh_min_max[1]] = true;
+        printf(
+            "[Degenerate] poweredge [%d,%d,%d] has FacetCC: (%d,%d,%d), "
+            "degenerate, delete all three spheres\n",
+            msphere.id, neigh_min_max[0], neigh_min_max[1], num_edge_cc0,
+            num_edge_cc12[0], num_edge_cc12[1]);
+        return;
+      }
+    }  // powercell edgeCC
+  };
+
+  // for (int i = 0; i < all_medial_spheres.size(); i++) {
+  //   run_thread_deletion(i);
+  // }
+  GEO::parallel_for(0, all_medial_spheres.size(),
+                    [&](int sphere_id) { run_thread_deletion(sphere_id); });
+
+  // count the sphere deleted this turn
+  int num_sphere_change = 0;
+  for (int i = 0; i < is_sphere_deleted_this_turn.size(); i++) {
+    if (is_sphere_deleted_this_turn[i]) num_sphere_change++;
+  }
+  printf("[Degenerate] deleted %d spheres this turn\n", num_sphere_change);
+  return num_sphere_change;
+}

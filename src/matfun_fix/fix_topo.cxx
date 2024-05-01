@@ -315,7 +315,7 @@ bool add_new_sphere_given_v2fid(const int num_itr_global,
                                 const TetMesh &tet_mesh,
                                 const v2int v2fid_chosen,
                                 std::vector<MedialSphere> &all_medial_spheres,
-                                bool is_merge_to_ce, bool is_debug) {
+                                const bool is_merge_to_ce, bool is_debug) {
   // did not find a proper fid
   if (v2fid_chosen.second < 0) return false;
   bool is_del_near_ce = true;  // will be false if is_merge_to_ce = true
@@ -498,109 +498,20 @@ bool fix_topo_is_delete_or_skip(std::vector<MedialSphere> &all_medial_spheres,
   // make sure the number of FacetCC is the same for msphere.id and neigh_id
   // [msphere.id, neigh_id] -> { set of cell_ids in one facet CC }
   // -----------------------------------------------------------------------
-  for (const auto &cur_facet_cc : msphere.pcell.facet_cc_cells) {
-    const int &neigh_id = cur_facet_cc.first;
-    const auto &neigh_facet_cc_cells =
-        all_medial_spheres.at(neigh_id).pcell.facet_cc_cells;
-
-    // neigh_id must also have this halfplane
-    assert(neigh_facet_cc_cells.find(msphere.id) != neigh_facet_cc_cells.end());
-
-    // if the count of FacetCC for [msphere.id, neigh_id] is different,
-    // then delete one of them
-    if (cur_facet_cc.second.size() !=
-        neigh_facet_cc_cells.at(msphere.id).size()) {
-      int sphere_id_to_delete = msphere.id;
-      if (cur_facet_cc.second.size() >
-          neigh_facet_cc_cells.at(msphere.id).size()) {
-        // delete msphere.id
-        msphere.fcc_fixed(neigh_id);  // no need to fix
-        msphere.is_deleted = true;
-      } else {
-        // delete neigh_id
-        sphere_id_to_delete = neigh_id;
-        all_medial_spheres.at(neigh_id).fcc_fixed(
-            msphere.id);  // no need to fix
-        all_medial_spheres.at(neigh_id).is_deleted = true;
-      }
-      printf(
-          "[Fix] halfplane [%d,%d] has FacetCC: (%d,%d), degenerate happens "
-          "delete %d \n",
-          msphere.id, neigh_id, cur_facet_cc.second.size(),
-          neigh_facet_cc_cells.at(msphere.id).size(), sphere_id_to_delete);
-      num_sphere_change++;
-      return true;
-    }
-  }  // powercel faceCC
+  // done by function delete_degenerated_medial_spheres()
 
   // -----------------------------------------------------------------------
   // Powercell EdgeCC
   // make sure the number of EdgeCC is the same for sphere1, sphere2 and sphere3
   // [sphere0, sphere1, sphere2] -> {set of cell_ids in one edge CC}
   // -----------------------------------------------------------------------
-  for (const auto &cur_edge_cc : msphere.pcell.edge_cc_cells) {
-    const aint2 &neigh_min_max = cur_edge_cc.first;
-    if (all_medial_spheres.at(neigh_min_max[0]).is_deleted ||
-        all_medial_spheres.at(neigh_min_max[1]).is_deleted)
-      continue;
-    // sphere1
-    const auto &neigh1_edge_cc_cells =
-        all_medial_spheres.at(neigh_min_max[0]).pcell.edge_cc_cells;
-    aint2 neigh1_min_max = {{msphere.id, neigh_min_max[1]}};
-    std::sort(neigh1_min_max.begin(), neigh1_min_max.end());
-    if (neigh1_edge_cc_cells.find(neigh1_min_max) ==
-        neigh1_edge_cc_cells.end()) {
-      printf(
-          "[Fix] poweredge [%d,%d,%d], sphere %d does not contain other two\n ",
-          msphere.id, neigh_min_max[0], neigh_min_max[1], neigh_min_max[0]);
-    }
-    assert(neigh1_edge_cc_cells.find(neigh1_min_max) !=
-           neigh1_edge_cc_cells.end());
-    // sphere2
-    const auto &neigh2_edge_cc_cells =
-        all_medial_spheres.at(neigh_min_max[1]).pcell.edge_cc_cells;
-    aint2 neigh2_min_max = {{msphere.id, neigh_min_max[0]}};
-    std::sort(neigh2_min_max.begin(), neigh2_min_max.end());
-    assert(neigh2_edge_cc_cells.find(neigh2_min_max) !=
-           neigh2_edge_cc_cells.end());
-    // if the count of EdgeCC for [sphere0, sphere1, sphere2] is different,
-    int num_edge_cc0 = cur_edge_cc.second.size();
-    int num_edge_cc1 = neigh1_edge_cc_cells.at(neigh1_min_max).size();
-    int num_edge_cc2 = neigh2_edge_cc_cells.at(neigh2_min_max).size();
-    if (num_edge_cc0 != num_edge_cc1 || num_edge_cc0 != num_edge_cc2) {
-      // int my_num_edge_cc[3] = {num_edge_cc0, num_edge_cc1, num_edge_cc2};
-      // int my_spheres[3] = {msphere.id, neigh_min_max[0], neigh_min_max[1]};
-      // int sphere_to_delete =
-      //     my_spheres[*std::max_element(my_num_edge_cc, my_num_edge_cc + 3)];
-      // all_medial_spheres.at(sphere_to_delete).is_deleted = true;
-      // num_sphere_change++;
-      // printf(
-      //     "[Fix] poweredge [%d,%d,%d] has FacetCC: (%d,%d,%d), degenerate, "
-      //     "delete sphere %d\n",
-      //     msphere.id, neigh_min_max[0], neigh_min_max[1], num_edge_cc0,
-      //     num_edge_cc1, num_edge_cc2, sphere_to_delete);
-
-      // delete them all
-      msphere.is_deleted = true;
-      all_medial_spheres.at(neigh_min_max[0]).is_deleted = true;
-      all_medial_spheres.at(neigh_min_max[1]).is_deleted = true;
-      num_sphere_change += 3;
-      printf(
-          "[Fix] poweredge [%d,%d,%d] has FacetCC: (%d,%d,%d), degenerate, "
-          "delete all three spheres\n",
-          msphere.id, neigh_min_max[0], neigh_min_max[1], num_edge_cc0,
-          num_edge_cc1, num_edge_cc2);
-
-      return true;
-      // assert(false);
-    }
-  }  // powercell edgeCC
+  // done by function delete_degenerated_medial_spheres()
 
   // -----------------------------------------------------------------------
   // Topo_Status::high_facet_cc too many times, then skip fixing
   // This might occurs around the concave lines
   // -----------------------------------------------------------------------
-  if (msphere.itr_topo_fix > 10 &&
+  if (msphere.itr_topo_fix > 4 &&
       msphere.pcell.topo_status == Topo_Status::high_facet_cc) {
     // mark as fixed
     for (const auto &neigh_is_fixed : msphere.pcell.facet_neigh_is_fixed) {
@@ -661,6 +572,14 @@ void fix_topo_facet_cc_euler(
     // sphere
     //
     // should be already handled by fix_topo_is_delete_or_skip()
+    if (!msphere_neigh.fcc_is_to_fix(sphere_id)) {
+      printf("[FixFacet] neigh_id %d not contain faceCC of sphere_id %d\n",
+             neigh_id, sphere_id);
+      printf("[FixFacet] [%d,%d] has FacetCC [%d,%d] \n", sphere_id, neigh_id,
+             msphere.pcell.facet_cc_cells.at(neigh_id).size(),
+             msphere_neigh.pcell.facet_cc_cells.at(sphere_id).size());
+      assert(false);
+    }
     assert(msphere_neigh.fcc_is_to_fix(sphere_id));
 
     // cell_ids grouped by each facet CC

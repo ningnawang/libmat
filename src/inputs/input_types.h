@@ -97,6 +97,7 @@ class TetMesh {
   };
 
  public:
+  bool is_non_cad = false;
   std::string tet_path_with_ext;
   std::vector<float> tet_vertices;  // tet vertices
   std::vector<int> tet_indices;     // tet 4 indices of vertices
@@ -318,6 +319,7 @@ class SurfaceMesh : public GEO::Mesh {
       const int k, int tan_fid, std::set<int> &kring_neighbors) const;
 
  public:
+  bool is_non_cad = false;
   AABBWrapper aabb_wrapper;
   std::vector<int> sf2tet_vs_mapping;          // matching TetMesh::tet_vertices
   std::map<int, std::set<int>> sf_fid_neighs;  // fid -> {neigh fids} [no use]

@@ -241,6 +241,9 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
     double dist_pq = GEO::Geom::distance(p, q);
     // minus a small value for radius
     double sq_radius_eps = (r - SCALAR_ZERO_3) * (r - SCALAR_ZERO_3);
+    // use smaller threashold for non-cad model
+    if (sf_mesh.is_non_cad)
+      sq_radius_eps = (r - SCALAR_ZERO_6) * (r - SCALAR_ZERO_6);
     // model scaled [0, 1000]^3, use larger threashold
     if (sq_radius_eps < SCALAR_ZERO_1) {
       if (is_debug)

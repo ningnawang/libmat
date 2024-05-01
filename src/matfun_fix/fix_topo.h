@@ -49,6 +49,6 @@ bool add_new_sphere_given_v2fid(const int num_itr_global,
                                 const TetMesh& tet_mesh,
                                 const v2int v2fid_chosen,
                                 std::vector<MedialSphere>& all_medial_spheres,
-                                bool is_merge_to_ce, bool is_debug);
+                                const bool is_merge_to_ce, bool is_debug);
 
 #endif  // __TOPO_H__
