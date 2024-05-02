@@ -368,7 +368,7 @@ bool add_new_sphere_given_v2fid(const int num_itr_global,
   if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
                      tet_mesh.feature_edges, new_msphere, -1 /*itr_limit*/,
                      is_del_near_ce, is_del_near_se, is_debug /*is_debug*/)) {
-    printf("[FixAdd] failed to add sphere\n");
+    // printf("[FixAdd] failed to add sphere\n");
     return false;
   }
   new_msphere.pcell.topo_status = Topo_Status::unkown;
@@ -815,8 +815,30 @@ int fix_topo_by_adding_new_sphere(
     }
   }  // for spheres_to_fix
 
+  /////////////////////////////////////////////////////////////
+  // sanity check
+  // remove spheres if still Topo_Status::high_cell_cc
+  // and no new sphere can be added
+  int updated_total =
+      all_medial_spheres.size() - old_num_spheres + num_sphere_change;
+  if (updated_total == 0) {
+    printf("[Fix] no new spheres added, check high_cell_cc spheres \n");
+    for (int i = 0; i < all_medial_spheres.size(); i++) {
+      auto &msphere = all_medial_spheres[i];
+      if (msphere.is_deleted) continue;
+      if (msphere.pcell.topo_status == Topo_Status::high_cell_cc) {
+        printf(
+            "[Fix] msphere %d cannot add sphere, topo_status %d, itr_topo_fix: "
+            "%d, delete \n",
+            msphere.id, msphere.pcell.topo_status, msphere.itr_topo_fix);
+        msphere.is_deleted = true;
+        num_sphere_change++;
+        updated_total++;
+      }
+    }
+  }  // if updated_total
+
   printf("[Fix] added %d->%d new spheres, changed spheres: %d\n",
          old_num_spheres, all_medial_spheres.size(), num_sphere_change);
-
-  return all_medial_spheres.size() - old_num_spheres + num_sphere_change;
+  return updated_total;
 }
