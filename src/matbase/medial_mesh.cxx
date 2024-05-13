@@ -1071,8 +1071,8 @@ void MedialMesh::validate_mmesh_dup_cnt() {
       if (this->faces.at(nfid).dup_cnt > 1) nfid_cnt++;
     }
     if (nfid_cnt < 1) {
-      printf("[validate_mmesh] medge %d has nfid_cnt: %d\n", medge.eid,
-             nfid_cnt);
+      printf("[validate_mmesh] medge %d (%d,%d) has nfid_cnt: %d\n", medge.eid,
+             medge.vertices_[0], medge.vertices_[1], nfid_cnt);
       // not true, some edges do not have neighboring face with dup_cnt > 1
       // assert(nfid_cnt > 0);
     }
@@ -1091,8 +1091,9 @@ void MedialMesh::validate_mmesh_dup_cnt() {
       }
     }
     if (neid_cnt < 1) {
-      printf("[validate_mmesh] mface %d has neid_cnt: %d\n", mface.fid,
-             neid_cnt);
+      printf("[validate_mmesh] mface %d (%d,%d,%d) has neid_cnt: %d\n",
+             mface.fid, mface.vertices_[0], mface.vertices_[1],
+             mface.vertices_[2], neid_cnt);
       assert(neid_cnt > 0);  // must be true?
     }
   }
