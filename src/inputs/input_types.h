@@ -33,8 +33,8 @@ class FeatureEdge {
       Vector3 b_direction = GEO::normalize(b.t2vs_pos[1] - b.t2vs_pos[0]);
       // we need to check the segment direction
       // if the direction deviate too much, then we consider them as different
-      if (!is_vector_same_direction(direction, b_direction, EPS_DEGREE_3) &&
-          !is_vector_oppo_direction(direction, b_direction, EPS_DEGREE_3))
+      if (!is_vector_same_direction(direction, b_direction, EPS_DEGREE_5) &&
+          !is_vector_oppo_direction(direction, b_direction, EPS_DEGREE_5))
         return false;
       return true;
     }

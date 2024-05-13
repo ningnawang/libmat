@@ -57,7 +57,7 @@ struct Parameter {
 constexpr float INIT_RADIUS = 1000.f;
 // for k-ring neighbors on sf_mesh
 // each sphere's covered sf_mesh fids
-constexpr int K_NEIGH = 2;
+constexpr int K_NEIGH = 3;
 
 // // Feature Edges
 // constexpr int SHARP_EDGE = 1;

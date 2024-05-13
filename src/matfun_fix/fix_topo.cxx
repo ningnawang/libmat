@@ -365,10 +365,6 @@ bool add_new_sphere_given_v2fid(const int num_itr_global,
   MedialSphere new_msphere(all_medial_spheres.size(), p, p_normal,
                            SphereType::T_2, num_itr_global);
   new_msphere.ss.p_fid = v2fid_chosen.second;
-  if (new_msphere.id == 262 || new_msphere.id == 79 || new_msphere.id == 155)
-    is_debug = true;
-  else
-    is_debug = false;
   if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
                      tet_mesh.feature_edges, new_msphere, -1 /*itr_limit*/,
                      is_del_near_ce, is_del_near_se, is_debug /*is_debug*/)) {
@@ -666,7 +662,8 @@ void fix_topo_cell_cc_euler(
     const int num_itr_global,
     const std::vector<ConvexCellHost> &convex_cells_host,
     const SurfaceMesh &sf_mesh, const TetMesh &tet_mesh, const int sphere_id,
-    std::vector<MedialSphere> &all_medial_spheres, bool is_debug) {
+    std::vector<MedialSphere> &all_medial_spheres, int &num_sphere_change,
+    bool is_debug) {
   MedialSphere &msphere = all_medial_spheres[sphere_id];
   assert(msphere.pcell.topo_status == Topo_Status::high_cell_cc ||
          msphere.pcell.topo_status == Topo_Status::low_cell_euler);
@@ -748,6 +745,7 @@ void fix_topo_cell_cc_euler(
     printf("]\n");
   }
   // 2. add new spheres
+  int num_new_added = 0;
   for (int i = 0; i < num_new_spheres; i++) {
     v2int &v2fid_chosen = v2fid_chosen_vec[i];
     if (is_debug)
@@ -761,6 +759,15 @@ void fix_topo_cell_cc_euler(
         true /*is_merge_to_ce*/, is_debug);
     printf("[FixCell] msphere %d newly added sphere %d is_good: %d\n",
            msphere.id, all_medial_spheres.back().id, is_good);
+    if (is_good) num_new_added++;
+  }
+  // 3. delete sphere if add nothing
+  if (num_new_added == 0) {
+    msphere.is_deleted = true;
+    num_sphere_change++;
+    printf(
+        "[FixCell] msphere %d cannot add new sphere, topo_status %d, delete \n",
+        msphere.id, msphere.pcell.topo_status, msphere.itr_topo_fix);
   }
 }
 
@@ -810,7 +817,8 @@ int fix_topo_by_adding_new_sphere(
     else if (msphere.pcell.topo_status == Topo_Status::high_cell_cc ||
              msphere.pcell.topo_status == Topo_Status::low_cell_euler) {
       fix_topo_cell_cc_euler(num_itr_global, convex_cells_host, sf_mesh,
-                             tet_mesh, mid, all_medial_spheres, is_debug);
+                             tet_mesh, mid, all_medial_spheres,
+                             num_sphere_change, is_debug);
     } else {
       // should not happen
       printf("[Fix] msphere %d topo_status %d is not handled \n", msphere.id,

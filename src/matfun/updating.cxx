@@ -623,11 +623,6 @@ bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
                     const bool is_check_new_tan_plane, double alpha1,
                     double alpha2, double alpha3, const double break_threshold,
                     const int itr_limit) {
-  if (mat_p.id == 6975)
-    is_debug = true;
-  else
-    is_debug = false;
-
   if (is_debug) {
     printf("[Iterate] calling iterate_sphere for mat_p: %d, is_debug: %d \n",
            mat_p.id, is_debug);

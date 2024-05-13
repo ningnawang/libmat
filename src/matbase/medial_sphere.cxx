@@ -154,8 +154,8 @@ bool TangentConcaveLine::operator==(TangentConcaveLine const& b) const {
   if (id_fl == b.id_fl) {
     // we need to check the segment direction
     // if the direction deviate too much, then we consider them as different
-    if (!is_vector_same_direction(direction, b.direction, EPS_DEGREE_3) &&
-        !is_vector_oppo_direction(direction, b.direction, EPS_DEGREE_3))
+    if (!is_vector_same_direction(direction, b.direction, EPS_DEGREE_5) &&
+        !is_vector_oppo_direction(direction, b.direction, EPS_DEGREE_5))
       return false;
     return true;
   }
@@ -201,7 +201,13 @@ bool TangentConcaveLine::purge_one_tan_plane(
     TangentPlane& one_tan_plane) const {
   // tan_pl has common sf_mesh fids as tan_cc_line
   for (const auto& sf_fids_covered : sf_fids_covered_two) {
-    if (has_intersection(sf_fids_covered, one_tan_plane.sf_fids_covered)) {
+    // 1. surface covered has intersection
+    // 2. tan_pl normal are similar to at least 1 tan_cc_line adjacent normals
+    if (has_intersection(sf_fids_covered, one_tan_plane.sf_fids_covered) &&
+        (angle_between_two_vectors_in_degrees(
+             one_tan_plane.normal, this->adj_normals[0]) < EPS_DEGREE_30 ||
+         angle_between_two_vectors_in_degrees(
+             one_tan_plane.normal, this->adj_normals[1]) < EPS_DEGREE_30)) {
       one_tan_plane.is_deleted = true;
       return true;
     }

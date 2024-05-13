@@ -286,7 +286,6 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
     double n_angle = angle_between_two_vectors_in_degrees(n, q_n);
     aint2 q_fid_adj = {{-1, q_fid}};
     double angle_eps = EPS_DEGREE_30;
-    if (sf_mesh.is_non_cad) angle_eps = EPS_DEGREE_10;
     if (is_q_on_ce)
       q_fid_adj =
           feature_edges.at(MedialSphere::convert_ss(q_fid)).adj_sf_fs_pair;
