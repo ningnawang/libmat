@@ -122,13 +122,13 @@ void postprocess_dupcnt_tet_face(MedialMesh& mat, int tid, int fid,
   assert(mface.is_deleted);
   // case 1: tet-face-edge dup_cnt is 1-1-2: no nothing
   if (mface.dup_cnt < 2) return;  // do nothing
-  assert(mface.dup_cnt == 2);
+  // assert(mface.dup_cnt == 2);
 
   if (is_debug)
     printf("[DUP_CNT] tet %d has fid %d with dup_cnt %d\n", tid, fid,
            mface.dup_cnt);
 
-  // case 2: tet-face-edge dup_cnt is 1-2-2
+  // case 2: tet-face-edge dup_cnt is 1-x-x, x>1
   // find adjacent edge with dup_cnt>1
   // given in mat.dup_f2e, updated through func update_mmesh_dup_ef_map()
   int neid = mat.dup_f2e.at(fid);
@@ -140,9 +140,12 @@ void postprocess_dupcnt_tet_face(MedialMesh& mat, int tid, int fid,
         tid, fid, mface.dup_cnt, neid, mface.dup_cnt);
 
   // clear edge's dup_cnt
-  mat.edges.at(neid).dup_cnt -= 1;
-  mat.numEdges_active -= 1;
-  assert(!mat.edges.at(neid).faces_.empty());
+  auto& mat_e = mat.edges.at(neid);
+  assert(mat_e.dup_cnt == mface.dup_cnt);  // 2-2 or 3-3 are all possible
+  int diff = mat_e.dup_cnt - 1;
+  mat_e.dup_cnt -= diff;
+  mat.numEdges_active -= diff;
+  assert(!mat_e.faces_.empty());
 }
 
 void prune_tets_while_iteration(MedialMesh& mat,
@@ -203,7 +206,7 @@ void handle_dupcnt_face_edge_pair(MedialMesh& mat, bool is_debug) {
     auto& medge = mat.edges.at(eid);
     if (mface.is_deleted && medge.is_deleted) continue;
     // handled by postprocess_dupcnt_tet_face()
-    if (mface.is_deleted && mface.dup_cnt == 2 && !medge.is_deleted &&
+    if (mface.is_deleted && mface.dup_cnt > 1 && !medge.is_deleted &&
         medge.dup_cnt == 1)
       continue;
 
