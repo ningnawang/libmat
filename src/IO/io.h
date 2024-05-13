@@ -105,6 +105,10 @@ void load_matfp(const std::string& ma_path,
 
 // save ma
 void export_ma(const std::string& maname, const MedialMesh& mat);
+void export_ma_given(const std::string& maname,
+                     const std::vector<Vector4>& mat_vertices,
+                     const std::vector<aint2>& mat_edges,
+                     const std::vector<std::array<int, 3>>& mat_faces);
 void write_ma_ply(const std::string& maname, const MedialMesh& mat);
 
 #endif  // __IO_H__

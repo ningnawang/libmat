@@ -23,6 +23,23 @@ class FeatureEdge {
   ~FeatureEdge(){};
   void print_info() const;
   inline int get_fl_id() const { return t2vs_group[2]; }
+  // NOTE: keep it same as TangentConcaveLine::operator==()
+  inline bool operator==(FeatureEdge const &b) const {
+    if (id == b.id) return true;
+    // belongs to the same grouped concave line
+    // this line can be a curve!!!
+    if (get_fl_id() == b.get_fl_id()) {
+      Vector3 direction = GEO::normalize(t2vs_pos[1] - t2vs_pos[0]);
+      Vector3 b_direction = GEO::normalize(b.t2vs_pos[1] - b.t2vs_pos[0]);
+      // we need to check the segment direction
+      // if the direction deviate too much, then we consider them as different
+      if (!is_vector_same_direction(direction, b_direction, EPS_DEGREE_3) &&
+          !is_vector_oppo_direction(direction, b_direction, EPS_DEGREE_3))
+        return false;
+      return true;
+    }
+    return false;
+  }
 
   int id;
   EdgeType type;

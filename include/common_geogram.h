@@ -300,6 +300,13 @@ inline bool is_vector_same_direction(const Vector3& a, const Vector3& b,
          std::cos(degree * HALF_PI);
 }
 
+inline bool is_vector_oppo_direction(const Vector3& a, const Vector3& b,
+                                     const double degree) {
+  // angle betwen a and b is in [180-degree, 180]
+  double cos_value = GEO::dot(a, b) / (a.length() * b.length());
+  return cos_value <= std::cos((180. - degree) * HALF_PI) && cos_value >= -1;
+}
+
 // check if x is within range of (a, b) vectors
 inline bool is_vector_within_range_of_two_vectors(const Vector3& a,
                                                   const Vector3& b,

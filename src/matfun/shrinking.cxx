@@ -162,8 +162,9 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
   int q_fid_prev = -1, q_fid;
   bool is_good = true;
   unsigned int num_itr = 1;
-  const int k = 5;            // k_ring sf_mesh face neighbors
-  std::set<int> k_ring_fids;  // can be EMPTY if p is on ce
+  int k = 5;                      // k_ring sf_mesh face neighbors
+  if (sf_mesh.is_non_cad) k = 2;  // use smaller k for non-cad model
+  std::set<int> k_ring_fids;      // can be EMPTY if p is on ce
   if (is_p_on_ce) {
     aint2 fe_adj_sf_fs_pair =
         feature_edges.at(msphere.ss.get_p_fid()).adj_sf_fs_pair;
@@ -219,7 +220,7 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
     if (is_debug)
       printf("sq_dist_ce %f to feid %d, sq_dist %f\n", sq_dist_ce, sq_dist,
              feid);
-    if (feid != UNK_FACE && sq_dist_ce <= sq_dist + SCALAR_ZERO_0) {
+    if (feid != UNK_FACE && sq_dist_ce <= sq_dist + SCALAR_ZERO_6) {
       is_q_on_ce = true;
       sq_dist = sq_dist_ce;
       q = q_copy;
@@ -264,15 +265,15 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
     }
     // if both p and q on concave lines, check number of cc_line group
     if (is_p_on_ce && is_q_on_ce) {
-      int p_ce_group = feature_edges.at(msphere.ss.get_p_fid()).t2vs_group[2];
-      int q_ce_group = feature_edges.at(MedialSphere::convert_ss(q_fid))
-                           .t2vs_group[2];  // q_fid is negative
-      if (p_ce_group == q_ce_group) {
+      const auto& p_ce = feature_edges.at(msphere.ss.get_p_fid());
+      const auto& q_ce = feature_edges.at(
+          MedialSphere::convert_ss(q_fid));  // q_fid is negative
+      if (p_ce == q_ce) {  // same as TangentConcaveLine::operator==()
         if (is_debug) {
           printf(
               "[shrink] good break, msphere %d found its breaking condition, "
               "p_ce_group: %d == q_ce_group: %d\n",
-              msphere.id, p_ce_group, q_ce_group);
+              msphere.id, p_ce.get_fl_id(), q_ce.get_fl_id());
           msphere.print_ss_info();
         }
         is_good = true;
@@ -284,6 +285,8 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
     // k_ring_fids can be empty of p is on ce
     double n_angle = angle_between_two_vectors_in_degrees(n, q_n);
     aint2 q_fid_adj = {{-1, q_fid}};
+    double angle_eps = EPS_DEGREE_30;
+    if (sf_mesh.is_non_cad) angle_eps = EPS_DEGREE_10;
     if (is_q_on_ce)
       q_fid_adj =
           feature_edges.at(MedialSphere::convert_ss(q_fid)).adj_sf_fs_pair;
@@ -292,7 +295,7 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
              q_fid_adj[1]);
     if ((k_ring_fids.find(q_fid_adj[0]) != k_ring_fids.end() ||
          k_ring_fids.find(q_fid_adj[1]) != k_ring_fids.end()) &&
-        n_angle <= EPS_DEGREE_30) {
+        n_angle <= angle_eps) {
       if (is_debug) {
         printf(
             "[shrink] good break, msphere %d found is_q_on_ce %d, q_fid %d, "
@@ -629,10 +632,6 @@ int create_new_concave_sphere_given_pin(
   MedialSphere new_sphere(
       all_medial_spheres.size(), pin_point, new_normal,
       sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c, 0 /*itr_cnt*/);
-  // if (new_sphere.id == 1226)
-  //   is_debug = true;
-  // else
-  //   is_debug = false;
   new_sphere.ss.set_p_fid(fe_id, true /*is_on_ce*/);
   new_sphere.update_tan_cc_lines_from_ss_params(
       sf_mesh, feature_edges, true /*is_update_p*/, false /*is_update_q*/);

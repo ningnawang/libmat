@@ -136,19 +136,20 @@ bool is_break_iteration(const int iteration_limit, const int num_itr,
       // create a tangent cc_line
       TangentConcaveLine tan_cc_line(sf_mesh, mat_p.tan_cc_lines.size(),
                                      feature_edges.at(q_fid));
-      if (try_add_tangent_cc_line(num_itr, mat_p, tan_cc_line,
-                                  false /*is_debug*/) &&
-          is_debug) {
-        printf("[Iterate Break] add new tan_cc_line: \n");
-        tan_cc_line.print_info();
+      bool is_add = try_add_tangent_cc_line(num_itr, mat_p, tan_cc_line,
+                                            is_debug /*is_debug*/);
+      if (is_debug) {
+        printf("[Iterate Break] is_add %d new tan_cc_line: \n", is_add);
+        if (is_add) tan_cc_line.print_info();
       }
     } else {
       // create a new tangent plane
       TangentPlane tan_pl_q(sf_mesh, qnormal, q, q_fid);
-      if (try_add_tangent_plane(num_itr, mat_p, tan_pl_q, false /*is_debug*/) &&
-          is_debug) {
-        printf("[Iterate Break] add new tan_pl: \n");
-        tan_pl_q.print_info();
+      bool is_add = try_add_tangent_plane(num_itr, mat_p, tan_pl_q,
+                                          is_debug /*is_debug*/);
+      if (is_debug) {
+        printf("[Iterate Break] is_add %d new tan_pl: \n", is_add);
+        if (is_add) tan_pl_q.print_info();
       }
     }
   }  // if is_check_new_tan_plane
@@ -622,6 +623,11 @@ bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
                     const bool is_check_new_tan_plane, double alpha1,
                     double alpha2, double alpha3, const double break_threshold,
                     const int itr_limit) {
+  if (mat_p.id == 6975)
+    is_debug = true;
+  else
+    is_debug = false;
+
   if (is_debug) {
     printf("[Iterate] calling iterate_sphere for mat_p: %d, is_debug: %d \n",
            mat_p.id, is_debug);

@@ -95,6 +95,7 @@ class TangentConcaveLine {
   bool update_covered_sf_fids(const SurfaceMesh& sf_mesh, int k = K_NEIGH);
 
  public:
+  // NOTE: keep it same as FeatureEdge::operator==()
   bool operator==(TangentConcaveLine const& b) const;
 
  public:

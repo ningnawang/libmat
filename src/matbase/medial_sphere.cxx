@@ -146,31 +146,20 @@ void TangentConcaveLine::print_info() const {
   printf(")\n");
 }
 
+// NOTE: keep it same as FeatureEdge::operator==()
 bool TangentConcaveLine::operator==(TangentConcaveLine const& b) const {
-  // belongs to the same grouped concave line
   if (id_fe == b.id_fe) return true;
-  if (id_fl == b.id_fl) return true;
+  // belongs to the same grouped concave line
+  // this line can be a curve!!!
+  if (id_fl == b.id_fl) {
+    // we need to check the segment direction
+    // if the direction deviate too much, then we consider them as different
+    if (!is_vector_same_direction(direction, b.direction, EPS_DEGREE_3) &&
+        !is_vector_oppo_direction(direction, b.direction, EPS_DEGREE_3))
+      return false;
+    return true;
+  }
   return false;
-
-  // Vector3 vec = (b.tan_point - tan_point).normalized();
-  // if (adj_sf_fs_pair == b.adj_sf_fs_pair) return true;
-
-  // // more likely to be different
-  // // adj_sf_fs_pair might be different, but represent the same line
-  // if (!is_vector_same_direction(direction, b.direction, esp_degree_5) &&
-  //     !is_vector_oppo_direction(direction, b.direction, esp_degree_5))
-  //   return false;
-
-  // if (!is_vector_same_direction(vec, direction, esp_degree_5) &&
-  //     !is_vector_oppo_direction(vec, direction, esp_degree_5))
-  //   return false;
-
-  // if (!is_vector_same_direction(vec, b.direction, esp_degree_5) &&
-  //     !is_vector_oppo_direction(vec, b.direction, esp_degree_5))
-  //   return false;
-
-  // // vec should parallel to both direction and b.direction
-  // return true;
 }
 
 // void TangentConcaveLine::print_info() const {
@@ -319,13 +308,13 @@ void MedialSphere::print_info() const {
          pcell.topo_status, covered_sf_fids_in_group.size());
   printf("RT is_rt_valid: %d, rt_change_status: %d\n", is_rt_valid,
          rt_change_status);
-  printf("rt_neigh_ids_prev: [");
-  for (const auto rt_neigh_id_prev : rt_neigh_ids_prev)
-    printf("%d, ", rt_neigh_id_prev);
-  printf("]\n");
-  printf("rt_neigh_ids: [");
-  for (const auto rt_neigh_id : rt_neigh_ids) printf("%d, ", rt_neigh_id);
-  printf("]\n");
+  // printf("rt_neigh_ids_prev: [");
+  // for (const auto rt_neigh_id_prev : rt_neigh_ids_prev)
+  //   printf("%d, ", rt_neigh_id_prev);
+  // printf("]\n");
+  // printf("rt_neigh_ids: [");
+  // for (const auto rt_neigh_id : rt_neigh_ids) printf("%d, ", rt_neigh_id);
+  // printf("]\n");
   print_tan_planes();
   print_tan_cc_lines();
   print_covered_sf_fids_in_group();

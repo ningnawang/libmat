@@ -365,6 +365,10 @@ bool add_new_sphere_given_v2fid(const int num_itr_global,
   MedialSphere new_msphere(all_medial_spheres.size(), p, p_normal,
                            SphereType::T_2, num_itr_global);
   new_msphere.ss.p_fid = v2fid_chosen.second;
+  if (new_msphere.id == 262 || new_msphere.id == 79 || new_msphere.id == 155)
+    is_debug = true;
+  else
+    is_debug = false;
   if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
                      tet_mesh.feature_edges, new_msphere, -1 /*itr_limit*/,
                      is_del_near_ce, is_del_near_se, is_debug /*is_debug*/)) {

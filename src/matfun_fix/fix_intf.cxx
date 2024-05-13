@@ -168,9 +168,9 @@ bool check_and_fix_intf_by_adding_new_spheres(
     new_sphere.purge_and_delete_tan_planes();
 
     // try to add T_N/T_N_c sphere after aggregation
-    is_good =
-        iterate_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
-                       tet_mesh.feature_edges, new_sphere, false /*is_debug*/);
+    is_good = iterate_sphere(sf_mesh, sf_mesh.aabb_wrapper,
+                             sf_mesh.fe_sf_fs_pairs, tet_mesh.feature_edges,
+                             new_sphere, is_debug /*is_debug*/);
 
     if (is_debug)
       printf("[FIX_INTF] step 1 is_good: %d, with tan_planes: %zu\n", is_good,

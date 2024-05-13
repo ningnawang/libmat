@@ -57,13 +57,14 @@ struct Parameter {
 constexpr float INIT_RADIUS = 1000.f;
 // for k-ring neighbors on sf_mesh
 // each sphere's covered sf_mesh fids
-constexpr int K_NEIGH = 3;
+constexpr int K_NEIGH = 2;
 
 // // Feature Edges
 // constexpr int SHARP_EDGE = 1;
 // constexpr int CONCAVE_EDGE = 2;
 
 // Topo fix
+
 constexpr int TOPO_ITR_MAX = 31;
 // Geo fix
 constexpr int GEO_ITR_MAX = 5;

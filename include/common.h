@@ -42,7 +42,7 @@ constexpr double HALF_PI = PI / 180.;
 #define SCALAR_ZERO_3 1e-3
 #define SCALAR_ZERO_2 1e-2
 #define SCALAR_ZERO_1 1e-1
-#define SCALAR_ZERO_0 0
+// #define SCALAR_ZERO_0 0
 #define SCALAR_1 1
 #define SCALAR_10 10
 #define SCALAR_20 20
@@ -60,8 +60,8 @@ constexpr float F_TET_ADJ_DEFAULT = 2.f;
 // bcs we only care about the Euler of a single cell
 constexpr float F_CELL_ADJ_DEFAULT = 1.f;
 constexpr float UNK_FACE_ID = -1.f;
+constexpr double EPS_DEGREE_3 = 3;
 constexpr double EPS_DEGREE_10 = 10;
 constexpr double EPS_DEGREE_20 = 20;
 constexpr double EPS_DEGREE_30 = 30;
-constexpr double EPS_DEGREE_ = 30;
 constexpr double EPS_DEGREE_90 = 90;

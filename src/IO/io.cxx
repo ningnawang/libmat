@@ -1145,6 +1145,53 @@ void export_ma(const std::string& maname, const MedialMesh& mat) {
   printf("saved mat at: %s \n", ma_name_full.c_str());
 }
 
+// this export is matching blender addon
+// https://github.com/songshibo/blender-mat-addon
+//
+/* # .ma format
+ * numVertices numEdges numFaces
+ * v x y z r
+ * e v1 v2
+ * f v1 v2 v3
+ */
+void export_ma_given(const std::string& maname,
+                     const std::vector<Vector4>& mat_vertices,
+                     const std::vector<aint2>& mat_edges,
+                     const std::vector<std::array<int, 3>>& mat_faces) {
+  std::string ma_name_full =
+      "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+
+  std::ofstream fout(ma_name_full);
+  fout << mat_vertices.size() << " " << mat_edges.size() << " "
+       << mat_faces.size() << std::endl;
+
+  // save vertices
+  for (int i = 0; i < mat_vertices.size(); i++) {
+    const auto& mat_v = mat_vertices.at(i);
+    fout << "v " << std::setiosflags(std::ios::fixed) << std::setprecision(15)
+         << mat_v[0] << " " << mat_v[1] << " " << mat_v[2] << " " << mat_v[3];
+    fout << std::endl;
+  }
+
+  //  save edges
+  for (int i = 0; i < mat_edges.size(); i++) {
+    const auto& mat_e = mat_edges[i];
+    fout << "e " << mat_e[0] << " " << mat_e[1];
+    fout << std::endl;
+  }
+
+  // save faces
+  for (int i = 0; i < mat_faces.size(); i++) {
+    const auto& mat_f = mat_faces[i];
+    fout << "f";
+    for (uint v = 0; v < 3; v++) fout << " " << mat_f[v];
+    fout << std::endl;
+  }
+  fout.close();
+
+  printf("saved mat at: %s \n", ma_name_full.c_str());
+}
+
 // no use
 // some vertices/faces are deleted
 void write_ma_ply(const std::string& maname, const MedialMesh& mat) {
