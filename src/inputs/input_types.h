@@ -24,6 +24,7 @@ class FeatureEdge {
   void print_info() const;
   inline int get_fl_id() const { return t2vs_group[2]; }
   // NOTE: keep it same as TangentConcaveLine::operator==()
+  //       used by shrink_sphere()
   inline bool operator==(FeatureEdge const &b) const {
     if (id == b.id) return true;
     // belongs to the same grouped concave line
@@ -33,8 +34,8 @@ class FeatureEdge {
       Vector3 b_direction = GEO::normalize(b.t2vs_pos[1] - b.t2vs_pos[0]);
       // we need to check the segment direction
       // if the direction deviate too much, then we consider them as different
-      if (!is_vector_same_direction(direction, b_direction, EPS_DEGREE_5) &&
-          !is_vector_oppo_direction(direction, b_direction, EPS_DEGREE_5))
+      if (!is_vector_same_direction(direction, b_direction, EPS_DEGREE_30) &&
+          !is_vector_oppo_direction(direction, b_direction, EPS_DEGREE_30))
         return false;
       return true;
     }

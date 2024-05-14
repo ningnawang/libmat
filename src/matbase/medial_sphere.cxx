@@ -154,8 +154,8 @@ bool TangentConcaveLine::operator==(TangentConcaveLine const& b) const {
   if (id_fl == b.id_fl) {
     // we need to check the segment direction
     // if the direction deviate too much, then we consider them as different
-    if (!is_vector_same_direction(direction, b.direction, EPS_DEGREE_5) &&
-        !is_vector_oppo_direction(direction, b.direction, EPS_DEGREE_5))
+    if (!is_vector_same_direction(direction, b.direction, EPS_DEGREE_30) &&
+        !is_vector_oppo_direction(direction, b.direction, EPS_DEGREE_30))
       return false;
     return true;
   }

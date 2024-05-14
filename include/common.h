@@ -60,8 +60,6 @@ constexpr float F_TET_ADJ_DEFAULT = 2.f;
 // bcs we only care about the Euler of a single cell
 constexpr float F_CELL_ADJ_DEFAULT = 1.f;
 constexpr float UNK_FACE_ID = -1.f;
-constexpr double EPS_DEGREE_5 = 5;
-constexpr double EPS_DEGREE_10 = 10;
 constexpr double EPS_DEGREE_20 = 20;
 constexpr double EPS_DEGREE_30 = 30;
 constexpr double EPS_DEGREE_90 = 90;
