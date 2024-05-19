@@ -1266,11 +1266,12 @@ int compute_Euler(const MedialMesh& mat) {
       mat.numTets_active);
 
   int euler = num_vs - num_edges + num_faces - num_tets;
-  int euler2 = connected_vertices.size() - connected_edges.size() +
-               connected_faces.size() - num_tets;
-  int euler3 = mat.numSpheres_active - mat.numEdges_active +
-               mat.numFaces_active - mat.numTets_active;
-  printf("Euler Characteristic: %d, euler2: %d. euler3 %d \n", euler, euler2,
-         euler3);
+  printf("Euler Characteristic: %d \n", euler);
+  // int euler2 = connected_vertices.size() - connected_edges.size() +
+  //              connected_faces.size() - num_tets;
+  // int euler3 = mat.numSpheres_active - mat.numEdges_active +
+  //              mat.numFaces_active - mat.numTets_active;
+  // printf("Euler Characteristic: %d, euler2: %d. euler3 %d \n", euler, euler2,
+  //        euler3);
   return euler;
 }
