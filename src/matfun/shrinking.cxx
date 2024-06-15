@@ -594,43 +594,20 @@ int create_new_spheres_for_concave_corner(
   return new_sphere_ids.size();
 }
 
-// Wrapper function for create_new_concave_sphere_given_pin
-int create_new_concave_sphere_given_pin_wrapper(
-    const SurfaceMesh& sf_mesh, const std::vector<FeatureEdge>& feature_edges,
-    const Vector3& pin_point, const int fe_id,
-    std::vector<MedialSphere>& all_medial_spheres, int sphere_type,
-    bool is_debug) {
-  int try_cnt = 10;
-  int new_sphere_id = -1;
-  while (try_cnt > 0) {
-    try_cnt--;
-    new_sphere_id = create_new_concave_sphere_given_pin(
-        sf_mesh, feature_edges, pin_point, fe_id, all_medial_spheres,
-        sphere_type, is_debug);
-    if (new_sphere_id != -1) break;
-  }
-  return new_sphere_id;
-}
-
-// Create one new T_2_c/T_X_c spheres given a pin sample.
-// For each given pin point, only sample 1 random normal.
-//
-// sphere_type:
-//    0: SphereType::T_2_c
-//    1: SphereType::T_X_c, for newly added concave spheres
-int create_new_concave_sphere_given_pin(
-    const SurfaceMesh& sf_mesh, const std::vector<FeatureEdge>& feature_edges,
-    const Vector3& pin_point, const int fe_id,
-    std::vector<MedialSphere>& all_medial_spheres, int sphere_type,
-    bool is_debug) {
+// helper function for insert_new_concave_sphere_given_pin()
+bool update_new_concave_sphere(const SurfaceMesh& sf_mesh,
+                               const std::vector<FeatureEdge>& feature_edges,
+                               const Vector3& pin_point, const int fe_id,
+                               const int sphere_type, MedialSphere& new_sphere,
+                               bool is_debug) {
   // apply perturbation
   const FeatureEdge& one_fe = feature_edges.at(fe_id);
   const std::array<Vector3, 2>& adj_normals = one_fe.adj_normals;
   Vector3 new_normal =
       sample_random_vector_given_two_vectors(adj_normals[0], adj_normals[1]);
-  MedialSphere new_sphere(
-      all_medial_spheres.size(), pin_point, new_normal,
-      sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c, 0 /*itr_cnt*/);
+  new_sphere.ss.p = pin_point;
+  new_sphere.ss.p_normal = new_normal;
+  new_sphere.type = sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c;
   new_sphere.ss.set_p_fid(fe_id, true /*is_on_ce*/);
   new_sphere.update_tan_cc_lines_from_ss_params(
       sf_mesh, feature_edges, true /*is_update_p*/, false /*is_update_q*/);
@@ -639,7 +616,27 @@ int create_new_concave_sphere_given_pin(
                      feature_edges, new_sphere, -1 /*itr_limit*/,
                      false /*is_del_near_ce*/, false /*is_del_near_se*/,
                      is_debug /*is_debug*/))
+    return false;
+  return true;
+}
+
+// Create one new T_2_c/T_X_c spheres given a pin sample.
+// For each given pin point, only sample 1 random normal.
+//
+// sphere_type:
+//    0: SphereType::T_2_c
+//    1: SphereType::T_X_c, for newly added concave spheres
+int insert_new_concave_sphere_given_pin(
+    const SurfaceMesh& sf_mesh, const std::vector<FeatureEdge>& feature_edges,
+    const Vector3& pin_point, const int fe_id,
+    std::vector<MedialSphere>& all_medial_spheres, int sphere_type,
+    bool is_debug) {
+  MedialSphere new_sphere;
+  new_sphere.id = all_medial_spheres.size();
+  if (!update_new_concave_sphere(sf_mesh, feature_edges, pin_point, fe_id,
+                                 sphere_type, new_sphere, is_debug))
     return -1;
+
   if (add_new_sphere_validate(all_medial_spheres, new_sphere)) {
     if (is_debug)
       printf(
@@ -652,8 +649,26 @@ int create_new_concave_sphere_given_pin(
   return -1;
 }
 
+// Wrapper function for insert_new_concave_sphere_given_pin()
+int insert_new_concave_sphere_given_pin_wrapper(
+    const SurfaceMesh& sf_mesh, const std::vector<FeatureEdge>& feature_edges,
+    const Vector3& pin_point, const int fe_id,
+    std::vector<MedialSphere>& all_medial_spheres, int sphere_type,
+    bool is_debug) {
+  int try_cnt = 10;
+  int new_sphere_id = -1;
+  while (try_cnt > 0) {
+    try_cnt--;
+    new_sphere_id = insert_new_concave_sphere_given_pin(
+        sf_mesh, feature_edges, pin_point, fe_id, all_medial_spheres,
+        sphere_type, is_debug);
+    if (new_sphere_id != -1) break;
+  }
+  return new_sphere_id;
+}
+
 // For each given pin point, only sample 1 random normal.
-int create_new_spheres_given_pin_sample(
+int insert_new_spheres_given_pin_sample(
     const SurfaceMesh& sf_mesh, const std::vector<FeatureEdge>& feature_edges,
     const FL_Sample& pin_sample, const double cc_len_eps,
     std::vector<MedialSphere>& all_medial_spheres, bool is_debug) {
@@ -669,7 +684,7 @@ int create_new_spheres_given_pin_sample(
   // std::vector<Vector3> new_normals;  // size will be num_new_spheres
   std::vector<int> new_sphere_ids;
   // for (int i = 0; i < num_new_spheres; i++) {
-  int new_sphere_id = create_new_concave_sphere_given_pin_wrapper(
+  int new_sphere_id = insert_new_concave_sphere_given_pin_wrapper(
       sf_mesh, feature_edges, pin, one_fe.id, all_medial_spheres,
       0 /*SphereType::T_2_c*/, is_debug);
   if (new_sphere_id != -1) new_sphere_ids.push_back(new_sphere_id);
@@ -708,7 +723,7 @@ void insert_spheres_for_concave_lines_new(
                                   is_debug /*is_debug*/);
     // create new spheres given samples on CE
     for (const auto& pin_sample : one_ce_line.samples) {
-      create_new_spheres_given_pin_sample(sf_mesh, feature_edges, pin_sample,
+      insert_new_spheres_given_pin_sample(sf_mesh, feature_edges, pin_sample,
                                           cc_len_eps, all_medial_spheres,
                                           is_debug);
     }
@@ -721,4 +736,108 @@ void insert_spheres_for_concave_lines_new(
   //       sf_mesh, feature_edges, cc_corner, cc_len_eps, cc_normal_eps,
   //       all_medial_spheres, true /*is_debug*/);
   // }
+}
+
+// This function only update sphere, without insertion
+//
+// If 'is_merge_to_ce = true', then the new sphere's pin is pushed to concave
+// line, this sphere is created as a concave sphere.
+// (will set 'is_del_near_ce = false')
+//
+// If 'is_merge_to_ce = false', then 'is_del_near_ce = true', will delete sphere
+// if too close to concave lines.
+bool update_msphere_given_v2fid(const SurfaceMesh& sf_mesh,
+                                const TetMesh& tet_mesh,
+                                const v2int v2fid_chosen,
+                                MedialSphere& new_msphere,
+                                const bool is_merge_to_ce, bool is_debug) {
+  // did not find a proper fid
+  if (v2fid_chosen.second < 0) return false;
+  bool is_del_near_ce = true;  // will be false if is_merge_to_ce = true
+  bool is_del_near_se = false;
+  Vector3 p = v2fid_chosen.first;
+
+  // check if pin point close to any concave lines
+  // if so, then create a concave sphere
+  if (is_merge_to_ce) {
+    // do not delete sphere if too close to concave line
+    is_del_near_ce = false;
+    Vector3 p_nearest;
+    double p_sq_dist_ce;
+    int p_feid = sf_mesh.aabb_wrapper.get_nearest_point_on_ce(p, p_nearest,
+                                                              p_sq_dist_ce);
+    if (is_debug)
+      printf(
+          "[FixAdd CCSphere] pin (%f,%f,%f) dist to concave edge %d "
+          "p_sq_dist_ce %f\n",
+          p[0], p[1], p[2], p_feid, p_sq_dist_ce);
+    // since scale is [0,1000]^3
+    if (p_feid != UNK_FACE && p_sq_dist_ce <= SCALAR_1) {
+      // int p_fid = MedialSphere::convert_ss(p_feid);  // let it be negative
+      if (is_debug)
+        printf(
+            "[FixAdd CCSphere] pin (%f,%f,%f) too close to concave edge %d "
+            "with p_sq_dist_ce %f, create a new SphereType::T_X_c sphere \n",
+            p[0], p[1], p[2], p_feid, p_sq_dist_ce);
+      // create a concave sphere
+      if (!update_new_concave_sphere(sf_mesh, tet_mesh.feature_edges, p_nearest,
+                                     p_feid, SphereType::T_2_c, new_msphere,
+                                     is_debug)) {
+        printf("[FixAdd CCSphere] failed \n");
+        return false;
+      } else {
+        if (is_debug)
+          printf("[FixAdd CCSphere] newly added sphere %d \n", new_msphere.id);
+        return true;
+      }
+    }
+  }  // if is_merge_to_ce
+
+  // normal sphere shrinking
+  Vector3 p_normal = get_mesh_facet_normal(sf_mesh, v2fid_chosen.second);
+  new_msphere.ss.p = p;
+  new_msphere.ss.p_normal = p_normal;
+  new_msphere.ss.p_fid = v2fid_chosen.second;
+  new_msphere.type = SphereType::T_2;
+  new_msphere.pcell.topo_status = Topo_Status::unkown;
+  if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
+                     tet_mesh.feature_edges, new_msphere, -1 /*itr_limit*/,
+                     is_del_near_ce, is_del_near_se, false /*is_debug*/)) {
+    // printf("[FixAdd] failed to add sphere\n");
+    return false;
+  }
+
+  if (is_debug)
+    printf("[Fix Add] add new_msphere %d, select v2fid_chosen %d as pin\n ",
+           new_msphere.id, v2fid_chosen.second);
+  return true;
+}
+
+// If 'is_merge_to_ce = true', then the new sphere's pin is pushed to concave
+// line, this sphere is created as a concave sphere.
+// (will set 'is_del_near_ce = false')
+//
+// If 'is_merge_to_ce = false', then 'is_del_near_ce = true', will delete sphere
+// if too close to concave lines.
+bool insert_new_sphere_given_v2fid(
+    const int num_itr_global, const SurfaceMesh& sf_mesh,
+    const TetMesh& tet_mesh, const v2int v2fid_chosen,
+    std::vector<MedialSphere>& all_medial_spheres, const bool is_merge_to_ce,
+    bool is_debug) {
+  // did not find a proper fid
+  if (v2fid_chosen.second < 0) return false;
+  MedialSphere new_msphere;
+  update_msphere_given_v2fid(sf_mesh, tet_mesh, v2fid_chosen, new_msphere,
+                             is_merge_to_ce, is_debug);
+
+  bool is_good = add_new_sphere_validate(all_medial_spheres, new_msphere,
+                                         true /*is_small_threshold*/);
+  if (is_debug)
+    printf(
+        "[Fix Add] add new_msphere %d, is_good %d, select v2fid_chosen %d as "
+        "pin\n ",
+        all_medial_spheres.back().id, is_good, v2fid_chosen.second);
+  else
+    printf("[FixAdd] failed to validate sphere\n");
+  return is_good;
 }
