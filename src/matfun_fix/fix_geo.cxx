@@ -122,7 +122,7 @@
 //         "[FixMM] select endpoint v2fid_chosen %d as pin, sf_mesh #facets:
 //         %d\n", v2fid_chosen.second, sf_mesh.facets.nb());
 
-//     add_new_sphere_given_v2fid(sf_mesh, v2fid_chosen, all_medial_spheres,
+//     insert_new_sphere_given_v2fid(sf_mesh, v2fid_chosen, all_medial_spheres,
 //                                is_debug);
 //   }
 // }
@@ -335,9 +335,9 @@ bool check_and_insert_sphere_geometry(
       printf("[SphereCheck] msphere %d found fid %d, surf_v2fids size: %ld\n",
              msphere.id, v2fid_chosen.second, surf_v2fids.size());
 
-    add_new_sphere_given_v2fid(num_itr_global, sf_mesh, tet_mesh, v2fid_chosen,
-                               all_medial_spheres, false /*is_merge_to_ce*/,
-                               is_debug);
+    insert_new_sphere_given_v2fid(num_itr_global, sf_mesh, tet_mesh,
+                                  v2fid_chosen, all_medial_spheres,
+                                  false /*is_merge_to_ce*/, is_debug);
     break;
   }
   return false;
@@ -391,9 +391,9 @@ void check_and_fix_mm_geo(const int num_itr_global, const SurfaceMesh& sf_mesh,
                 samples.at(i * 3 + 2));
       v2fid_chosen.first = s;
       v2fid_chosen.second = sample_fids.at(i);
-      add_new_sphere_given_v2fid(num_itr_global, sf_mesh, tet_mesh,
-                                 v2fid_chosen, all_medial_spheres,
-                                 true /*is_merge_to_ce*/, false /*is_debug*/);
+      insert_new_sphere_given_v2fid(
+          num_itr_global, sf_mesh, tet_mesh, v2fid_chosen, all_medial_spheres,
+          true /*is_merge_to_ce*/, false /*is_debug*/);
     }
   }
 }

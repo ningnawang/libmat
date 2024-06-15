@@ -23,7 +23,7 @@ bool add_new_T2_sphere_from_common(
     v2int v2fid_chosen;
     v2fid_chosen.first = tan_pl.tan_point;
     v2fid_chosen.second = tan_pl.fid;
-    is_good = add_new_sphere_given_v2fid(
+    is_good = insert_new_sphere_given_v2fid(
         num_itr_global, sf_mesh, tet_mesh, v2fid_chosen, all_medial_spheres,
         true /*is_merge_to_ce*/, false /*is_debug*/);
     if (is_good) return true;
