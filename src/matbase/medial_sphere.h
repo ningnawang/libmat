@@ -352,6 +352,7 @@ class MedialSphere {
   bool operator==(const MedialSphere& m2) const;
   bool operator!=(const MedialSphere& m2) const;
   bool is_sphere_too_close(const MedialSphere& m2, double threshold) const;
+  void copy(const MedialSphere& b);
 
   // convert ss_params fid <-> eid
   inline static int convert_ss(const int _id) { return -(_id + 2); };

@@ -22,6 +22,9 @@ struct Parameter {
   // will be updated by function get_RT_vertex_neighbors()
   int site_k = 90;
 
+  // For ideal mface area = mface_rel_len * bbox_diag_l
+  float mface_rel_len = 1. / 30.;
+
   // For adding spheres on feature edges if too long
   float fe_rel_len = 1. / 50.;
   // 10 for pipeline fix_extf

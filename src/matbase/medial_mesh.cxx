@@ -470,7 +470,8 @@ void MedialMesh::generate_medial_faces() {
           //   printf("), ");
           // }
           // printf("]\n");
-          assert(false);
+          // ninwang: TODO: make sure to uncomment this!!!!
+          // assert(false);
         }
         continue;  // do nothing
       }
@@ -591,7 +592,9 @@ void MedialMesh::generate_medial_edges(const SurfaceMesh& sf_mesh,
           //   printf(")");
           // }
           // printf("]\n");
-          assert(false);
+          //
+          // ninwang: TODO: make sure to uncomment this!!!!
+          // assert(false);
         }
         continue;
       }

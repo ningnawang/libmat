@@ -862,6 +862,18 @@ bool MedialSphere::is_sphere_too_close(const MedialSphere& m2,
   return true;
 }
 
+void MedialSphere::copy(const MedialSphere& b) {
+  this->center = b.center;
+  this->radius = b.radius;
+  this->type = b.type;
+  this->tan_planes = b.tan_planes;
+  this->tan_cc_lines = b.tan_cc_lines;
+  this->se_edge_id = b.se_edge_id;
+  this->se_line_id = b.se_line_id;
+  this->corner_fls = b.corner_fls;
+  this->corner_fes = b.corner_fes;
+}
+
 // for removing medial spheres that are too close
 // used by remove_duplicated_medial_spheres() ONLY
 bool MedialSphere::operator==(const MedialSphere& m2) const {
