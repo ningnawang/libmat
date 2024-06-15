@@ -48,26 +48,19 @@ void insert_spheres_for_concave_lines_new(
     const double cc_len_eps /*=length, scaled in [0, Parameter::scale_max]*/,
     bool is_debug);
 
-// create CC spheres in a while loop, try 10 times
-// 1. init concave spheres
-// 2. topo fix
-int insert_new_concave_sphere_given_pin_wrapper(
+int create_new_concave_sphere_given_pin(
     const SurfaceMesh &sf_mesh, const std::vector<FeatureEdge> &feature_edges,
     const Vector3 &pin_point, const int fe_id,
     std::vector<MedialSphere> &all_medial_spheres, int sphere_type,
-    bool is_debug);
+    bool is_debug = false);
 
-bool update_msphere_given_v2fid(const int num_itr_global,
-                                const SurfaceMesh &sf_mesh,
-                                const TetMesh &tet_mesh,
-                                const v2int v2fid_chosen,
-                                MedialSphere &new_msphere,
-                                const bool is_merge_to_ce, bool is_debug);
-
-bool insert_new_sphere_given_v2fid(
-    const int num_itr_global, const SurfaceMesh &sf_mesh,
-    const TetMesh &tet_mesh, const v2int v2fid_chosen,
-    std::vector<MedialSphere> &all_medial_spheres, const bool is_merge_to_ce,
+// create CC spheres in a while loop, try 10 times
+// 1. init concave spheres
+// 2. topo fix
+int create_new_concave_sphere_given_pin_wrapper(
+    const SurfaceMesh &sf_mesh, const std::vector<FeatureEdge> &feature_edges,
+    const Vector3 &pin_point, const int fe_id,
+    std::vector<MedialSphere> &all_medial_spheres, int sphere_type,
     bool is_debug);
 
 #endif  // __SHRINKING_H__

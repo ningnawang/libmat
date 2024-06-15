@@ -44,4 +44,11 @@ void get_facet_CC_surf_v2fids(
     const std::map<int, std::vector<std::set<int>>>& facet_cc_cells,
     std::map<int, std::vector<std::vector<v2int>>>& facet_cc_surf_v2fids);
 
+bool add_new_sphere_given_v2fid(const int num_itr_global,
+                                const SurfaceMesh& sf_mesh,
+                                const TetMesh& tet_mesh,
+                                const v2int v2fid_chosen,
+                                std::vector<MedialSphere>& all_medial_spheres,
+                                const bool is_merge_to_ce, bool is_debug);
+
 #endif  // __TOPO_H__

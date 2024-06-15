@@ -304,6 +304,88 @@ bool is_to_fix_edge_cc(MedialSphere &msphere, bool is_debug) {
   return is_to_fix;
 }
 
+// If 'is_merge_to_ce = true', then the new sphere's pin is pushed to concave
+// line, this sphere is created as a concave sphere.
+// (will set 'is_del_near_ce = false')
+//
+// If 'is_merge_to_ce = false', then 'is_del_near_ce = true', will delete sphere
+// if too close to concave lines.
+bool add_new_sphere_given_v2fid(const int num_itr_global,
+                                const SurfaceMesh &sf_mesh,
+                                const TetMesh &tet_mesh,
+                                const v2int v2fid_chosen,
+                                std::vector<MedialSphere> &all_medial_spheres,
+                                const bool is_merge_to_ce, bool is_debug) {
+  // did not find a proper fid
+  if (v2fid_chosen.second < 0) return false;
+  bool is_del_near_ce = true;  // will be false if is_merge_to_ce = true
+  bool is_del_near_se = false;
+  Vector3 p = v2fid_chosen.first;
+
+  // check if pin point close to any concave lines
+  // if so, then create a concave sphere
+  if (is_merge_to_ce) {
+    // do not delete sphere if too close to concave line
+    is_del_near_ce = false;
+    Vector3 p_nearest;
+    double p_sq_dist_ce;
+    int p_feid = sf_mesh.aabb_wrapper.get_nearest_point_on_ce(p, p_nearest,
+                                                              p_sq_dist_ce);
+    if (is_debug)
+      printf(
+          "[FixAdd CCSphere] pin (%f,%f,%f) dist to concave edge %d "
+          "p_sq_dist_ce %f\n",
+          p[0], p[1], p[2], p_feid, p_sq_dist_ce);
+    // since scale is [0,1000]^3
+    if (p_feid != UNK_FACE && p_sq_dist_ce <= SCALAR_1) {
+      // int p_fid = MedialSphere::convert_ss(p_feid);  // let it be negative
+      if (is_debug)
+        printf(
+            "[FixAdd CCSphere] pin (%f,%f,%f) too close to concave edge %d "
+            "with p_sq_dist_ce %f, create a new SphereType::T_X_c sphere \n",
+            p[0], p[1], p[2], p_feid, p_sq_dist_ce);
+      // create a concave sphere
+      int new_sphere_id = create_new_concave_sphere_given_pin_wrapper(
+          sf_mesh, tet_mesh.feature_edges, p_nearest, p_feid,
+          all_medial_spheres, 1 /*SphereType::T_X_c*/, false /*is_debug*/);
+      if (new_sphere_id < 0) {
+        printf("[FixAdd CCSphere] failed \n");
+        return false;
+      } else {
+        if (is_debug)
+          printf("[FixAdd CCSphere] newly added sphere %d \n", new_sphere_id);
+        return true;
+      }
+    }
+  }  // if is_merge_to_ce
+
+  // normal sphere shrinking
+  is_debug = false;
+  Vector3 p_normal = get_mesh_facet_normal(sf_mesh, v2fid_chosen.second);
+  MedialSphere new_msphere(all_medial_spheres.size(), p, p_normal,
+                           SphereType::T_2, num_itr_global);
+  new_msphere.ss.p_fid = v2fid_chosen.second;
+  if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
+                     tet_mesh.feature_edges, new_msphere, -1 /*itr_limit*/,
+                     is_del_near_ce, is_del_near_se, is_debug /*is_debug*/)) {
+    // printf("[FixAdd] failed to add sphere\n");
+    return false;
+  }
+  new_msphere.pcell.topo_status = Topo_Status::unkown;
+  new_msphere.type = SphereType::T_2;
+  // all_medial_spheres.push_back(new_msphere);
+  bool is_good = add_new_sphere_validate(all_medial_spheres, new_msphere,
+                                         true /*is_small_threshold*/);
+  if (!is_good) printf("[FixAdd] failed to validate sphere\n");
+
+  if (is_debug)
+    printf(
+        "[Fix Add] add new_msphere %d, is_good %d, select v2fid_chosen %d as "
+        "pin\n ",
+        all_medial_spheres.back().id, is_good, v2fid_chosen.second);
+  return is_good;
+}
+
 /////////////////////////////////////////////
 // Main Functions (new)
 /////////////////////////////////////////////
@@ -549,11 +631,11 @@ void fix_topo_facet_cc_euler(
       // get surface v2fid closet to the given point
       v2int v2fid_chosen =
           get_v2fid_min_to_point(sf_mesh, fcc_v2fids_in_group[i], point);
-      bool is_good = insert_new_sphere_given_v2fid(
+      bool is_good = add_new_sphere_given_v2fid(
           num_itr_global, sf_mesh, tet_mesh, v2fid_chosen, all_medial_spheres,
           is_merge_to_ce, is_debug);
       // Note: to make sure msphere is still valid
-      // insert_new_sphere_given_v2fid() add new sphere to
+      // add_new_sphere_given_v2fid() add new sphere to
       // all_medial_spheres which make msphere access not stable
       auto &msphere = all_medial_spheres.at(sphere_id);
       printf("[FixFacet] msphere %d newly added sphere %d is_good: %d\n",
@@ -672,7 +754,7 @@ void fix_topo_cell_cc_euler(
           "facets size:%d\n",
           i + 1, num_new_spheres, msphere.id, v2fid_chosen.second,
           sf_mesh.facets.nb());
-    bool is_good = insert_new_sphere_given_v2fid(
+    bool is_good = add_new_sphere_given_v2fid(
         num_itr_global, sf_mesh, tet_mesh, v2fid_chosen, all_medial_spheres,
         true /*is_merge_to_ce*/, is_debug);
     printf("[FixCell] msphere %d newly added sphere %d is_good: %d\n",
