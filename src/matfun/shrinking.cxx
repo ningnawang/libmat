@@ -595,6 +595,33 @@ int insert_new_spheres_for_concave_corner(
   return new_sphere_ids.size();
 }
 
+// helper function for insert_new_concave_sphere_given_pin()
+bool update_new_concave_sphere(const SurfaceMesh& sf_mesh,
+                               const std::vector<FeatureEdge>& feature_edges,
+                               const Vector3& pin_point, const int fe_id,
+                               const int sphere_type, MedialSphere& new_sphere,
+                               bool is_debug) {
+  // apply perturbation
+  const FeatureEdge& one_fe = feature_edges.at(fe_id);
+  const std::array<Vector3, 2>& adj_normals = one_fe.adj_normals;
+  Vector3 new_normal =
+      sample_random_vector_given_two_vectors(adj_normals[0], adj_normals[1]);
+  new_sphere.ss.p = pin_point;
+  new_sphere.ss.p_normal = new_normal;
+  new_sphere.ss.set_p_fid(fe_id, true /*is_on_ce*/);
+  new_sphere.type = sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c;
+  new_sphere.itr_cnt = 0;
+  new_sphere.update_tan_cc_lines_from_ss_params(
+      sf_mesh, feature_edges, true /*is_update_p*/, false /*is_update_q*/);
+  assert(!new_sphere.tan_cc_lines.empty());
+  if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
+                     feature_edges, new_sphere, -1 /*itr_limit*/,
+                     false /*is_del_near_ce*/, false /*is_del_near_se*/,
+                     false /*is_debug*/))
+    return false;
+  return true;
+}
+
 // Create one new T_2_c/T_X_c spheres given a pin sample.
 // For each given pin point, only sample 1 random normal.
 //
@@ -613,7 +640,8 @@ int insert_new_concave_sphere_given_pin(
       sample_random_vector_given_two_vectors(adj_normals[0], adj_normals[1]);
   MedialSphere new_sphere(
       all_medial_spheres.size(), pin_point, new_normal,
-      sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c, 0 /*itr_cnt*/);
+      sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c, 0
+      /*itr_cnt*/);
   new_sphere.ss.set_p_fid(fe_id, true /*is_on_ce*/);
   new_sphere.update_tan_cc_lines_from_ss_params(
       sf_mesh, feature_edges, true /*is_update_p*/, false /*is_update_q*/);
@@ -621,8 +649,13 @@ int insert_new_concave_sphere_given_pin(
   if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
                      feature_edges, new_sphere, -1 /*itr_limit*/,
                      false /*is_del_near_ce*/, false /*is_del_near_se*/,
-                     is_debug /*is_debug*/))
+                     false /*is_debug*/))
     return -1;
+  // MedialSphere new_sphere(all_medial_spheres.size());
+  // if (!update_new_concave_sphere(sf_mesh, feature_edges, pin_point, fe_id,
+  //                                sphere_type, new_sphere, is_debug))
+  //   return -1;
+
   if (add_new_sphere_validate(all_medial_spheres, new_sphere)) {
     if (is_debug)
       printf(
@@ -704,9 +737,10 @@ void insert_spheres_for_concave_lines_new(
     const double cc_len_eps /*=length, scaled in [0, Parameter::scale_max]*/,
     bool is_debug) {
   // store if two end points of given one_cc_line is visited as pin
-  printf("[CC Sphere] cc_len_eps: %f\n", cc_len_eps);
+  if (is_debug) printf("[CC Sphere] cc_len_eps: %f\n", cc_len_eps);
 
   // 1. for concave lines
+  int num_sphere = all_medial_spheres.size();
   for (auto& one_ce_line : ce_lines) {
     sample_points_on_feature_line(feature_edges, one_ce_line, cc_len_eps,
                                   is_debug /*is_debug*/);
@@ -716,8 +750,10 @@ void insert_spheres_for_concave_lines_new(
                                           cc_len_eps, all_medial_spheres,
                                           is_debug);
     }
-    // break;
   }
+  if (is_debug)
+    printf("[CC Sphere] created %ld new spheres for concave lines\n",
+           all_medial_spheres.size() - num_sphere);
 
   // // step 2: for concave corners
   // for (const auto& cc_corner : cc_corners) {
