@@ -48,6 +48,12 @@ void insert_spheres_for_concave_lines_new(
     const double cc_len_eps /*=length, scaled in [0, Parameter::scale_max]*/,
     bool is_debug);
 
+bool update_msphere_given_v2fid(const SurfaceMesh &sf_mesh,
+                                const TetMesh &tet_mesh,
+                                const v2int v2fid_chosen,
+                                MedialSphere &new_msphere,
+                                const bool is_merge_to_ce, bool is_debug);
+
 bool insert_new_sphere_given_v2fid(
     const int num_itr_global, const SurfaceMesh &sf_mesh,
     const TetMesh &tet_mesh, const v2int v2fid_chosen,
