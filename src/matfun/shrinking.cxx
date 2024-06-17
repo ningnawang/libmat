@@ -595,7 +595,8 @@ int insert_new_spheres_for_concave_corner(
   return new_sphere_ids.size();
 }
 
-// helper function for insert_new_concave_sphere_given_pin()
+// helper function for insert_new_concave_sphere_given_pin() and
+// helper function for update_msphere_given_v2fid()
 bool update_new_concave_sphere(const SurfaceMesh& sf_mesh,
                                const std::vector<FeatureEdge>& feature_edges,
                                const Vector3& pin_point, const int fe_id,
@@ -651,6 +652,9 @@ int insert_new_concave_sphere_given_pin(
                      false /*is_del_near_ce*/, false /*is_del_near_se*/,
                      false /*is_debug*/))
     return -1;
+
+  // ninwang: dunno why this would make different result
+  //          during random sampling
   // MedialSphere new_sphere(all_medial_spheres.size());
   // if (!update_new_concave_sphere(sf_mesh, feature_edges, pin_point, fe_id,
   //                                sphere_type, new_sphere, is_debug))
