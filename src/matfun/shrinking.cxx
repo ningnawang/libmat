@@ -607,14 +607,14 @@ bool update_new_concave_sphere(const SurfaceMesh& sf_mesh,
   const std::array<Vector3, 2>& adj_normals = one_fe.adj_normals;
   Vector3 new_normal =
       sample_random_vector_given_two_vectors(adj_normals[0], adj_normals[1]);
-  new_sphere.ss.p = pin_point;
-  new_sphere.ss.p_normal = new_normal;
+  // re-int the new sphere using new pin_point and new_normal
+  new_sphere =
+      MedialSphere(new_sphere.id, pin_point, new_normal,
+                   sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c, 0
+                   /*itr_cnt*/);
   new_sphere.ss.set_p_fid(fe_id, true /*is_on_ce*/);
-  new_sphere.type = sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c;
-  new_sphere.itr_cnt = 0;
   new_sphere.update_tan_cc_lines_from_ss_params(
       sf_mesh, feature_edges, true /*is_update_p*/, false /*is_update_q*/);
-  assert(!new_sphere.tan_cc_lines.empty());
   if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
                      feature_edges, new_sphere, -1 /*itr_limit*/,
                      false /*is_del_near_ce*/, false /*is_del_near_se*/,
@@ -634,31 +634,11 @@ int insert_new_concave_sphere_given_pin(
     const Vector3& pin_point, const int fe_id,
     std::vector<MedialSphere>& all_medial_spheres, int sphere_type,
     bool is_debug) {
-  // apply perturbation
-  const FeatureEdge& one_fe = feature_edges.at(fe_id);
-  const std::array<Vector3, 2>& adj_normals = one_fe.adj_normals;
-  Vector3 new_normal =
-      sample_random_vector_given_two_vectors(adj_normals[0], adj_normals[1]);
-  MedialSphere new_sphere(
-      all_medial_spheres.size(), pin_point, new_normal,
-      sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c, 0
-      /*itr_cnt*/);
-  new_sphere.ss.set_p_fid(fe_id, true /*is_on_ce*/);
-  new_sphere.update_tan_cc_lines_from_ss_params(
-      sf_mesh, feature_edges, true /*is_update_p*/, false /*is_update_q*/);
-  assert(!new_sphere.tan_cc_lines.empty());
-  if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
-                     feature_edges, new_sphere, -1 /*itr_limit*/,
-                     false /*is_del_near_ce*/, false /*is_del_near_se*/,
-                     false /*is_debug*/))
+  // create new concave sphere
+  MedialSphere new_sphere;
+  if (!update_new_concave_sphere(sf_mesh, feature_edges, pin_point, fe_id,
+                                 sphere_type, new_sphere, is_debug))
     return -1;
-
-  // ninwang: dunno why this would make different result
-  //          during random sampling
-  // MedialSphere new_sphere(all_medial_spheres.size());
-  // if (!update_new_concave_sphere(sf_mesh, feature_edges, pin_point, fe_id,
-  //                                sphere_type, new_sphere, is_debug))
-  //   return -1;
 
   if (add_new_sphere_validate(all_medial_spheres, new_sphere)) {
     if (is_debug)
@@ -778,10 +758,19 @@ void insert_spheres_for_concave_lines_new(
 bool update_msphere_given_v2fid(const SurfaceMesh& sf_mesh,
                                 const TetMesh& tet_mesh,
                                 const v2int v2fid_chosen,
+                                const int new_sphere_id,
                                 MedialSphere& new_msphere,
                                 const bool is_merge_to_ce, bool is_debug) {
   // did not find a proper fid
   if (v2fid_chosen.second < 0) return false;
+  // init new_msphere by v2fid_chosen
+  new_msphere =
+      MedialSphere(new_sphere_id, v2fid_chosen.first,
+                   get_mesh_facet_normal(sf_mesh, v2fid_chosen.second),
+                   SphereType::T_2, 0 /*itr_cnt*/);
+  new_msphere.ss.p_fid = v2fid_chosen.second;
+  new_msphere.pcell.topo_status = Topo_Status::unkown;
+  // set parameters
   bool is_del_near_ce = true;  // will be false if is_merge_to_ce = true
   bool is_del_near_se = false;
   Vector3 p = v2fid_chosen.first;
@@ -823,12 +812,6 @@ bool update_msphere_given_v2fid(const SurfaceMesh& sf_mesh,
   }  // if is_merge_to_ce
 
   // normal sphere shrinking
-  Vector3 p_normal = get_mesh_facet_normal(sf_mesh, v2fid_chosen.second);
-  new_msphere.ss.p = p;
-  new_msphere.ss.p_normal = p_normal;
-  new_msphere.ss.p_fid = v2fid_chosen.second;
-  new_msphere.type = SphereType::T_2;
-  new_msphere.pcell.topo_status = Topo_Status::unkown;
   if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
                      tet_mesh.feature_edges, new_msphere, -1 /*itr_limit*/,
                      is_del_near_ce, is_del_near_se, false /*is_debug*/)) {
@@ -855,9 +838,10 @@ bool insert_new_sphere_given_v2fid(
     bool is_debug) {
   // did not find a proper fid
   if (v2fid_chosen.second < 0) return false;
-  MedialSphere new_msphere(all_medial_spheres.size());
-  if (!update_msphere_given_v2fid(sf_mesh, tet_mesh, v2fid_chosen, new_msphere,
-                                  is_merge_to_ce, is_debug))
+  MedialSphere new_msphere;
+  if (!update_msphere_given_v2fid(sf_mesh, tet_mesh, v2fid_chosen,
+                                  all_medial_spheres.size() /*new_sphere_id*/,
+                                  new_msphere, is_merge_to_ce, is_debug))
     return false;
 
   bool is_good = add_new_sphere_validate(all_medial_spheres, new_msphere,
