@@ -258,7 +258,7 @@ bool TangentConcaveLine::update_covered_sf_fids(const SurfaceMesh& sf_mesh,
 // MedialSphere
 /////////////////////////////////////////////////////////////////////////////////////
 MedialSphere::MedialSphere(int _id, Vector3 _pin, Vector3 _pin_normal,
-                           SphereType _type, int _itr) {
+                           int _pin_fid, SphereType _type, int _itr) {
   id = _id;
   is_rt_valid = false;
   is_rt_prev_valid = false;
@@ -266,6 +266,7 @@ MedialSphere::MedialSphere(int _id, Vector3 _pin, Vector3 _pin_normal,
   site_id = -1;
   ss.p = _pin;
   ss.p_normal = _pin_normal;
+  ss.p_fid = _pin_fid;
   radius = INIT_RADIUS;
   type = _type ? _type : SphereType::T_UNK;
   center = ss.p - ss.p_normal * radius;

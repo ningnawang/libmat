@@ -362,10 +362,9 @@ void load_spheres_to_sites_given(std::vector<MedialSphere>& all_medial_spheres,
 
   all_medial_spheres.clear();
   for (int i = 0; i < n_site; i++) {
-    MedialSphere msphere(all_medial_spheres.size(), Vector3(0, 0, 0),
-                         Vector3(0, 0, 0));
-    msphere.center = Vector3(spheres[i][0], spheres[i][1], spheres[i][2]);
-    msphere.radius = spheres[i][3];
+    MedialSphere msphere(all_medial_spheres.size(),
+                         Vector3(spheres[i][0], spheres[i][1], spheres[i][2]),
+                         spheres[i][3], SphereType::T_UNK);
     all_medial_spheres.push_back(msphere);
   }
 
@@ -406,7 +405,7 @@ void load_spheres_from_file(const char* filename,
   all_medial_spheres.clear();
   for (int i = 0; i < n_site; i++) {
     MedialSphere msphere(all_medial_spheres.size(), Vector3(0, 0, 0),
-                         Vector3(0, 0, 0));
+                         INIT_RADIUS, SphereType::T_UNK);
     file >> msphere.center[0] >> msphere.center[1] >> msphere.center[2];
     if (dim == 4)
       file >> msphere.radius;

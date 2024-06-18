@@ -287,7 +287,7 @@ enum RtValidStates { Valid2Invalid = -1, NoChange = 0, Invalid2Valid = 1 };
 class MedialSphere {
  public:
   MedialSphere(){};  // for mult-threads parallization
-  MedialSphere(int _id, Vector3 _pin, Vector3 _pin_normal,
+  MedialSphere(int _id, Vector3 _pin, Vector3 _pin_normal, int _pin_fid,
                SphereType _type = SphereType::T_UNK, int _itr = -1);
   MedialSphere(int _id, Vector3 _center, double _radius, SphereType _type,
                int _itr = -1);

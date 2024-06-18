@@ -443,8 +443,7 @@ void init_and_shrink(const SurfaceMesh& sf_mesh, const TetMesh& tet_mesh,
         sf_mesh.vertices.point(sf_mesh.facets.vertex(rand_fidx, 1)),
         sf_mesh.vertices.point(sf_mesh.facets.vertex(rand_fidx, 2)));
     Vector3 p_normal = get_mesh_facet_normal(sf_mesh, rand_fidx);
-    MedialSphere msphere(all_medial_spheres.size(), p, p_normal);
-    msphere.ss.p_fid = rand_fidx;
+    MedialSphere msphere(all_medial_spheres.size(), p, p_normal, rand_fidx);
     msphere.itr_cnt = 0;  // init spheres
     add_new_sphere_validate(all_medial_spheres, msphere);
     if (is_debug)
@@ -609,7 +608,7 @@ bool update_new_concave_sphere(const SurfaceMesh& sf_mesh,
       sample_random_vector_given_two_vectors(adj_normals[0], adj_normals[1]);
   // re-int the new sphere using new pin_point and new_normal
   new_sphere =
-      MedialSphere(new_sphere.id, pin_point, new_normal,
+      MedialSphere(new_sphere.id, pin_point, new_normal, fe_id,
                    sphere_type == 0 ? SphereType::T_2_c : SphereType::T_X_c, 0
                    /*itr_cnt*/);
   new_sphere.ss.set_p_fid(fe_id, true /*is_on_ce*/);
@@ -767,9 +766,7 @@ bool update_msphere_given_v2fid(const SurfaceMesh& sf_mesh,
   new_msphere =
       MedialSphere(new_sphere_id, v2fid_chosen.first,
                    get_mesh_facet_normal(sf_mesh, v2fid_chosen.second),
-                   SphereType::T_2, 0 /*itr_cnt*/);
-  new_msphere.ss.p_fid = v2fid_chosen.second;
-  new_msphere.pcell.topo_status = Topo_Status::unkown;
+                   v2fid_chosen.second, SphereType::T_2, 0 /*itr_cnt*/);
   // set parameters
   bool is_del_near_ce = true;  // will be false if is_merge_to_ce = true
   bool is_del_near_se = false;

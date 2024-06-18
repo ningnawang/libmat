@@ -228,14 +228,14 @@ void check_and_insert_cone_geometry(
   // find the fid closest to any sphere
   v2int v2fid_chosen =
       get_v2fid_max_to_point(sf_mesh, all_v2fid_chosen[0], msphere1.center);
+  if (v2fid_chosen.second < 0) return;
   // printf("[ConeCheck] medge (%d,%d) choose fid %d to check new T2 sphere\n",
   //        msphere1.id, msphere2.id, v2fid_chosen.second);
   // sphere shrinking
   Vector3 p = v2fid_chosen.first;
   Vector3 p_normal = get_mesh_facet_normal(sf_mesh, v2fid_chosen.second);
-  MedialSphere new_msphere(all_medial_spheres.size(), p, p_normal);
-  new_msphere.ss.p_fid = v2fid_chosen.second;
-  if (new_msphere.ss.p_fid < 0) return;
+  MedialSphere new_msphere(all_medial_spheres.size(), p, p_normal,
+                           v2fid_chosen.second /*pin_fid*/);
   if (!shrink_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
                      tet_mesh.feature_edges, new_msphere, -1 /*itr_limit*/,
                      true /*is_del_near_ce*/, false /*is_del_near_se*/,
