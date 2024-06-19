@@ -105,6 +105,7 @@ void SurfaceMesh::reload_sf_fid_neighs_no_cross() {
 
 bool SurfaceMesh::collect_kring_neighbors_given_fid(
     const int k, int tan_fid, std::set<int>& kring_neighbors) const {
+  assert(tan_fid >= 0);
   kring_neighbors.clear();
   get_k_ring_neighbors_no_cross(*this, this->fe_sf_fs_pairs, tan_fid, k,
                                 kring_neighbors, true /*is_clear_cur*/,
@@ -114,6 +115,7 @@ bool SurfaceMesh::collect_kring_neighbors_given_fid(
 
 bool SurfaceMesh::collect_kring_neighbors_given_fid_se_only(
     const int k, int tan_fid, std::set<int>& kring_neighbors) const {
+  assert(tan_fid >= 0);
   kring_neighbors.clear();
   get_k_ring_neighbors_no_cross(*this, this->fe_sf_fs_pairs_se_only, tan_fid, k,
                                 kring_neighbors, true /*is_clear_cur*/,
