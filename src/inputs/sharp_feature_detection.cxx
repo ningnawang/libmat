@@ -114,7 +114,8 @@ void find_feature_edges(const Parameter& args,
                         std::set<int>& corners_se, std::set<int>& corners_ce,
                         std::set<int>& corners_fake,
                         std::set<aint2>& fe_sf_fs_pairs,
-                        std::set<aint2>& fe_sf_fs_pairs_se_only) {
+                        std::set<aint2>& fe_sf_fs_pairs_se_only,
+                        std::set<aint2>& fe_sf_fs_pairs_ce_only) {
   printf("Detecting sharp/concave edges and corners_se using threshold: %f \n",
          args.thres_concave);
   s_edges.clear();
@@ -123,6 +124,7 @@ void find_feature_edges(const Parameter& args,
   corners_ce.clear();
   fe_sf_fs_pairs.clear();
   fe_sf_fs_pairs_se_only.clear();
+  fe_sf_fs_pairs_ce_only.clear();
 
   std::vector<aint2> edges;
   std::map<int, std::unordered_set<int>> conn_tris;
@@ -202,6 +204,7 @@ void find_feature_edges(const Parameter& args,
         //          e[1], tmp_concave);
         cc_edges.insert(e);  // once concave, never sharp
         fe_sf_fs_pairs.insert(ref_fs_pair);
+        fe_sf_fs_pairs_ce_only.insert(ref_fs_pair);
       } else {
         // Sharp edges (when it's convex)
         // angle between two normals of convex faces: theta
@@ -387,6 +390,20 @@ void convert_vs_tlfs2lvs(const std::vector<int> tet_indices,
   // std::endl;
 }
 
+void update_allow_to_merge_ce_line_ids(
+    const std::vector<ConcaveCorner>& cc_corners,
+    std::map<int, std::set<int>>& allow_to_merge_ce_line_ids) {
+  // loop cc_corners
+  for (const auto& cc : cc_corners) {
+    // cc.print_info();
+    for (const auto& fl_id : cc.adj_fl_ids) {
+      allow_to_merge_ce_line_ids[fl_id].insert(cc.adj_fl_ids.begin(),
+                                               cc.adj_fl_ids.end());
+    }
+
+  }  // for a concave  corner
+}
+
 void convert_fe_groups_to_set(std::vector<std::vector<aint3>>& fe_groups,
                               std::set<aint3>& fe_set) {
   fe_set.clear();
@@ -554,7 +571,7 @@ void print_corners(const std::set<int>& corners) {
   printf("]\n");
 }
 
-void print_corner2fl(std::map<int, std::set<int>>& corner2fl) {
+void print_corner2fl(const std::map<int, std::set<int>>& corner2fl) {
   printf("corner2fl:\n");
   for (const auto& pair : corner2fl) {
     printf("%d: [", pair.first);
@@ -615,6 +632,7 @@ void store_concave_corners(const std::set<int>& corners_ce_tet,
 
     for (const auto& one_fe_id : adj_fes) {
       cc_corner.adj_fe_ids.push_back(one_fe_id);
+      cc_corner.adj_fl_ids.push_back(feature_edges.at(one_fe_id).get_fl_id());
       const auto& one_fe = feature_edges.at(one_fe_id);
       Vector3 pert_dir = one_fe.t2vs_group[0] == corner_tvid
                              ? get_direction(one_fe.t2vs_pos[0],
@@ -653,7 +671,8 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   std::set<int> corners_se_sf, corners_ce_sf, corners_fake_sf;
   find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
                      corners_se_sf, corners_ce_sf, corners_fake_sf,
-                     sf_mesh.fe_sf_fs_pairs, sf_mesh.fe_sf_fs_pairs_se_only);
+                     sf_mesh.fe_sf_fs_pairs, sf_mesh.fe_sf_fs_pairs_se_only,
+                     sf_mesh.fe_sf_fs_pairs_ce_only);
   mark_feature_attributes(s_edges_sf, cc_edges_sf, corners_se_sf, sf_mesh);
 
   // map back to tet mesh
@@ -710,4 +729,7 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   // for concave corners
   store_concave_corners(tet_mesh.corners_ce_tet, tet_mesh.feature_edges,
                         tet_mesh.cc_corners, false);
+  // update FeatureLine::allow_to_merge_fl_ids
+  update_allow_to_merge_ce_line_ids(tet_mesh.cc_corners,
+                                    tet_mesh.allow_to_merge_ce_line_ids);
 }

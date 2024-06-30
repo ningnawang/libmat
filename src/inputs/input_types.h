@@ -63,6 +63,7 @@ class ConcaveCorner {
 
   int tvid;                     // tet vid of this corner
   std::vector<int> adj_fe_ids;  // matching FeatureEdge::id
+  std::vector<int> adj_fl_ids;  // matching FeatureLine::id
 
   // size matching adj_fe_ids.size()
   std::vector<Vector3> adj_fe_dir;  // from corner ->  another point on CE
@@ -148,13 +149,24 @@ class TetMesh {
   // mapping vertex from <tid, lfid1, lfid2, lfid3> -> tvid
   std::map<aint4, int> tet_vs_lfs2tvs_map;
   // each feature line is grouped by feature edges
+  // index NOT matching FeatureLine::id
   std::vector<FeatureLine> se_lines;
 
   // for concave edges
   // each feature line is grouped by feature edges
+  // index NOT matching FeatureLine::id
   std::vector<FeatureLine> ce_lines;
+  // allow fl to merge with other adjacent feature lines
+  // if the corner is only adjacent to concave lines, no convex lines
+  // include the id of itself
+  // updated by function update_allow_to_merge_ce_line_ids()
+  //
+  // used for clustering fids for msphere type
+  // RPD3D_Wrapper::cluster_sphere_type_using_samples_fids()
+  std::map<int, std::set<int>> allow_to_merge_ce_line_ids;
 
   // for concave corners
+  // adjacent to > 2 concave edges, no sharp edges
   std::vector<ConcaveCorner> cc_corners;
 
   // 1. regular se corner (connect to > 2 sharp edges)
@@ -346,13 +358,15 @@ class SurfaceMesh : public GEO::Mesh {
   // store <sf_fid_min, sf_fid_max> if on feature edge
   // updated in detect_mark_sharp_features()
   std::set<aint2> fe_sf_fs_pairs;
+  // same as fe_sf_fs_pairs, but only for SE
+  std::set<aint2> fe_sf_fs_pairs_se_only;
+  // same as fe_sf_fs_pairs, but only for CE
+  std::set<aint2> fe_sf_fs_pairs_ce_only;
   // fid -> {neigh fids} but NOT cross fe_sf_fs_pairs,
   // updated in reload_sf_fid_neighs_no_cross(), after calling
   // detect_mark_sharp_features()
+  // [no use]
   std::map<int, std::set<int>> sf_fid_neighs_no_cross;
-
-  // same as fe_sf_fs_pairs, but only for SE
-  std::set<aint2> fe_sf_fs_pairs_se_only;
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,
