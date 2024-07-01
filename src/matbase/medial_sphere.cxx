@@ -926,7 +926,9 @@ bool MedialSphere::is_on_ce() const {
   return false;
 }
 bool MedialSphere::is_on_intf() const {
-  if (type == SphereType::T_N || type == SphereType::T_N_c) return true;
+  if (type == SphereType::T_N || type == SphereType::T_N_c ||
+      type == SphereType::T_N_JUNC)
+    return true;
   return false;
 }
 bool MedialSphere::is_on_extf() const {
@@ -934,11 +936,14 @@ bool MedialSphere::is_on_extf() const {
   if (is_on_corner()) return true;
   return false;
 }
-
 bool MedialSphere::is_on_sheet() const {
   if (is_on_se() || is_on_corner()) return false;
   if (is_on_intf()) return false;
   return true;
+}
+bool MedialSphere::is_on_junction() const {
+  if (type == SphereType::T_N_JUNC) return true;
+  return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

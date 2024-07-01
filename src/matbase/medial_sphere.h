@@ -272,12 +272,13 @@ enum SphereType {
   T_1_2 = -2,  // external feature, sharp edge
   T_UNK = -1,
   T_2 = 2,
-  T_N = 3,     // including T_3, T_4 ...
-  T_c = 10,    // invisible pin sphere added on concave line to avoid RPD
-               // degeneration [no use?]
-  T_2_c = 11,  // added for one concave line using sphere shrinking
-  T_N_c = 12,  // added through internal feature preservation
-  T_3_c = 13,  // added for concave corners (debug only) [no use]
+  T_N = 3,       // including T_3, T_4 ...
+  T_N_JUNC = 4,  // potential junctions T_4, T_5 ...
+  T_c = 10,      // invisible pin sphere added on concave line to avoid RPD
+                 // degeneration [no use?]
+  T_2_c = 11,    // added for one concave line using sphere shrinking
+  T_N_c = 12,    // added through internal feature preservation
+  T_3_c = 13,    // added for concave corners (debug only) [no use]
   // todo: deprecate this
   T_X_c = 14  // added for one concave edge during topo fix
 };
@@ -340,6 +341,7 @@ class MedialSphere {
   bool is_on_intf() const;
   bool is_on_extf() const;
   bool is_on_sheet() const;
+  bool is_on_junction() const;
 
   void topo_clear();
   void pcell_insert(int cell_id);
