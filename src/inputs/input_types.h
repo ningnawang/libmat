@@ -347,6 +347,8 @@ class SurfaceMesh : public GEO::Mesh {
                                          std::set<int> &kring_neighbors) const;
   bool collect_kring_neighbors_given_fid_se_only(
       const int k, int tan_fid, std::set<int> &kring_neighbors) const;
+  void update_fe_sf_fs_pairs_to_ce_id(
+      const std::vector<FeatureEdge> &feature_edges);
 
  public:
   bool is_non_cad = false;
@@ -361,7 +363,8 @@ class SurfaceMesh : public GEO::Mesh {
   // same as fe_sf_fs_pairs, but only for SE
   std::set<aint2> fe_sf_fs_pairs_se_only;
   // same as fe_sf_fs_pairs, but only for CE
-  std::set<aint2> fe_sf_fs_pairs_ce_only;
+  std::set<aint2> fe_sf_fs_pairs_ce_only;        // [no use]
+  std::map<aint2, int> fe_sf_fs_pairs_to_ce_id;  // mapping to FeatureEdge::id
   // fid -> {neigh fids} but NOT cross fe_sf_fs_pairs,
   // updated in reload_sf_fid_neighs_no_cross(), after calling
   // detect_mark_sharp_features()

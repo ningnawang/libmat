@@ -1,8 +1,8 @@
 #include "thinning.h"
 
 // helper funtion to load mface's importance
-void compute_face_importance(const MedialMesh& mat, MedialFace& face,
-                             bool is_sort_randomly, bool is_debug) {
+void Thinning::compute_face_importance(const MedialMesh& mat, MedialFace& face,
+                                       bool is_sort_randomly, bool is_debug) {
   if (is_sort_randomly) {
     face.importance = (double)std::rand() / (RAND_MAX);
   } else {
@@ -37,9 +37,9 @@ void compute_face_importance(const MedialMesh& mat, MedialFace& face,
 }
 
 // just store importance for each mat face
-void load_all_mat_face_importance_globally(MedialMesh& mat,
-                                           bool is_sort_randomly,
-                                           bool is_debug) {
+void Thinning::load_all_mat_face_importance_globally(MedialMesh& mat,
+                                                     bool is_sort_randomly,
+                                                     bool is_debug) {
   for (auto& face : mat.faces) {
     compute_face_importance(mat, face, is_sort_randomly, is_debug);
   }
@@ -47,10 +47,9 @@ void load_all_mat_face_importance_globally(MedialMesh& mat,
 }
 
 // priority queue is ordered by first element of the pair
-void sort_mat_face_importance_globally(MedialMesh& mat,
-                                       std::set<face_importance>& imp_queue,
-                                       bool is_import_given,
-                                       bool is_sort_randomly, bool is_debug) {
+void Thinning::sort_mat_face_importance_globally(
+    MedialMesh& mat, std::set<Thinning::face_importance>& imp_queue,
+    bool is_import_given, bool is_sort_randomly, bool is_debug) {
   imp_queue.clear();
   for (const auto& one_tet : mat.tets) {
     int tet_id = one_tet.tid;
@@ -62,6 +61,7 @@ void sort_mat_face_importance_globally(MedialMesh& mat,
         assert(false);
         continue;
       }
+
       if (!is_import_given)
         compute_face_importance(mat, face, is_sort_randomly, is_debug);
       // store to priority queue
@@ -148,9 +148,9 @@ void postprocess_dupcnt_tet_face(MedialMesh& mat, int tid, int fid,
   assert(!mat_e.faces_.empty());
 }
 
-void prune_tets_while_iteration(MedialMesh& mat,
-                                std::set<face_importance>& imp_queue,
-                                bool is_dup_cnt, bool is_debug) {
+void Thinning::prune_tets_while_iteration(
+    MedialMesh& mat, std::set<Thinning::face_importance>& imp_queue,
+    bool is_dup_cnt, bool is_debug) {
   if (mat.tets.empty()) return;
   if (imp_queue.empty()) {
     printf("[Prune] imp_queue is not empty?? imp_queue %ld \n",
@@ -170,6 +170,7 @@ void prune_tets_while_iteration(MedialMesh& mat,
         printf("ERROR face has more than 1 tets \n");
         assert(false);
       }
+
       // everytime we delete a face, we break for loop of imp_queue
       // and checking again from face with smallest importance
       int tid = *(face.tets_.begin());
@@ -193,7 +194,7 @@ void prune_tets_while_iteration(MedialMesh& mat,
   }  // while true
 }
 
-void handle_dupcnt_face_edge_pair(MedialMesh& mat, bool is_debug) {
+void Thinning::handle_dupcnt_face_edge_pair(MedialMesh& mat, bool is_debug) {
   for (const auto& ef_pair : mat.dup_e2f) {
     int eid = ef_pair.first;
     int fid = ef_pair.second;
@@ -262,9 +263,10 @@ void handle_dupcnt_face_edge_pair(MedialMesh& mat, bool is_debug) {
   }
 }
 
-void prune_faces_while_iteration(
+void Thinning::prune_faces_while_iteration(
     const std::vector<MedialSphere>& all_medial_spheres, MedialMesh& mat,
-    std::set<face_importance>& imp_queue, double imp_thres, bool is_debug) {
+    std::set<Thinning::face_importance>& imp_queue, double imp_thres,
+    bool is_debug) {
   if (imp_queue.empty()) {
     printf("[Prune] error, imp_queue is not empty?? imp_queue %ld\n",
            imp_queue.size());
@@ -342,7 +344,7 @@ void prune_faces_while_iteration(
   return;
 }
 
-void prune_edges_while_iteration(
+void Thinning::prune_edges_while_iteration(
     const std::vector<MedialSphere>& all_medial_spheres, MedialMesh& mat,
     bool is_debug) {
   int num_spheres_are_good;
@@ -367,7 +369,7 @@ void prune_edges_while_iteration(
   }
 }
 
-void assert_mmesh(MedialMesh& mat) {
+void Thinning::assert_mmesh(MedialMesh& mat) {
   for (const auto& mv : *mat.vertices) {
     if (mv.is_deleted) continue;
     // assert(mv.dup_cnt == 1);
@@ -396,15 +398,16 @@ void assert_mmesh(MedialMesh& mat) {
 }
 
 // imp_thres: more faces will be prunes if bigger
-void prune(const std::vector<MedialSphere>& all_medial_spheres, MedialMesh& mat,
-           double imp_thres, bool is_dup_cnt, bool is_import_given,
-           bool is_sort_randomly, bool is_debug) {
+void Thinning::prune(const std::vector<MedialSphere>& all_medial_spheres,
+                     MedialMesh& mat, double imp_thres, bool is_dup_cnt,
+                     bool is_import_given, bool is_sort_randomly,
+                     bool is_debug) {
   printf("start thinning with importance threshold: %f is_debug: %d... \n",
          imp_thres, is_debug);
   // using set as priority queue
   // (importance, fid) starts with the smallest importance
   // tie-broken with smallest fid.
-  std::set<face_importance> imp_queue;  // in ascending order
+  std::set<Thinning::face_importance> imp_queue;  // in ascending order
   sort_mat_face_importance_globally(mat, imp_queue, is_import_given,
                                     is_sort_randomly, is_debug);
 

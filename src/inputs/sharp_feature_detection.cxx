@@ -711,6 +711,7 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
                      tet_mesh.feature_edges, tet_mesh.ce_lines, ce_tet_info,
                      tet_mesh.corners_se_tet, tet_mesh.corner2fl,
                      tet_mesh.corner2fe, false /*is_debug*/);
+  sf_mesh.update_fe_sf_fs_pairs_to_ce_id(tet_mesh.feature_edges);
   printf("[Feature] stored SphereType::CE line size: %ld \n",
          tet_mesh.ce_lines.size());
   // print_corner2fl(tet_mesh.corner2fl);

@@ -123,6 +123,18 @@ bool SurfaceMesh::collect_kring_neighbors_given_fid_se_only(
   return kring_neighbors.empty() ? false : true;
 }
 
+void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
+    const std::vector<FeatureEdge>& feature_edges) {
+  this->fe_sf_fs_pairs_to_ce_id.clear();
+  for (const auto& fe : feature_edges) {
+    if (fe.type == EdgeType::CE) {
+      aint2 fs_pair = {{fe.adj_sf_fs_pair[0], fe.adj_sf_fs_pair[1]}};
+      std::sort(fs_pair.begin(), fs_pair.end());
+      this->fe_sf_fs_pairs_to_ce_id[fs_pair] = fe.id;
+    }
+  }
+}
+
 void SurfaceMesh::collect_fid_centroids(
     const std::set<int>& given_fids, std::vector<v2int>& one_group_fids) const {
   one_group_fids.clear();

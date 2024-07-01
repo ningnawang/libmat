@@ -54,12 +54,33 @@ struct simple_pair {
   unsigned tid;
 };
 
-typedef std::pair<double, int> face_importance;  // (importance, fid)
+class Thinning {
+ public:
+  typedef std::pair<double, int> face_importance;  // (importance, fid)
 
-void prune(const std::vector<MedialSphere>& all_medial_spheres, MedialMesh& mat,
-           double imp_thres = -1, bool is_dup_cnt = false,
-           bool is_import_given = false, bool is_sort_randomly = false,
-           bool is_debug = false);
-void load_all_mat_face_importance_globally(MedialMesh& mat,
-                                           bool is_sort_randomly = false,
-                                           bool is_debug = false);
+  static void prune(const std::vector<MedialSphere>& all_medial_spheres,
+                    MedialMesh& mat, double imp_thres = -1,
+                    bool is_dup_cnt = false, bool is_import_given = false,
+                    bool is_sort_randomly = false, bool is_debug = false);
+  static void load_all_mat_face_importance_globally(
+      MedialMesh& mat, bool is_sort_randomly = false, bool is_debug = false);
+
+ protected:
+  static void compute_face_importance(const MedialMesh& mat, MedialFace& face,
+                                      bool is_sort_randomly, bool is_debug);
+  static void sort_mat_face_importance_globally(
+      MedialMesh& mat, std::set<Thinning::face_importance>& imp_queue,
+      bool is_import_given, bool is_sort_randomly, bool is_debug);
+  static void prune_tets_while_iteration(
+      MedialMesh& mat, std::set<Thinning::face_importance>& imp_queue,
+      bool is_dup_cnt, bool is_debug);
+  static void handle_dupcnt_face_edge_pair(MedialMesh& mat, bool is_debug);
+  static void prune_faces_while_iteration(
+      const std::vector<MedialSphere>& all_medial_spheres, MedialMesh& mat,
+      std::set<Thinning::face_importance>& imp_queue, double imp_thres,
+      bool is_debug);
+  static void prune_edges_while_iteration(
+      const std::vector<MedialSphere>& all_medial_spheres, MedialMesh& mat,
+      bool is_debug);
+  static void assert_mmesh(MedialMesh& mat);
+};

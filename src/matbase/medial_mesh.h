@@ -32,7 +32,7 @@ class MedialEdge {
   bool is_deleted = false;
   bool is_intf = false;
   bool is_extf = false;
-  bool is_on_same_sheet = false; // including is_intf
+  bool is_on_same_sheet = false;  // including is_intf
 
   // for medial structure
   int mstruc_id = -1;  // MedialStruc::id
