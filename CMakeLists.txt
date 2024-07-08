@@ -56,12 +56,12 @@ if(USE_GPU)
     add_subdirectory(src/rpd3d)
     add_subdirectory(src/rpd3d_api)
     add_subdirectory(src/matfun_fix)
+    add_subdirectory(src/IO/IO_CUDA)
 endif(USE_GPU)
 add_subdirectory(src/inputs)
 add_subdirectory(src/matbase)
 add_subdirectory(src/matfun)
-add_subdirectory(src/IO)
-add_subdirectory(src/CPU)
+add_subdirectory(src/IO/IO_CXX)
 
 # ###############################################################################
 # For VolumeVoronoiGPU binary
@@ -99,15 +99,16 @@ if(USE_GPU)
         optimized rpd3d_api
         optimized dist2mat
         optimized matfun_fix
+        optimized IO_CUDA
     )
     target_link_libraries(${PROJECT_NAME} general ${CUDA_LIBRARIES})
 endif(USE_GPU)
 target_link_libraries(${PROJECT_NAME}
+    optimized IO_CXX
     optimized inputs
     optimized matbase
     optimized matfun
-    optimized IO
-    optimized cpu_fallback
+    # optimized cpu_fallback
     optimized mshloader
     optimized polyscope
     optimized geogram

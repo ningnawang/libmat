@@ -12,12 +12,12 @@ add_library(matbase STATIC
 # add lib
 target_link_libraries(matbase
     optimized inputs
-    optimized rpd3d
+    # optimized rpd3d
 )
 
 # add common headers
 target_include_directories(matbase PUBLIC 
     ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/src/rpd3d
+    # ${PROJECT_SOURCE_DIR}/src/rpd3d
 )
 
