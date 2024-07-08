@@ -108,7 +108,8 @@ void export_ma(const std::string& maname, const MedialMesh& mat);
 void export_ma_given(const std::string& maname,
                      const std::vector<Vector4>& mat_vertices,
                      const std::vector<aint2>& mat_edges,
-                     const std::vector<std::array<int, 3>>& mat_faces);
+                     const std::vector<std::array<int, 3>>& mat_faces,
+                     bool is_use_given_name = false);
 void write_ma_ply(const std::string& maname, const MedialMesh& mat);
 
 #endif  // __IO_H__

@@ -983,7 +983,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
     const auto& msphere3 = this->vertices->at(this->faces.at(fid).vertices_[2]);
 
     if (msphere1.is_on_intf() && msphere2.is_on_intf() && msphere3.is_on_intf())
-      return MedialType::SINGULAR;
+      return MedialType::SEAM;
     return MedialType::SHEET;
     // printf("ERROR: unkown msphere1 %d type %d, msphere2 %d type %d\n",
     //        msphere1.id, msphere1.type, msphere2.id, msphere2.type);

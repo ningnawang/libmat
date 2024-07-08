@@ -1156,11 +1156,14 @@ void export_ma(const std::string& maname, const MedialMesh& mat) {
 void export_ma_given(const std::string& maname,
                      const std::vector<Vector4>& mat_vertices,
                      const std::vector<aint2>& mat_edges,
-                     const std::vector<std::array<int, 3>>& mat_faces) {
-  std::string ma_name_full =
-      "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+                     const std::vector<std::array<int, 3>>& mat_faces,
+                     bool is_use_given_name) {
+  std::string ma_name_full = maname;
+  if (!is_use_given_name)
+    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
 
-  std::ofstream fout(ma_name_full);
+  std::ofstream fout;
+  fout.open(ma_name_full, std::ofstream::out | std::ofstream::app);  //   append
   fout << mat_vertices.size() << " " << mat_edges.size() << " "
        << mat_faces.size() << std::endl;
 

@@ -7,8 +7,9 @@
 enum MedialType {
   MUNKOWN = -1,
   SHEET = 0,
-  SINGULAR = 1, /*matching internal feature*/
-  BOUNDARY = 2  /*matching external feature*/
+  SEAM = 1,     /*matching internal feature*/
+  BOUNDARY = 2, /*matching external feature*/
+  JUNCTION = 3
 };
 
 class MedialStruc {
@@ -19,8 +20,9 @@ class MedialStruc {
  public:
   int id;
   MedialType type;
-  std::set<int> m_face_ids;  // MedialFace::id
-  std::set<int> m_edge_ids;  // MedialEdge::id
+  std::set<int> m_face_ids;    // MedialFace::id
+  std::set<int> m_edge_ids;    // MedialEdge::id
+  std::set<int> m_sphere_ids;  // MedialSphere::id
 };
 
 class MedialEdge {
