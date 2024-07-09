@@ -25,11 +25,13 @@ class RPD3D_GPU {
       const std::vector<int>& map_site2msphere,
       const std::vector<int>& map_tet_new2orig,
       std::vector<ConvexCellHost>& cells_partials, bool is_debug);
+
   std::vector<ConvexCellHost> merge_convex_cells(
       const std::set<int>& valid_sphere_ids,
       const std::set<int>& spheres_and_1rings,
       const std::vector<ConvexCellHost>& convex_cells_prev,
       const std::vector<ConvexCellHost>& convex_cells_new, bool is_debug);
+
   void load_partial_tet_given_spheres(
       const std::vector<int>& old_tet_indices,
       const std::vector<int>& old_tet_fids,

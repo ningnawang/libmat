@@ -1,5 +1,19 @@
 #include "io_cuda.h"
+
 #include "io_utils.hpp"
+
+Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans) {
+  cfloat3 bary = {0.0f, 0.0f, 0.0f};  // barycenter of cell
+  FOR(i, cc_trans.nb_v) {
+    cfloat4 voro_vertex = cc_trans.compute_vertex_coordinates(
+        cmake_uchar3(cc_trans.ver_trans_const(i)));
+    bary =
+        cplus3(cmake_float3(voro_vertex.x, voro_vertex.y, voro_vertex.z), bary);
+  }
+
+  bary = cdivide3(bary, cc_trans.nb_v);
+  return Vector3(bary.x, bary.y, bary.z);
+}
 
 // return 3d triangle mesh if is_triangle is true
 void get_one_convex_cell_faces(

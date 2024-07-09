@@ -21,6 +21,8 @@
 #include "params.h"
 #include "voronoi_defs.h"
 
+Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans);
+
 bool save_convex_cells_houdini(
     const Parameter params, const std::vector<MedialSphere>& all_medial_spheres,
     const std::vector<ConvexCellHost>& convex_cells_returned,

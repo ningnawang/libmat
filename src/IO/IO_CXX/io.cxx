@@ -7,7 +7,7 @@
 #include <bitset>
 
 #include "../extern/mshloader/MshLoader.h"
-#include "voronoi_common.h"
+// #include "voronoi_common.h"
 
 bool is_inverted(const Vector3& v0, const Vector3& v1, const Vector3& v2,
                  const Vector3& v3) {
@@ -811,19 +811,6 @@ bool is_slice_by_plane(const Vector3& bary, const Parameter& params) {
   double dist = GEO::dot(bary - slice_pl_pos, slice_pl_normal);
   if (dist >= 0) return true;  // clip and do not save
   return false;
-}
-
-Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans) {
-  cfloat3 bary = {0.0f, 0.0f, 0.0f};  // barycenter of cell
-  FOR(i, cc_trans.nb_v) {
-    cfloat4 voro_vertex = cc_trans.compute_vertex_coordinates(
-        cmake_uchar3(cc_trans.ver_trans_const(i)));
-    bary =
-        cplus3(cmake_float3(voro_vertex.x, voro_vertex.y, voro_vertex.z), bary);
-  }
-
-  bary = cdivide3(bary, cc_trans.nb_v);
-  return Vector3(bary.x, bary.y, bary.z);
 }
 
 void unnormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp) {

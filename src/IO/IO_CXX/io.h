@@ -24,7 +24,7 @@
 #include "medial_mesh.h"
 #include "medial_sphere.h"
 #include "params.h"
-#include "voronoi_defs.h"
+// #include "voronoi_defs.h"
 
 bool is_inverted(const Vector3& v0, const Vector3& v1, const Vector3& v2,
                  const Vector3& v3);
@@ -89,8 +89,6 @@ bool save_sf_mesh_scaled(const std::string sf_path_scaled,
 bool save_sf_mesh_geogram(const std::string sf_path, GEO::Mesh& sf_mesh);
 
 bool is_slice_by_plane(const Vector3& bary, const Parameter& params);
-Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans);
-
 
 // load ma
 void unnormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp);

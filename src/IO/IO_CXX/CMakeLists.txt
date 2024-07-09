@@ -21,5 +21,4 @@ target_include_directories(IO_CXX PUBLIC
     ${PROJECT_SOURCE_DIR}/extern/mshloader
     ${PROJECT_SOURCE_DIR}/src/external
     ${PROJECT_SOURCE_DIR}/src/matbase
-    ${PROJECT_SOURCE_DIR}/src/rpd3d
 )

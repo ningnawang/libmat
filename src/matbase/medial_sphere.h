@@ -5,7 +5,6 @@
 
 #include <vector>
 
-#include "../src/rpd3d/voronoi_defs.h"
 #include "common_geogram.h"
 #include "input_types.h"
 
@@ -431,12 +430,6 @@ class MedialSphere {
   // updated by RPD3D_Wrapper::update_pcell_samples_sf_fids()
   std::vector<std::set<int>> pcell_samples_sf_fids_in_group;
 };
-
-void update_power_cells(const SurfaceMesh& sf_mesh,
-                        std::vector<ConvexCellHost>& convex_cells_host,
-                        std::vector<MedialSphere>& all_medial_spheres,
-                        const std::map<aint3, aint3>& tet_es2fe_map,
-                        bool is_debug);
 
 bool validate_new_sphere(const std::vector<MedialSphere>& all_medial_spheres,
                          const MedialSphere& new_sphere,

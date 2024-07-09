@@ -62,6 +62,7 @@ add_subdirectory(src/inputs)
 add_subdirectory(src/matbase)
 add_subdirectory(src/matfun)
 add_subdirectory(src/IO/IO_CXX)
+add_subdirectory(src/rpd3d_base)
 
 # ###############################################################################
 # For VolumeVoronoiGPU binary
@@ -105,6 +106,7 @@ if(USE_GPU)
 endif(USE_GPU)
 target_link_libraries(${PROJECT_NAME}
     optimized IO_CXX
+    optimized rpd3d_base
     optimized inputs
     optimized matbase
     optimized matfun
