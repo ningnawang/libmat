@@ -11,7 +11,6 @@ add_library(IO_CXX STATIC
 target_link_libraries(IO_CXX
     optimized inputs
     optimized matbase
-    optimized nlohmann_json::nlohmann_json
     optimized mshloader
 )
 

@@ -2,6 +2,7 @@
 
 #include <assert.h>
 
+#include "rpd_update.h"
 #include "voronoi.h"
 
 RPD3D_GPU::~RPD3D_GPU() {

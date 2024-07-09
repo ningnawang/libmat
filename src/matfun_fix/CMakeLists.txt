@@ -21,6 +21,7 @@ target_link_libraries(matfun_fix
     optimized inputs
     optimized matbase
     optimized matfun
+    optimized rpd3d_base
 )
 
 # add common headers
@@ -29,6 +30,7 @@ target_include_directories(matfun_fix PUBLIC
     ${PROJECT_SOURCE_DIR}/src/matbase
     ${PROJECT_SOURCE_DIR}/src/matfun
     ${PROJECT_SOURCE_DIR}/src/dist2mat
+    ${PROJECT_SOURCE_DIR}/src/rpd3d_base
 )
 
 

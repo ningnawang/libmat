@@ -8,6 +8,8 @@ add_library(rpd3d_base STATIC
     voronoi_defs.cxx
     triangulation.h
     triangulation.cxx
+    rpd_update.h
+    rpd_update.cxx
 )
 
 # add lib

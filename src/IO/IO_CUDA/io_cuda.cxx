@@ -1,5 +1,6 @@
 #include "io_cuda.h"
 
+#include "io.h"
 #include "io_utils.hpp"
 
 Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans) {
@@ -41,7 +42,7 @@ void get_one_convex_cell_faces(
       return;
     }
     voro_points.push_back(
-        make_cfloat3(voro_vertex.x, voro_vertex.y, voro_vertex.z));
+        make_float3(voro_vertex.x, voro_vertex.y, voro_vertex.z));
   }
 
   // some clipping planes may not exist in tri but

@@ -3,10 +3,11 @@
 #include "input_types.h"
 #include "medial_sphere.h"
 #include "triangulation.h"
+#include "voronoi_defs.h"
 
 class RPD3D_GPU {
  public:
-  RPD3D_GPU(){};
+  RPD3D_GPU() {};
   ~RPD3D_GPU();
   void init(const TetMesh* _tet_mesh, const SurfaceMesh* _sf_mesh,
             const Parameter* _params);
