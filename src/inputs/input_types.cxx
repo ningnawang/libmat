@@ -72,7 +72,7 @@ void SurfaceMesh::reload_sf2tet_vs_mapping() {
   }
 }
 
-void SurfaceMesh::reload_sf_fid_neighs() {
+void SurfaceMesh::cache_sf_fid_neighs() {
   // load input_mesh adjacent info
   sf_fid_neighs.clear();
   // std::map<int, std::set<int>> conn_tris;
@@ -88,7 +88,7 @@ void SurfaceMesh::reload_sf_fid_neighs() {
 }
 
 // must call after detect_mark_sharp_features()
-void SurfaceMesh::reload_sf_fid_neighs_no_cross() {
+void SurfaceMesh::cache_sf_fid_neighs_no_cross() {
   if (fe_sf_fs_pairs.empty()) return;
   // load input_mesh adjacent info, not cross sharp features
   sf_fid_neighs_no_cross.clear();
@@ -101,6 +101,29 @@ void SurfaceMesh::reload_sf_fid_neighs_no_cross() {
       sf_fid_neighs_no_cross[i].insert(nfid);
     }
   }
+}
+
+// must call after detect_mark_sharp_features()
+void SurfaceMesh::cache_sf_fid_krings_no_cross_se_only(const int k) {
+  if (fe_sf_fs_pairs_se_only.empty()) return;
+  // load input_mesh adjacent info, not cross sharp features
+  sf_fid_krings_no_cross_se_only.clear();
+  std::set<int> kring_neighbors;
+  for (int fid = 0; fid < this->facets.nb(); fid++) {
+    collect_kring_neighbors_given_fid_se_only(k, fid, kring_neighbors);
+    sf_fid_krings_no_cross_se_only[fid] = kring_neighbors;
+  }
+}
+
+bool SurfaceMesh::get_sf_fid_krings_no_cross_se_only(
+    const int fid_given, std::set<int>& kring_neighbors) const {
+  kring_neighbors.clear();
+  if (sf_fid_krings_no_cross_se_only.empty()) return false;
+  if (sf_fid_krings_no_cross_se_only.find(fid_given) ==
+      sf_fid_krings_no_cross_se_only.end())
+    return false;
+  kring_neighbors = sf_fid_krings_no_cross_se_only.at(fid_given);
+  return true;
 }
 
 bool SurfaceMesh::collect_kring_neighbors_given_fid(

@@ -19,8 +19,8 @@ enum EdgeType {
 class FeatureEdge {
  public:
   FeatureEdge(const int _id, const EdgeType &_t, const aint3 &_t2vs_group)
-      : id(_id), type(_t), t2vs_group(_t2vs_group){};
-  ~FeatureEdge(){};
+      : id(_id), type(_t), t2vs_group(_t2vs_group) {};
+  ~FeatureEdge() {};
   void print_info() const;
   inline int get_fl_id() const { return t2vs_group[2]; }
   // NOTE: keep it same as TangentConcaveLine::operator==()
@@ -56,8 +56,8 @@ class FeatureEdge {
 
 class ConcaveCorner {
  public:
-  ConcaveCorner(const int _tvid) : tvid(_tvid){};
-  ~ConcaveCorner(){};
+  ConcaveCorner(const int _tvid) : tvid(_tvid) {};
+  ~ConcaveCorner() {};
 
   void print_info() const;
 
@@ -73,8 +73,8 @@ class ConcaveCorner {
 // sample point on FeatureLine
 class FL_Sample {
  public:
-  FL_Sample(const Vector3 &_p, const int &_fe) : point(_p), fe_id(_fe){};
-  ~FL_Sample(){};
+  FL_Sample(const Vector3 &_p, const int &_fe) : point(_p), fe_id(_fe) {};
+  ~FL_Sample() {};
   void print_info() const;
 
   Vector3 point;
@@ -84,8 +84,8 @@ class FL_Sample {
 // either sharp line or concave line
 class FeatureLine {
  public:
-  FeatureLine(const int _id, const EdgeType &_t) : id(_id), type(_t){};
-  ~FeatureLine(){};
+  FeatureLine(const int _id, const EdgeType &_t) : id(_id), type(_t) {};
+  ~FeatureLine() {};
   void print_info() const;
 
   int id;  // num_fe_group / t2vs_group[3]
@@ -109,7 +109,7 @@ class FeatureLine {
 
 class TetMesh {
  public:
-  TetMesh(std::string path) : tet_path_with_ext(path){};
+  TetMesh(std::string path) : tet_path_with_ext(path) {};
   inline int get_fl_id(const int fe_id) const {
     assert(fe_id >= 0 && fe_id < feature_edges.size());
     return feature_edges[fe_id].get_fl_id();
@@ -338,11 +338,14 @@ class AABBWrapper {
 class SurfaceMesh : public GEO::Mesh {
  public:
   void reload_sf2tet_vs_mapping();
-  void reload_sf_fid_neighs();
-  void reload_sf_fid_neighs_no_cross();  // must call after
-  // detect_mark_sharp_features()
   void collect_fid_centroids(const std::set<int> &given_fids,
                              std::vector<v2int> &one_group_fids) const;
+  void cache_sf_fid_neighs();
+  void cache_sf_fid_neighs_no_cross();
+  void cache_sf_fid_krings_no_cross_se_only(const int k);
+  bool get_sf_fid_krings_no_cross_se_only(const int fid_given);
+  bool get_sf_fid_krings_no_cross_se_only(const int fid_given,
+                                          std::set<int> &kring_neighbors) const;
   bool collect_kring_neighbors_given_fid(const int k, int tan_fid,
                                          std::set<int> &kring_neighbors) const;
   bool collect_kring_neighbors_given_fid_se_only(
@@ -353,8 +356,18 @@ class SurfaceMesh : public GEO::Mesh {
  public:
   bool is_non_cad = false;
   AABBWrapper aabb_wrapper;
-  std::vector<int> sf2tet_vs_mapping;          // matching TetMesh::tet_vertices
-  std::map<int, std::set<int>> sf_fid_neighs;  // fid -> {neigh fids} [no use]
+  std::vector<int> sf2tet_vs_mapping;  // matching TetMesh::tet_vertices
+  // fid -> {neigh fids}
+  // [no use]
+  std::map<int, std::set<int>> sf_fid_neighs;
+  // fid -> {neigh fids} but NOT cross fe_sf_fs_pairs,
+  // updated in cache_sf_fid_neighs_no_cross(), after calling
+  // detect_mark_sharp_features()
+  // [no use]
+  std::map<int, std::set<int>> sf_fid_neighs_no_cross;
+  // fid -> {kring fids} but NOT cross fe_sf_fs_pairs_se_only,
+  // updated in cache_sf_fid_krings_no_cross_se_only()
+  std::map<int, std::set<int>> sf_fid_krings_no_cross_se_only;
 
   // for feature edges, both SE and CE
   // store <sf_fid_min, sf_fid_max> if on feature edge
@@ -365,11 +378,6 @@ class SurfaceMesh : public GEO::Mesh {
   // same as fe_sf_fs_pairs, but only for CE
   std::set<aint2> fe_sf_fs_pairs_ce_only;        // [no use]
   std::map<aint2, int> fe_sf_fs_pairs_to_ce_id;  // mapping to FeatureEdge::id
-  // fid -> {neigh fids} but NOT cross fe_sf_fs_pairs,
-  // updated in reload_sf_fid_neighs_no_cross(), after calling
-  // detect_mark_sharp_features()
-  // [no use]
-  std::map<int, std::set<int>> sf_fid_neighs_no_cross;
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,
