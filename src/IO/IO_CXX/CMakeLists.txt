@@ -16,8 +16,8 @@ target_link_libraries(IO_CXX
 
 # add common headers
 target_include_directories(IO_CXX PUBLIC 
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/extern/mshloader
-    ${PROJECT_SOURCE_DIR}/src/external
-    ${PROJECT_SOURCE_DIR}/src/matbase
+    ${MAT_MODULE_INCLUDE}
+    ${MAT_MODULE_EXTERNAL}/mshloader
+    ${MAT_MODULE_SRC}/external
+    ${MAT_MODULE_SRC}/matbase
 )

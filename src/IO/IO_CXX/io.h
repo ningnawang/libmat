@@ -95,6 +95,9 @@ void unnormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp);
 void renormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp);
 void load_matfp(const std::string& ma_path,
                 std::vector<MedialSphere>& all_medial_spheres, MedialMesh& mat);
+void load_mat_clean(const std::string& ma_path,
+                    std::vector<MedialSphere>& all_medial_spheres,
+                    MedialMesh& mat);
 
 // save ma
 void export_ma(const std::string& maname, const MedialMesh& mat);
@@ -103,6 +106,12 @@ void export_ma_given(const std::string& maname,
                      const std::vector<aint2>& mat_edges,
                      const std::vector<std::array<int, 3>>& mat_faces,
                      bool is_use_given_name = false);
-void write_ma_ply(const std::string& maname, const MedialMesh& mat);
+void get_mat_clean(const MedialMesh& mat, std::vector<Vector4>& vertices,
+                   std::vector<aint2>& edges,
+                   std::vector<std::array<int, 3>>& faces);
+void export_ma_clean(const std::string& maname, const MedialMesh& mat,
+                     bool is_use_given_name = false);
+void write_ma_ply(const std::string& maname, const MedialMesh& mat,
+                  bool is_use_given_name = false);
 
 #endif  // __IO_H__

@@ -241,14 +241,14 @@ inline std::string get_only_file_name(std::string filePath, bool withExtension,
   return filename_ext.substr(0, lastindex);
 }
 
-namespace fs = std::filesystem;
-inline bool create_dir(const std::string& dir) {
-  // if dir not exists, create it
-  if (!fs::is_directory(dir.c_str())) {
-    return fs::create_directories(dir.c_str());
-  }
-  return true;
-}
+// namespace fs = std::filesystem;
+// inline bool create_dir(const std::string& dir) {
+//   // if dir not exists, create it
+//   if (!fs::is_directory(dir.c_str())) {
+//     return fs::create_directories(dir.c_str());
+//   }
+//   return true;
+// }
 
 // using .geogram for saving vertex attributes
 //

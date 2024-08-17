@@ -21,7 +21,7 @@ target_link_libraries(rpd3d_base
 
 # add common headers
 target_include_directories(rpd3d_base PUBLIC 
-    ${PROJECT_SOURCE_DIR}/include
-    ${PROJECT_SOURCE_DIR}/src/inputs
-    ${PROJECT_SOURCE_DIR}/src/matbase
+    ${MAT_MODULE_INCLUDE}
+    ${MAT_MODULE_SRC}/inputs
+    ${MAT_MODULE_SRC}/matbase
 )

@@ -7,8 +7,8 @@ if(TARGET geogram)
 endif()
 
 # ###############################################################################
-if(EXTERNAL_DIR)
-	set(GEOGRAM_SEARCH_PATHS ${EXTERNAL_DIR})
+if(MAT_MODULE_EXTERNAL)
+	set(GEOGRAM_SEARCH_PATHS ${MAT_MODULE_EXTERNAL})
 else()
 	set(GEOGRAM_SEARCH_PATHS
 		${GEOGRAM_INSTALL_PREFIX}

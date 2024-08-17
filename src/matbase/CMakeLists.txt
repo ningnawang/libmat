@@ -18,4 +18,3 @@ target_link_libraries(matbase
 target_include_directories(matbase PUBLIC 
     ${PROJECT_SOURCE_DIR}/include
 )
-

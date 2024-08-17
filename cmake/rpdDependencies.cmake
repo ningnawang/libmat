@@ -44,7 +44,6 @@ endif()
 
 # # pymesh loaders
 # add_subdirectory(${TETWILD_EXTERNAL}/pymesh)
-
 # # CL11
 # if(NOT TARGET CLI11::CLI11)
 # tetwild_download_cli11()
@@ -54,15 +53,9 @@ endif()
 # polyscope
 if(NOT TARGET polyscope)
     rpd_download_polyscope()
-    add_subdirectory(${EXTERNAL_DIR}/polyscope)
 endif()
 
 # json
 if(NOT TARGET nlohmann_json::nlohmann_json)
     rpd_download_json()
 endif()
-
-# # cub cuda
-# if (NOT TARGET CUB)
-#     add_subdirectory(${EXTERNAL_DIR}/cub)
-# endif()

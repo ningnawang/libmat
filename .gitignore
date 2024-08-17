@@ -5,3 +5,5 @@ extern/.*
 .vscode*
 houdini*/*
 out*/*
+*.DS_Store*
+*data/*

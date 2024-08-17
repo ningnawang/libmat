@@ -5,30 +5,32 @@
 
 #include <cmath>
 
-#include "../medial_sphere.h"
+#include "../src/matbase/medial_mesh.h"
+#include "../src/matbase/medial_sphere.h"
 
 class MainGuiWindow {
  private:
   static MainGuiWindow* instance_;
   static constexpr double point_radius_rel = 0.01;
+  static constexpr double edge_radius_rel = 0.0008;
+  using timer = std::chrono::system_clock;
 
  private:
   // a pointer
-  GEO::Mesh* sf_mesh = nullptr;
+  std::string file_name = "";
+  TetMesh* tet_mesh = nullptr;
+  SurfaceMesh* sf_mesh = nullptr;
   std::vector<MedialSphere>* all_medial_spheres = nullptr;
-  //   std::vector<float>* tet_vertices = nullptr;
-  //   std::vector<int>* tet_indices = nullptr;
-  //   std::vector<std::array<float, 3>>* sf_vertices = nullptr;
-  //   std::vector<std::array<int, 3>>* sf_faces = nullptr;
+  Parameter* params = nullptr;  // not const, update site_k
+  MedialMesh* mmesh = nullptr;  // not const
 
  public:
-  void set_sf_mesh(GEO::Mesh& _sf_mesh);
+  void set_file_name(const std::string& _file_name);
+  void set_params(Parameter& _params);
+  void set_tet_mesh(TetMesh& _tet_mesh);
+  void set_sf_mesh(SurfaceMesh& _sf_mesh);
   void set_all_medial_spheres(std::vector<MedialSphere>& _all_medial_spheres);
-  //   void set_tet_mesh(std::vector<float>& _tet_vertices,
-  //                     std::vector<int>& _tet_indices);
-  //   void set_sf_mesh_internal(std::vector<std::array<float, 3>>&
-  //   _sf_vertices,
-  //                             std::vector<std::array<int, 3>>& _sf_fases);
+  void set_medial_mesh(MedialMesh& _mmesh);
 
  public:
   MainGuiWindow();
@@ -37,6 +39,9 @@ class MainGuiWindow {
   // show polyscope window
   void show();
   static void callbacks();
+
+  // Tetmesh
+  void show_tet_mesh(const TetMesh& tet_mesh, bool is_shown_meta = false);
 
   // Surface
   int given_sf_face_id = -1;
@@ -51,6 +56,13 @@ class MainGuiWindow {
                        const int given_sphere_id,
                        const bool is_show_radius = false,
                        const bool is_clear_all = false);
+
+  // Medial Mesh
+  int given_mat_face_id = -1;
+  void show_medial_mesh(const MedialMesh& mmesh, int given_mat_face_id = -1,
+                        std::string mmname = "MedialMesh");
+  double given_thinning_thres = 0.3;
+  void show_medial_edges(const MedialMesh& mmesh);
 };
 
 #endif  // __H_MAIN_GUI_H__

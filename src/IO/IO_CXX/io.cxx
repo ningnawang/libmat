@@ -828,13 +828,15 @@ void unnormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp) {
     }
   }
 
-  // same as matfp
+  // same as original shape
+  // load_tet() will update params.scale_maxside_orig
+  assert(params.scale_maxside_orig != 0.f);
   double size_orig = params.scale_maxside_orig / 10.f;
-  double xcenter = (max[0] + min[0]) * 0.5;
-  double ycenter = (max[1] + min[1]) * 0.5;
-  double zcenter = (max[2] + min[2]) * 0.5;
+  double xcenter = (params.xmax_orig + params.xmin_orig) * 0.5;
+  double ycenter = (params.ymax_orig + params.ymin_orig) * 0.5;
+  double zcenter = (params.zmax_orig + params.zmin_orig) * 0.5;
 
-  // un-normalize
+  // un-normalize matfp to original
   for (int i = 0; i < mmesh_matfp.vertices->size(); ++i) {
     Vector3& p = mmesh_matfp.vertices->at(i).center;
     p[0] = (p[0] * size_orig) + xcenter;
@@ -855,7 +857,7 @@ void renormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp) {
   }
 }
 
-// this export is matching MATFP
+// this export is matching MATFP (contains flag_type and flag_delete)
 /* # .ma format
  * numVertices numEdges numFaces
  * v x y z r flag_type flag_delete
@@ -900,6 +902,60 @@ void load_matfp(const std::string& ma_path,
   for (int e = 0; e < num_es; e++) {
     ma_file >> ch >> e1 >> e2 >> is_deleted;
     if (is_deleted) continue;
+    // printf("ma e %d has (%d,%d)\n", e, e1, e2);
+    mat.create_edge(e1, e2);
+  }
+
+  int f1, f2, f3;
+  for (int f = 0; f < num_fs; f++) {
+    ma_file >> ch >> f1 >> f2 >> f3;
+    // printf("ma f %d has (%d,%d,%d)\n", f, f1, f2, f3);
+    aint3 fvs = {{f1, f2, f3}};
+    mat.create_face(fvs);
+  }
+
+  ma_file.close();
+}
+
+// this export is matching MATFP clean format
+// see MATFP commit fdd2d19dd73e10262fed885f414c338d0d8c6151
+/* # .ma format
+ * numVertices numEdges numFaces
+ * v x y z r
+ * e v1 v2
+ * f v1 v2 v3
+ */
+void load_mat_clean(const std::string& ma_path,
+                    std::vector<MedialSphere>& all_medial_spheres,
+                    MedialMesh& mat) {
+  std::ifstream ma_file(ma_path);
+  int num_vs, num_es, num_fs;
+  int type, is_deleted;
+  char ch;
+  ma_file >> num_vs >> num_es >> num_fs;
+  printf("loading .ma with num_vs: %d, num_es: %d, num_fs: %d\n", num_vs,
+         num_es, num_fs);
+
+  // load spheres
+  all_medial_spheres.clear();
+  for (int i = 0; i < num_vs; i++) {
+    MedialSphere msphere(all_medial_spheres.size(), Vector3(0, 0, 0),
+                         Vector3(0, 0, 0), SphereType::T_2);
+    ma_file >> ch >> msphere.center[0] >> msphere.center[1] >>
+        msphere.center[2];
+    ma_file >> msphere.radius;
+    all_medial_spheres.push_back(msphere);
+    // printf("ma v %d has sphere: (%lf %lf %lf %lf), type: %d\n", i,
+    //        msphere.center[0], msphere.center[1], msphere.center[2],
+    //        msphere.radius, msphere.type);
+  }
+
+  // load mat
+  mat.clear();
+  mat.vertices = &all_medial_spheres;
+  int e1, e2;
+  for (int e = 0; e < num_es; e++) {
+    ma_file >> ch >> e1 >> e2;
     // printf("ma e %d has (%d,%d)\n", e, e1, e2);
     mat.create_edge(e1, e2);
   }
@@ -1030,12 +1086,110 @@ void export_ma_given(const std::string& maname,
   printf("saved mat at: %s \n", ma_name_full.c_str());
 }
 
+// helper function for export_ma_clean() and export_ma_ply()
+void get_mat_clean(const MedialMesh& mat, std::vector<Vector4>& vertices,
+                   std::vector<aint2>& edges,
+                   std::vector<std::array<int, 3>>& faces) {
+  std::map<int, int> map_vertices;  // mat vertex tag to new
+  vertices.clear();
+  edges.clear();
+  faces.clear();
+
+  auto get_vertex_mapped_id = [&](const int vid) {
+    if (map_vertices.find(vid) == map_vertices.end()) {
+      // add a new vertex
+      map_vertices[vid] = map_vertices.size();
+    }
+    return map_vertices.at(vid);
+  };
+
+  // faces
+  for (int f = 0; f < mat.faces.size(); f++) {
+    const auto& face = mat.faces[f];
+    if (face.is_deleted) continue;
+    std::array<int, 3> one_f;
+    for (uint j = 0; j < 3; j++) {
+      int vid = get_vertex_mapped_id(face.vertices_[j]);
+      one_f[j] = vid;
+    }
+    faces.push_back(one_f);
+  }
+  printf("faces: %d \n", faces.size());
+
+  // edges
+  for (int e = 0; e < mat.edges.size(); e++) {
+    const auto& edge = mat.edges[e];
+    if (edge.is_deleted) continue;
+    // if (edge.faces_.empty()) continue;
+    int vid1 = get_vertex_mapped_id(edge.vertices_[0]);
+    int vid2 = get_vertex_mapped_id(edge.vertices_[1]);
+    edges.push_back({{vid1, vid2}});
+  }
+  printf("edges: %d \n", edges.size());
+
+  // vertices
+  // save from map_vertices, to avoid (0,0,0,0) in .ma file
+  vertices.resize(map_vertices.size());
+  for (const auto& v_pair : map_vertices) {
+    int old_vid = v_pair.first;
+    int new_vid = v_pair.second;
+    const auto& mat_v = mat.vertices->at(old_vid);
+    vertices[new_vid] = Vector4(mat_v.center[0], mat_v.center[1],
+                                mat_v.center[2], mat_v.radius);
+  }
+  // for (int v = 0; v < mat.vertices->size(); v++) {
+  //   const auto& mat_v = mat.vertices->at(v);
+  //   if (mat_v.is_deleted) continue;
+  //   if (mat_v.edges_.empty() && mat_v.faces_.empty()) continue;  //
+  //   isolated？ int vid = get_vertex_mapped_id(mat_v.id); if (vid ==
+  //   map_vertices.size()) {
+  //     // vertices.push_back(Vector4(vertex.center[0], vertex.center[1],
+  //     //                            vertex.center[2], vertex.radius));
+  //     printf("mat sphere: %d not connect to any edge/face, wrong?\n", v);
+  //     assert(false);
+  //   } else {
+  //     vertices[vid] = Vector4(mat_v.center[0], mat_v.center[1],
+  //     mat_v.center[2],
+  //                             mat_v.radius);
+  //   }
+  // }
+  printf("vertcies: %d \n", vertices.size());
+}
+
+// remove deleted edges/faces
+// should save the same result as export_ma_ply but with different format
+//
+// this export is matching blender addon
+// https://github.com/songshibo/blender-mat-addon
+/* # .ma format
+ * numVertices numEdges numFaces
+ * v x y z r
+ * e v1 v2
+ * f v1 v2 v3
+ */
+void export_ma_clean(const std::string& maname, const MedialMesh& mat,
+                     bool is_use_given_name) {
+  std::string ma_name_full = maname;
+  if (!is_use_given_name)
+    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+  printf("start saving mat .m file: %s \n", ma_name_full.c_str());
+
+  std::vector<Vector4> vertices;
+  std::vector<aint2> edges;
+  std::vector<std::array<int, 3>> faces;
+  get_mat_clean(mat, vertices, edges, faces);
+
+  // export
+  export_ma_given(maname, vertices, edges, faces, true);
+}
+
 // no use
 // some vertices/faces are deleted
-void write_ma_ply(const std::string& maname, const MedialMesh& mat) {
-  std::string ma_name_full =
-      "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ply";
-  // std::string ma_name_full = "../out/mat/mat_" + maname + ".ply";
+void write_ma_ply(const std::string& maname, const MedialMesh& mat,
+                  bool is_use_given_name) {
+  std::string ma_name_full = maname;
+  if (!is_use_given_name)
+    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ply";
   printf("start saving mat .ply file: %s \n", ma_name_full.c_str());
 
   std::map<int, int> map_vertices;  // mat vertex tag to new ply
