@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 # ###############################################################################
-option(USE_GPU "Enable GPU for RPD" ON) #ON by default
+option(USE_GPU "Enable GPU for RPD" OFF) #ON by default
 
 # ###############################################################################
 if(USE_GPU)
@@ -69,6 +69,8 @@ add_subdirectory(src/rpd3d_base)
 # ###############################################################################
 set(SOURCE_LIST
     "src/main.cpp"
+    "src/main_gui.h"
+    "src/main_gui.cpp"
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_LIST})
@@ -121,11 +123,11 @@ target_link_libraries(${PROJECT_NAME}
     optimized igl::core
 )
 
-# ###############################################################################
-# For VORO_GUI binary
-# ###############################################################################
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -pthread -D_DEBUG")
+# # ###############################################################################
+# # For VORO_GUI binary
+# # ###############################################################################
+# set(CMAKE_CXX_STANDARD 14)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall -pthread -D_DEBUG")
 
-add_executable(VORO_GUI src/test_gui.cpp)
-target_link_libraries(VORO_GUI PUBLIC polyscope mshloader)
+# add_executable(VORO_GUI src/test_gui.cpp)
+# target_link_libraries(VORO_GUI PUBLIC polyscope mshloader)
