@@ -96,6 +96,7 @@ int get_tet_euler(const std::vector<float>& tet_vertices,
             << ", e: " << tet_edges.size() << ", f: " << tet_faces.size()
             << ", t: " << tet_indices.size() / 4 << ", and euler: " << euler
             << std::endl;
+  return euler;
 }
 
 // vertices: tet vertices
@@ -756,6 +757,7 @@ bool save_sf_mesh_with_extf(const std::string sf_path,
   }
   fout.close();
   printf("saved sf_mesh with extf at: %s \n", sf_path.c_str());
+  return true;
 }
 
 bool save_sf_mesh_scaled(const std::string sf_path_scaled,
@@ -786,6 +788,7 @@ bool save_sf_mesh_scaled(const std::string sf_path_scaled,
   GEO::Mesh sf_mesh_scaled;
   load_sf_mesh_from_internal(vertices, faces, _, sf_mesh_scaled);
   save_sf_mesh(sf_path_scaled, sf_mesh_scaled);
+  return true;
 }
 
 bool save_sf_mesh_geogram(const std::string sf_path, GEO::Mesh& sf_mesh) {

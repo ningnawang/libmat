@@ -71,7 +71,7 @@ void MedialMesh::clear() {
   mat_extf_edges.clear();
 }
 
-int MedialMesh::clear_all_tets() {
+void MedialMesh::clear_all_tets() {
   tets.clear();
   numTets_active = 0;
 

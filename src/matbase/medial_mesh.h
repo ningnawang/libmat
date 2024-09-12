@@ -199,7 +199,7 @@ class MedialMesh {
   // void sort_dual_edges(const GEO::Mesh& sf_mesh, MedialFace& mface);
 
   // for thinning
-  int clear_all_tets();
+  void clear_all_tets();
   bool delete_vertex(const int vid);
   bool delete_edge(const int eid);
   bool delete_face(const int fid);

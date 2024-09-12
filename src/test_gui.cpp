@@ -1,3 +1,6 @@
+#ifdef _MSC_VER
+  #define uint unsigned
+#endif
 #include <polyscope/polyscope.h>
 #include <polyscope/volume_mesh.h>
 #include <stdio.h>

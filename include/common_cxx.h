@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef _MSC_VER
+  #define ALIGN(n) __declspec(align(n))
+#else
+  #define ALIGN(n) __attribute__((aligned(n)))
+#endif
+
 #include <limits.h>
 
 #include <algorithm>
@@ -20,25 +26,25 @@
 
 //----------------------------------------------------------------------------
 
-struct __attribute__((aligned(8))) cint2 {
+struct ALIGN(8) cint2 {
   int x, y;
 };
-struct __attribute__((aligned(2))) cuchar2 {
+struct ALIGN(2) cuchar2 {
   unsigned char x, y;
 };
-struct __attribute__((aligned(4))) cuchar3 {
+struct ALIGN(4) cuchar3 {
   unsigned char x, y, z;
 };
-struct __attribute__((aligned(4))) cuchar4 {
+struct ALIGN(4) cuchar4 {
   unsigned char x, y, z, w;
 };
-struct __attribute__((aligned(16))) cfloat3 {
+struct ALIGN(16) cfloat3 {
   float x, y, z;
 };
-struct __attribute__((aligned(16))) cfloat4 {
+struct ALIGN(16) cfloat4 {
   float x, y, z, w;
 };
-struct __attribute__((aligned(32))) cfloat5 {
+struct ALIGN(32) cfloat5 {
   float x, y, z, w, h;
 };
 inline cuchar2 cmake_uchar2(uchar x, uchar y) {

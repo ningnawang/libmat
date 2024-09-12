@@ -23,7 +23,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 # ###############################################################################
 if(USE_GPU)
-    find_package(CUDA REQUIRED)
+    if(${MSVC})
+        find_package(CUDAToolkit REQUIRED)
+    else()
+        find_package(CUDA REQUIRED)
+    endif()
     link_directories(${CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
     include_directories("${CUDA_INCLUDE_DIRS}")
 endif(USE_GPU)
@@ -84,6 +88,15 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC -Dgeogram_EXPORTS)
 target_include_directories(${PROJECT_NAME} PUBLIC
 	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:include>)
+
+if(${MSVC})
+    target_include_directories(matbase PUBLIC src/inputs)
+    target_include_directories(matfun_fix PUBLIC src/inputs)
+    target_include_directories(matfun PUBLIC src/inputs)
+    target_include_directories(IO_CXX PUBLIC src/inputs)
+    target_include_directories(IO_CUDA PUBLIC src/inputs)
+    target_include_directories(IO_CUDA PUBLIC src/rpd3d_base)
+endif()
 
 if(${MSVC})
     if(${CMAKE_VERSION} VERSION_GREATER 3.6.0)

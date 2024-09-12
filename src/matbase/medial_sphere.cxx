@@ -244,7 +244,7 @@ double TangentConcaveLine::update_energy_value(const Vector3& theta,
   return energy;
 }
 
-bool TangentConcaveLine::update_covered_sf_fids(const SurfaceMesh& sf_mesh,
+void TangentConcaveLine::update_covered_sf_fids(const SurfaceMesh& sf_mesh,
                                                 int k) {
   this->sf_fids_covered_two.clear();
   this->sf_fids_covered_two.resize(2);

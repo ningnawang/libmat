@@ -91,7 +91,7 @@ class TangentConcaveLine {
   double update_energy_value(const Vector3& theta, const double& radius,
                              const double alpha3);
 
-  bool update_covered_sf_fids(const SurfaceMesh& sf_mesh, int k = K_NEIGH);
+  void update_covered_sf_fids(const SurfaceMesh& sf_mesh, int k = K_NEIGH);
 
  public:
   // NOTE: keep it same as FeatureEdge::operator==()

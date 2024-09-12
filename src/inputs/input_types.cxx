@@ -427,7 +427,7 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
       new_fl.t2vs_to_feid[t2vs] = fe_id;
 
       // update fe_tet_info
-      fe_tet_info.insert({{t2vs[0], t2vs[1], fe_id, fl_id}});
+      fe_tet_info.insert({{t2vs[0], t2vs[1], static_cast<int>(fe_id), static_cast<int>(fl_id)}});
 
       // update FeatureLine::tvs_neighbors (part1)
       FOR(j, 2) {

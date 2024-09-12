@@ -164,4 +164,5 @@ bool save_convex_cells_houdini(
   geometry_writer.OutputGeometry(rpd_path, geometry);
 
   printf("saved houdini file: %s \n", rpd_path.c_str());
+  return true;
 }
