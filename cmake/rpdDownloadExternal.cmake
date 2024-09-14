@@ -7,8 +7,8 @@ function(rpd_download_project name)
 	if(AUTO_DOWNLOAD)
 		download_project(
 			PROJ ${name}
-			SOURCE_DIR ${MAT_MODULE_EXTERNAL}/${name}
-			DOWNLOAD_DIR ${MAT_MODULE_EXTERNAL}/.cache/${name}
+			SOURCE_DIR ${LIBMAT_MODULE_EXTERNAL}/${name}
+			DOWNLOAD_DIR ${LIBMAT_MODULE_EXTERNAL}/.cache/${name}
 			${ARGN}
 		)
 	endif()

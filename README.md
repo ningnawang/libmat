@@ -1,9 +1,9 @@
-# MAT Modules
-Some commonly used libraries for computing the 3D medial axis given a 3D triangle mesh (or tetrahedral mesh).
+# LibMAT
+Some commonly used libraries for computing the 3D medial axis transform (MAT) given a 3D triangle mesh (or tetrahedral mesh).
 
 Starter code is from the paper "[MATFP: Computing Medial Axis Transform with Feature Preservation via Restricted Power Diagram](https://github.com/ningnawang/MATFP)".
 
-The extended work "[MATTopo: Topology-preserving Medial Axis Transform with Restricted Power Diagram](https://github.com/ningnawang/mattopo)" heavily replies on this repo using tag **v1.0**.
+The extended work "[MATTopo: Topology-preserving Medial Axis Transform with Restricted Power Diagram](https://github.com/ningnawang/mattopo)" heavily replies on this repo using tag **v0.0.1**.
 
 ## 1. Lib using GPU (set option **IS_USE_GPU** as ON)
 

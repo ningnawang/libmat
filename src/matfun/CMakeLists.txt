@@ -17,7 +17,7 @@ target_link_libraries(matfun
 
 # add common headers
 target_include_directories(matfun PUBLIC 
-    ${MAT_MODULE_INCLUDE}
-    ${MAT_MODULE_SRC}/matbase
+    ${LIBMAT_MODULE_INCLUDE}
+    ${LIBMAT_MODULE_SRC}/matbase
 )
 

@@ -1,6 +1,6 @@
 # ###############################################################################
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
-project(mat_modules)
+project(libmat)
 
 # ###############################################################################
 option(LIBMAT_IS_USE_GPU "Enable GPU for RPD" OFF)
@@ -9,11 +9,11 @@ message("LIBMAT_IS_USE_GPU: ${LIBMAT_IS_USE_GPU}")
 message("LIBMAT_IS_BUILD_TEST: ${LIBMAT_IS_BUILD_TEST}")
 
 # ###############################################################################
-set(MAT_MODULE_EXTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/extern")
-set(MAT_MODULE_CMAKE "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-set(MAT_MODULE_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
-set(MAT_MODULE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(MAT_PROJECT_NAME "mat_modules")
+set(LIBMAT_MODULE_EXTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/extern")
+set(LIBMAT_MODULE_CMAKE "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(LIBMAT_MODULE_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(LIBMAT_MODULE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(LIBMAT_PROJECT_NAME "libmat")
 
 # ###############################################################################
 # build test, before add subdirectories
@@ -27,7 +27,7 @@ endif(LIBMAT_IS_BUILD_TEST)
 #
 # we need if here because add_subdirectory(tests_cxx) will add the targets
 if (NOT TARGET mshloader)
-    add_subdirectory(${MAT_MODULE_EXTERNAL}/mshloader)
+    add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/mshloader)
 endif()
 if (NOT TARGET inputs)
     add_subdirectory(src/inputs)
@@ -54,14 +54,14 @@ endif(LIBMAT_IS_USE_GPU)
 
 # ###############################################################################
 # create the interface library
-add_library(${MAT_PROJECT_NAME} INTERFACE)
-target_include_directories(${MAT_PROJECT_NAME} INTERFACE
-    $<BUILD_INTERFACE:${MAT_MODULE_INCLUDE}>
+add_library(${LIBMAT_PROJECT_NAME} INTERFACE)
+target_include_directories(${LIBMAT_PROJECT_NAME} INTERFACE
+    $<BUILD_INTERFACE:${LIBMAT_MODULE_INCLUDE}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_directories(${MAT_PROJECT_NAME} INTERFACE "${CMAKE_BINARY_DIR}/lib")
-target_include_directories(${MAT_PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(${MAT_PROJECT_NAME} INTERFACE
+target_link_directories(${LIBMAT_PROJECT_NAME} INTERFACE "${CMAKE_BINARY_DIR}/lib")
+target_include_directories(${LIBMAT_PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(${LIBMAT_PROJECT_NAME} INTERFACE
     optimized inputs
     optimized IO_CXX
     optimized rpd3d_base
@@ -69,7 +69,7 @@ target_link_libraries(${MAT_PROJECT_NAME} INTERFACE
     optimized matfun
 )
 if(LIBMAT_IS_USE_GPU)
-    target_link_libraries(${MAT_PROJECT_NAME} INTERFACE
+    target_link_libraries(${LIBMAT_PROJECT_NAME} INTERFACE
         general cuda
         general cublas
         ###
@@ -79,5 +79,5 @@ if(LIBMAT_IS_USE_GPU)
         optimized matfun_fix
         optimized IO_CUDA
     )
-    target_link_libraries(${MAT_PROJECT_NAME} INTERFACE ${CUDA_LIBRARIES})
+    target_link_libraries(${LIBMAT_PROJECT_NAME} INTERFACE ${CUDA_LIBRARIES})
 endif(LIBMAT_IS_USE_GPU)

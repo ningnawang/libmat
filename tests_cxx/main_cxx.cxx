@@ -19,12 +19,12 @@
 #include "main_gui_cxx.h"
 
 // Scale matfp to mattopo, without scaling radius
-//  $ ./bin/MAT_MODULES_CXX ../data/mattopo/input/bug.off_.msh
+//  $ ./bin/LIBMAT_TEST_CXX ../data/mattopo/input/bug.off_.msh
 //  ../data/matfp/mat_mesh_bug.off__sf_2024-08-17_15:06:47.ma
 int main(int argc, char** argv) {
   if (3 != argc) {
     std::cerr << "Usage: " << argv[0]
-              << "./bin/MAT_MODULES <tet_mesh.msh> "
+              << "./bin/LIBMAT_TEST <tet_mesh.msh> "
                  "<matfp_medial_mesh.ma/medial_spheres.sph>"
               << std::endl;
     return 1;

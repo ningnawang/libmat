@@ -16,8 +16,8 @@ add_library(inputs STATIC
 
 # add common headers
 target_include_directories(inputs PUBLIC 
-    ${MAT_MODULE_INCLUDE}
-    ${MAT_MODULE_SRC}/inputs
+    ${LIBMAT_MODULE_INCLUDE}
+    ${LIBMAT_MODULE_SRC}/inputs
 )
 
 target_link_libraries(inputs

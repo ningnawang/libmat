@@ -1,5 +1,5 @@
 # ###############################################################################
-project(MAT_MODULES_CXX LANGUAGES CXX)
+project(LIBMAT_TEST_CXX LANGUAGES CXX)
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 # ###############################################################################
@@ -23,16 +23,16 @@ if (Eigen3_FOUND)
 endif()
 
 # add dependencies
-list(APPEND CMAKE_MODULE_PATH ${MAT_MODULE_CMAKE})
+list(APPEND CMAKE_MODULE_PATH ${LIBMAT_MODULE_CMAKE})
 option(AUTO_DOWNLOAD "Auto download dependencies" ON)
 include(rpdDependencies)
-add_subdirectory(${MAT_MODULE_EXTERNAL}/polyscope ${CMAKE_CURRENT_BINARY_DIR}/polyscope)
-add_subdirectory(${MAT_MODULE_EXTERNAL}/mshloader ${CMAKE_CURRENT_BINARY_DIR}/mshloader)
-add_subdirectory(${MAT_MODULE_SRC}/inputs ${CMAKE_CURRENT_BINARY_DIR}/inputs)
-add_subdirectory(${MAT_MODULE_SRC}/matbase ${CMAKE_CURRENT_BINARY_DIR}/matbase)
-add_subdirectory(${MAT_MODULE_SRC}/matfun ${CMAKE_CURRENT_BINARY_DIR}/matfun)
-add_subdirectory(${MAT_MODULE_SRC}/IO/IO_CXX ${CMAKE_CURRENT_BINARY_DIR}/IO/IO_CXX)
-add_subdirectory(${MAT_MODULE_SRC}/rpd3d_base ${CMAKE_CURRENT_BINARY_DIR}/rpd3d_base)
+add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/polyscope ${CMAKE_CURRENT_BINARY_DIR}/polyscope)
+add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/mshloader ${CMAKE_CURRENT_BINARY_DIR}/mshloader)
+add_subdirectory(${LIBMAT_MODULE_SRC}/inputs ${CMAKE_CURRENT_BINARY_DIR}/inputs)
+add_subdirectory(${LIBMAT_MODULE_SRC}/matbase ${CMAKE_CURRENT_BINARY_DIR}/matbase)
+add_subdirectory(${LIBMAT_MODULE_SRC}/matfun ${CMAKE_CURRENT_BINARY_DIR}/matfun)
+add_subdirectory(${LIBMAT_MODULE_SRC}/IO/IO_CXX ${CMAKE_CURRENT_BINARY_DIR}/IO/IO_CXX)
+add_subdirectory(${LIBMAT_MODULE_SRC}/rpd3d_base ${CMAKE_CURRENT_BINARY_DIR}/rpd3d_base)
 
 # ###############################################################################
 set(SOURCE_LIST
@@ -41,12 +41,12 @@ set(SOURCE_LIST
 )
 add_executable(${PROJECT_NAME} ${SOURCE_LIST})
 target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${MAT_MODULE_INCLUDE}>
+    $<BUILD_INTERFACE:${LIBMAT_MODULE_INCLUDE}>
     $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-    ### mat_modules lib
-    optimized mat_modules
+    ### libmat lib
+    optimized libmat
     ### other libs
     optimized polyscope
     optimized geogram
