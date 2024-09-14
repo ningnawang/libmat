@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 
 # geogram
 if(NOT TARGET geogram)
-    message(FATAL_ERROR "geogram not found in inputs" )
+    message(FATAL_ERROR "geogram not found in inputs")
 endif()
 
 add_library(inputs STATIC 

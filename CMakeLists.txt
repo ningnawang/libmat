@@ -3,53 +3,81 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(mat_modules)
 
 # ###############################################################################
-option(IS_USE_GPU "Enable GPU for RPD" OFF)
-option(IS_BUILD_TEST "Build tests, either CXX or CUDA" ON)
+option(LIBMAT_IS_USE_GPU "Enable GPU for RPD" OFF)
+option(LIBMAT_IS_BUILD_TEST "Build tests, either CXX or CUDA" ON)
+message("LIBMAT_IS_USE_GPU: ${LIBMAT_IS_USE_GPU}")
+message("LIBMAT_IS_BUILD_TEST: ${LIBMAT_IS_BUILD_TEST}")
 
 # ###############################################################################
 set(MAT_MODULE_EXTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/extern")
 set(MAT_MODULE_CMAKE "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(MAT_MODULE_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(MAT_MODULE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(MAT_PROJECT_NAME "mat_modules_cxx")
-if(IS_USE_GPU)
-    set(MAT_PROJECT_NAME "mat_modules_cuda")
+set(MAT_PROJECT_NAME "mat_modules")
+
+# ###############################################################################
+# build test, before add subdirectories
+if(LIBMAT_IS_BUILD_TEST)
+    message("Building CXX tests ...")
+    add_subdirectory(tests_cxx)
+endif(LIBMAT_IS_BUILD_TEST)
+
+# ###############################################################################
+# add subdirectories
+#
+# we need if here because add_subdirectory(tests_cxx) will add the targets
+if (NOT TARGET mshloader)
+    add_subdirectory(${MAT_MODULE_EXTERNAL}/mshloader)
 endif()
+if (NOT TARGET inputs)
+    add_subdirectory(src/inputs)
+endif()
+if (NOT TARGET IO_CXX)
+    add_subdirectory(src/IO/IO_CXX)
+endif()
+if (NOT TARGET rpd3d_base)
+    add_subdirectory(src/rpd3d_base)
+endif()
+if (NOT TARGET matbase)
+    add_subdirectory(src/matbase)
+endif()
+if (NOT TARGET matfun)
+    add_subdirectory(src/matfun)
+endif()
+if(LIBMAT_IS_USE_GPU)
+    add_subdirectory(src/rpd3d)
+    add_subdirectory(src/rpd3d_api)
+    add_subdirectory(src/dist2mat)
+    add_subdirectory(src/matfun_fix)
+    add_subdirectory(src/IO/IO_CUDA)
+endif(LIBMAT_IS_USE_GPU)
 
 # ###############################################################################
-if(IS_BUILD_TEST)
-    if(IS_USE_GPU)
-        message("Building CUDA tests ...")
-        # add_subdirectory(tests_cuda)
-    else()
-        message("Building CXX tests ...")
-        add_subdirectory(tests_cxx)
-    endif(IS_USE_GPU)
-endif(IS_BUILD_TEST)
-
-# ###############################################################################
+# create the interface library
 add_library(${MAT_PROJECT_NAME} INTERFACE)
 target_include_directories(${MAT_PROJECT_NAME} INTERFACE
     $<BUILD_INTERFACE:${MAT_MODULE_INCLUDE}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_directories(${MAT_PROJECT_NAME} INTERFACE "${CMAKE_BINARY_DIR}/lib")
+target_include_directories(${MAT_PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${MAT_PROJECT_NAME} INTERFACE
+    optimized inputs
     optimized IO_CXX
     optimized rpd3d_base
-    optimized inputs
     optimized matbase
     optimized matfun
 )
-if(IS_USE_GPU)
+if(LIBMAT_IS_USE_GPU)
     target_link_libraries(${MAT_PROJECT_NAME} INTERFACE
         general cuda
         general cublas
+        ###
         optimized rpd3d
         optimized rpd3d_api
         optimized dist2mat
         optimized matfun_fix
         optimized IO_CUDA
     )
-    target_link_libraries(${MAT_PROJECT_NAME} general ${CUDA_LIBRARIES})
-endif(IS_USE_GPU)
+    target_link_libraries(${MAT_PROJECT_NAME} INTERFACE ${CUDA_LIBRARIES})
+endif(LIBMAT_IS_USE_GPU)

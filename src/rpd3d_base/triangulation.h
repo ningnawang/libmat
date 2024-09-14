@@ -59,7 +59,7 @@ typedef Rt::Tetrahedron Tetrahedron_rt;
 ///////////////
 class RegularTriangulationNN : public Rt, public GEO::Counted {
  public:
-  ~RegularTriangulationNN(){};
+  ~RegularTriangulationNN() {};
 
  public:
   inline void clean() {

@@ -1,5 +1,5 @@
 # ninwang: we do not use Eigen
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.16)
 
 add_library(mshloader STATIC MshLoader.cxx MshLoader.h) 
 
