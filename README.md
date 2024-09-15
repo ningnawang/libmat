@@ -7,6 +7,8 @@ The extended work "[MATTopo: Topology-preserving Medial Axis Transform with Rest
 
 
 ## Attribution
+If you use our library in your research paper, please cite us! You can use the bibtex block below:
+
 ```
 @misc{gpytoolbox,
   title = {{LibMAT}: A C++ Library for Medial Axis Transform},
