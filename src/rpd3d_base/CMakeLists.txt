@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-find_package(CGAL REQUIRED)
+find_package(CGAL)
 
 add_library(rpd3d_base STATIC  
     voronoi_common.h   
