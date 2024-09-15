@@ -22,17 +22,17 @@ if (Eigen3_FOUND)
     include_directories(${EIGEN3_INCLUDE_DIR})
 endif()
 
-# add dependencies
-list(APPEND CMAKE_MODULE_PATH ${LIBMAT_MODULE_CMAKE})
-option(AUTO_DOWNLOAD "Auto download dependencies" ON)
-include(rpdDependencies)
-add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/polyscope ${CMAKE_CURRENT_BINARY_DIR}/polyscope)
-add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/mshloader ${CMAKE_CURRENT_BINARY_DIR}/mshloader)
-add_subdirectory(${LIBMAT_MODULE_SRC}/inputs ${CMAKE_CURRENT_BINARY_DIR}/inputs)
-add_subdirectory(${LIBMAT_MODULE_SRC}/matbase ${CMAKE_CURRENT_BINARY_DIR}/matbase)
-add_subdirectory(${LIBMAT_MODULE_SRC}/matfun ${CMAKE_CURRENT_BINARY_DIR}/matfun)
-add_subdirectory(${LIBMAT_MODULE_SRC}/IO/IO_CXX ${CMAKE_CURRENT_BINARY_DIR}/IO/IO_CXX)
-add_subdirectory(${LIBMAT_MODULE_SRC}/rpd3d_base ${CMAKE_CURRENT_BINARY_DIR}/rpd3d_base)
+# # add dependencies
+# list(APPEND CMAKE_MODULE_PATH ${LIBMAT_MODULE_CMAKE})
+# option(AUTO_DOWNLOAD "Auto download dependencies" ON)
+# include(rpdDependencies)
+# add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/polyscope ${CMAKE_CURRENT_BINARY_DIR}/polyscope)
+# add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/mshloader ${CMAKE_CURRENT_BINARY_DIR}/mshloader)
+# add_subdirectory(${LIBMAT_MODULE_SRC}/inputs ${CMAKE_CURRENT_BINARY_DIR}/inputs)
+# add_subdirectory(${LIBMAT_MODULE_SRC}/matbase ${CMAKE_CURRENT_BINARY_DIR}/matbase)
+# add_subdirectory(${LIBMAT_MODULE_SRC}/matfun ${CMAKE_CURRENT_BINARY_DIR}/matfun)
+# add_subdirectory(${LIBMAT_MODULE_SRC}/IO/IO_CXX ${CMAKE_CURRENT_BINARY_DIR}/IO/IO_CXX)
+# add_subdirectory(${LIBMAT_MODULE_SRC}/rpd3d_base ${CMAKE_CURRENT_BINARY_DIR}/rpd3d_base)
 
 # ###############################################################################
 set(SOURCE_LIST
@@ -40,6 +40,7 @@ set(SOURCE_LIST
 	main_gui_cxx.cxx
 )
 add_executable(${PROJECT_NAME} ${SOURCE_LIST})
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${LIBMAT_MODULE_INCLUDE}>
     $<INSTALL_INTERFACE:include>)

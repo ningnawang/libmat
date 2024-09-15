@@ -377,8 +377,8 @@ void convert_vs_tlfs2lvs(const std::vector<int> tet_indices,
                          std::map<aint4, int>& tet_vs_lfs2tvs_map) {
   tet_vs_lfs2tvs_map.clear();
   assert(tet_indices.size() % 4 == 0);
-  for (uint tid = 0; tid < tet_indices.size() / 4; tid++) {
-    for (uint lv = 0; lv < 4; lv++) {  // local vertices
+  for (int tid = 0; tid < tet_indices.size() / 4; tid++) {
+    for (int lv = 0; lv < 4; lv++) {  // local vertices
       aint3 f = {{tet_faces_lvid_host[lv][0], tet_faces_lvid_host[lv][1],
                   tet_faces_lvid_host[lv][2]}};
       std::sort(f.begin(), f.end());

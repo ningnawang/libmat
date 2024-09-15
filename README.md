@@ -5,7 +5,18 @@ Starter code is from the paper "[MATFP: Computing Medial Axis Transform with Fea
 
 The extended work "[MATTopo: Topology-preserving Medial Axis Transform with Restricted Power Diagram](https://github.com/ningnawang/mattopo)" heavily replies on this repo using tag **v0.0.1**.
 
-## 1. Lib using GPU (set option **IS_USE_GPU** as ON)
+
+## Attribution
+```
+@misc{gpytoolbox,
+  title = {{LibMAT}: A C++ Library for Medial Axis Transform},
+  author = {Ningna Wang},
+  note = {https://github.com/ningnawang/libmat},
+  year = {2024}
+}
+```
+
+## 1. Lib using GPU (set option **LIBMAT_IS_USE_GPU** as ON)
 
 ### 1.1. dist2mat 
 Given a 3D sample, compute its closest medial element (sphere/cone/slab) on the given medial mesh.
@@ -20,12 +31,10 @@ Libs and APIs for computing 3D RPD using CUDA.
 - fix_intf
 - fix_geo
 
-
-
 ### 1.4. IO_CUDA
 Some IO related libs related to CUDA 3D RPD output.
 
-## 2. Lib NOT using GPU (set option **IS_USE_GPU** as OFF)
+## 2. Lib NOT using GPU (set option **LIBMAT_IS_USE_GPU** as OFF)
 ### 2.1. inputs
 - SurfaceMesh (extends GEO::Mesh)
 - TetMesh

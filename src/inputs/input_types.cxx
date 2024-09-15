@@ -67,7 +67,7 @@ void SurfaceMesh::reload_sf2tet_vs_mapping() {
                                          "tet_vid");
   sf2tet_vs_mapping.clear();
   sf2tet_vs_mapping.resize(this->vertices.nb());
-  for (uint v = 0; v < this->vertices.nb(); v++) {
+  for (int v = 0; v < this->vertices.nb(); v++) {
     sf2tet_vs_mapping[v] = tet_vid_attr[v];
   }
 }
@@ -258,16 +258,16 @@ void load_sf_tet_mapping(const GEO::Mesh& sf_mesh,
   sf_vs2fids.clear();
   const GEO::Attribute<int> tet_vid_attr(sf_mesh.vertices.attributes(),
                                          "tet_vid");
-  for (uint v = 0; v < sf_mesh.vertices.nb(); v++) {
+  for (int v = 0; v < sf_mesh.vertices.nb(); v++) {
     tet2sf_vs_mapping[tet_vid_attr[v]] = v;
   }
 
-  for (uint f = 0; f < sf_mesh.facets.nb(); f++) {
+  for (int f = 0; f < sf_mesh.facets.nb(); f++) {
     int f_nb_v = sf_mesh.facets.nb_vertices(f);
     assert(f_nb_v == 3);
-    for (uint lv = 0; lv < f_nb_v; lv++) {
-      uint vid = sf_mesh.facets.vertex(f, lv);
-      uint tvid = tet_vid_attr[vid];
+    for (int lv = 0; lv < f_nb_v; lv++) {
+      int vid = sf_mesh.facets.vertex(f, lv);
+      int tvid = tet_vid_attr[vid];
       sf_vs2fids[vid].insert(f);
       tet_vs2sf_fids[tvid].insert(f);
     }
@@ -391,14 +391,14 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
   };
   if (is_debug) print_fe_group(fe_tet_groups);
   feature_lines.clear();
-  for (uint fl_id = 0; fl_id < fe_tet_groups.size(); fl_id++) {
+  for (int fl_id = 0; fl_id < fe_tet_groups.size(); fl_id++) {
     // Note: one_fe_group is pre-sorted in an order
     const std::vector<aint2>& one_fe_group = fe_tet_groups[fl_id];
     if (is_debug) print_one_fe(fl_id, one_fe_group);
     // create new feature line
     FeatureLine new_fl(fl_id, fe_type);
     new_fl.length = 0.f;
-    for (uint i = 0; i < one_fe_group.size(); i++) {
+    for (int i = 0; i < one_fe_group.size(); i++) {
       // create new feature edge
       const aint2& one_fe = one_fe_group.at(i);
       if (is_debug)

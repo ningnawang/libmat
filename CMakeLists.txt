@@ -16,34 +16,23 @@ set(LIBMAT_MODULE_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(LIBMAT_PROJECT_NAME "libmat")
 
 # ###############################################################################
-# build test, before add subdirectories
-if(LIBMAT_IS_BUILD_TEST)
-    message("Building CXX tests ...")
-    add_subdirectory(tests_cxx)
-endif(LIBMAT_IS_BUILD_TEST)
+# add dependencies if NOT exists
+# 1. geogram
+# 2. libigl
+# 3. polyscope
+# 4. nlohmann_json
+list(APPEND CMAKE_MODULE_PATH ${LIBMAT_MODULE_CMAKE})
+option(AUTO_DOWNLOAD "Auto download dependencies" ON)
+include(rpdDependencies)
 
 # ###############################################################################
 # add subdirectories
-#
-# we need if here because add_subdirectory(tests_cxx) will add the targets
-if (NOT TARGET mshloader)
-    add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/mshloader)
-endif()
-if (NOT TARGET inputs)
-    add_subdirectory(src/inputs)
-endif()
-if (NOT TARGET IO_CXX)
-    add_subdirectory(src/IO/IO_CXX)
-endif()
-if (NOT TARGET rpd3d_base)
-    add_subdirectory(src/rpd3d_base)
-endif()
-if (NOT TARGET matbase)
-    add_subdirectory(src/matbase)
-endif()
-if (NOT TARGET matfun)
-    add_subdirectory(src/matfun)
-endif()
+add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/mshloader)
+add_subdirectory(src/inputs)
+add_subdirectory(src/IO/IO_CXX)
+add_subdirectory(src/rpd3d_base)
+add_subdirectory(src/matbase)
+add_subdirectory(src/matfun)
 if(LIBMAT_IS_USE_GPU)
     add_subdirectory(src/rpd3d)
     add_subdirectory(src/rpd3d_api)
@@ -55,6 +44,7 @@ endif(LIBMAT_IS_USE_GPU)
 # ###############################################################################
 # create the interface library
 add_library(${LIBMAT_PROJECT_NAME} INTERFACE)
+target_compile_features(${LIBMAT_PROJECT_NAME} INTERFACE cxx_std_17)
 target_include_directories(${LIBMAT_PROJECT_NAME} INTERFACE
     $<BUILD_INTERFACE:${LIBMAT_MODULE_INCLUDE}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -81,3 +71,11 @@ if(LIBMAT_IS_USE_GPU)
     )
     target_link_libraries(${LIBMAT_PROJECT_NAME} INTERFACE ${CUDA_LIBRARIES})
 endif(LIBMAT_IS_USE_GPU)
+
+
+# ###############################################################################
+# build test
+if(LIBMAT_IS_BUILD_TEST)
+    message("Building CXX tests ...")
+    add_subdirectory(tests_cxx)
+endif(LIBMAT_IS_BUILD_TEST)

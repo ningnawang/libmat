@@ -53,7 +53,7 @@ endif()
 # polyscope
 if(NOT TARGET polyscope)
     rpd_download_polyscope()
-    # add_subdirectory(${EXTERNAL_DIR}/polyscope)
+    add_subdirectory(${LIBMAT_MODULE_EXTERNAL}/polyscope)
 endif()
 
 # json
