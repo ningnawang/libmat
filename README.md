@@ -62,5 +62,5 @@ Some IO related libs.
 - ConvexCellHost
 
 ## TODO list:
-1. Update CMakeLists.txt to remove some unused external dependencies, such as `polyscope`.
+1. ~~Update CMakeLists.txt to remove some unused external dependencies, such as `polyscope`.~~
 2. write more docs 
