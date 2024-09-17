@@ -63,4 +63,6 @@ Some IO related libs.
 
 ## TODO list:
 1. ~~Update CMakeLists.txt to remove some unused external dependencies, such as `polyscope`.~~
-2. write more docs 
+2. Enable platform check.
+4. Add more tests.
+5. Write more docs. 
