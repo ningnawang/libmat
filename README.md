@@ -13,7 +13,7 @@ If you use our library in your research paper, please cite us! You can use the b
 @misc{gpytoolbox,
   title = {{LibMAT}: A C++ Library for Medial Axis Transform},
   author = {Ningna Wang},
-  note = {https://github.com/ningnawang/libmat},
+  howpublished = "\url{https://github.com/ningnawang/libmat}",
   year = {2024}
 }
 ```
