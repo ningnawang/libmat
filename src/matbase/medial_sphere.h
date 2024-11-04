@@ -34,7 +34,7 @@ class TangentPlane {
  public:
   TangentPlane(const SurfaceMesh& sf_mesh, const Vector3& _normal,
                const Vector3& _point, const int _fid);
-  ~TangentPlane(){};
+  ~TangentPlane() {};
 
  public:
   void print_info() const;
@@ -73,7 +73,7 @@ class TangentConcaveLine {
  public:
   TangentConcaveLine(const SurfaceMesh& sf_mesh, const int _id,
                      const FeatureEdge& fe);
-  ~TangentConcaveLine(){};
+  ~TangentConcaveLine() {};
 
  public:
   void print_info() const;
@@ -133,7 +133,7 @@ enum Topo_Status {
 
 // each PowerCell contains multiple ConvexCellHost
 struct PowerCell {
-  PowerCell(){};
+  PowerCell() {};
   int voro_id = -1;
 
   // sum of all convex cell volumes
@@ -286,12 +286,12 @@ enum RtValidStates { Valid2Invalid = -1, NoChange = 0, Invalid2Valid = 1 };
 
 class MedialSphere {
  public:
-  MedialSphere(){};  // for mult-threads parallization
+  MedialSphere() {};  // for mult-threads parallization
   MedialSphere(int _id, Vector3 _pin, Vector3 _pin_normal, int _pin_fid,
                SphereType _type = SphereType::T_UNK, int _itr = -1);
   MedialSphere(int _id, Vector3 _center, double _radius, SphereType _type,
                int _itr = -1);
-  ~MedialSphere(){};
+  ~MedialSphere() {};
 
  public:
   void print_info() const;
@@ -450,6 +450,8 @@ void purge_deleted_medial_spheres(
 
 bool is_two_mspheres_on_same_se(const MedialSphere& msphere1,
                                 const MedialSphere& msphere2);
+bool is_two_mspheres_on_same_sl_including_corners(const MedialSphere& msphere1,
+                                                  const MedialSphere& msphere2);
 
 // must call after update_power_cells()
 void update_se_tangent_planes(const SurfaceMesh& sf_mesh,

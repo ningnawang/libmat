@@ -1109,6 +1109,32 @@ bool is_two_mspheres_on_same_se(const MedialSphere& msphere1,
   return true;
 }
 
+bool is_two_mspheres_on_same_sl_including_corners(
+    const MedialSphere& msphere1, const MedialSphere& msphere2) {
+  if (!msphere1.is_on_extf() || !msphere2.is_on_extf()) return false;
+  if (msphere1.is_on_se() && msphere2.is_on_se()) {
+    if (msphere1.se_line_id != msphere2.se_line_id) return false;
+    return true;
+  }
+  if (msphere1.is_on_corner() && msphere2.is_on_corner()) {
+    if (msphere1.corner_fes != msphere2.corner_fes) return false;
+    return true;
+  }
+  if (msphere1.is_on_se() && msphere2.is_on_corner()) {
+    if (msphere2.corner_fls.find(msphere1.se_line_id) !=
+        msphere2.corner_fls.end())
+      return true;
+    return false;
+  }
+  if (msphere1.is_on_corner() && msphere2.is_on_se()) {
+    if (msphere1.corner_fls.find(msphere2.se_line_id) !=
+        msphere1.corner_fls.end())
+      return true;
+    return false;
+  }
+  return false;
+}
+
 // must call before update_power_cells()
 void update_se_tangent_planes(const SurfaceMesh& sf_mesh,
                               const std::vector<FeatureEdge>& feature_edges,
