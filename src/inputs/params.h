@@ -22,7 +22,10 @@ struct Parameter {
   // will be updated by function get_RT_vertex_neighbors()
   int site_k = 90;
 
-  // For ideal mface area = mface_rel_len * bbox_diag_l
+  // For surface poisson disk sampling = sf_face_len * bbox_diag_l
+  float sf_face_len = 1. / 20.;
+
+  // For ideal mface len = mface_rel_len * bbox_diag_l
   float mface_rel_len = 1. / 30.;
 
   // For adding spheres on feature edges if too long

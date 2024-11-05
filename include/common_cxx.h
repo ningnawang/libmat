@@ -229,6 +229,8 @@ inline std::string get_file_ext(const std::string filePath) {
 
 inline std::string get_file_no_ext(std::string filePath) {
   std::string filename = filePath.substr(0, filePath.find_last_of("."));
+  // ftetwild save format xxx.ply_.msh
+  filename = filePath.substr(0, filename.find_last_of("."));
   return filename;
 }
 
@@ -256,9 +258,10 @@ inline std::string get_only_file_name(std::string filePath, bool withExtension,
 //
 // type:
 // 0 -> .geogram
-// 1 -> .obj
-// 2 -> .xyz
-// 3 -> .obj
+// 1 -> _sf.obj
+// 2 -> _pts.xyz
+// 3 -> _sf_01_scaled.obj // matching matfp?
+// 4 -> _extf.ma
 inline std::string get_other_file_path(std::string filePath, int type) {
   std::string file_path = get_file_no_ext(filePath);
   switch (type) {
@@ -270,7 +273,7 @@ inline std::string get_other_file_path(std::string filePath, int type) {
     case 2:
       return file_path + "_pts.xyz";
     case 3:  // no use
-      return file_path + "_sf_scaled.obj";
+      return file_path + "_sf_01_scaled.obj";
     case 4:
       return file_path + "_extf.ma";
     default:

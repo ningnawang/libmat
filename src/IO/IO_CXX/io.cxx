@@ -715,7 +715,7 @@ void get_surface_from_tet(const std::vector<float>& tet_vertices,
 
 bool save_sf_mesh(const std::string sf_path, const GEO::Mesh& sf_mesh) {
   bool ok = GEO::mesh_save(sf_mesh, sf_path);
-  std::cout << "saving sf_mesh ok: " << ok << std::endl;
+  std::cout << "saving sf_mesh at " << sf_path << ", ok: " << ok << std::endl;
   return ok;
 }
 
@@ -758,8 +758,8 @@ bool save_sf_mesh_with_extf(const std::string sf_path,
   printf("saved sf_mesh with extf at: %s \n", sf_path.c_str());
 }
 
-bool save_sf_mesh_scaled(const std::string sf_path_scaled,
-                         const GEO::Mesh& sf_mesh, const Parameter& params) {
+bool save_sf_mesh_scaled_01(const std::string sf_path_scaled,
+                            const GEO::Mesh& sf_mesh, const Parameter& params) {
   // load vertices from sf_mesh
   std::vector<std::array<float, 3>> vertices(sf_mesh.vertices.nb());
   for (uint v = 0; v < sf_mesh.vertices.nb(); ++v) {

@@ -28,6 +28,11 @@ void init_and_shrink(const SurfaceMesh &sf_mesh, const TetMesh &tet_mesh,
                      std::vector<MedialSphere> &all_medial_spheres,
                      int num_init_spheres, int itr_limit = -1,
                      bool is_debug = false);
+void init_and_shrink_given_pins(const SurfaceMesh &sf_mesh,
+                                const TetMesh &tet_mesh,
+                                std::vector<MedialSphere> &all_medial_spheres,
+                                const std::vector<v2int> &surface_pins,
+                                int itr_limit = -1, bool is_debug = false);
 
 // shrink one sphere
 bool shrink_sphere(const SurfaceMesh &sf_mesh, const AABBWrapper &aabb_wrapper,

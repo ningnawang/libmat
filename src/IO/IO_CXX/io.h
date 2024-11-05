@@ -84,8 +84,8 @@ void get_surface_from_tet(const std::vector<float>& tet_vertices,
 bool save_sf_mesh(const std::string sf_path, const GEO::Mesh& sf_mesh);
 bool save_sf_mesh_with_extf(const std::string sf_path,
                             const GEO::Mesh& sf_mesh);
-bool save_sf_mesh_scaled(const std::string sf_path_scaled,
-                         const GEO::Mesh& sf_mesh, const Parameter& param);
+bool save_sf_mesh_scaled_01(const std::string sf_path_scaled,
+                            const GEO::Mesh& sf_mesh, const Parameter& param);
 bool save_sf_mesh_geogram(const std::string sf_path, GEO::Mesh& sf_mesh);
 
 bool is_slice_by_plane(const Vector3& bary, const Parameter& params);

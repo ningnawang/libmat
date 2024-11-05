@@ -378,6 +378,9 @@ class SurfaceMesh : public GEO::Mesh {
   // same as fe_sf_fs_pairs, but only for CE
   std::set<aint2> fe_sf_fs_pairs_ce_only;        // [no use]
   std::map<aint2, int> fe_sf_fs_pairs_to_ce_id;  // mapping to FeatureEdge::id
+
+  // surface samples
+  std::vector<v2int> samples_fids;
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,
