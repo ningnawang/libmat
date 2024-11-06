@@ -262,6 +262,7 @@ inline std::string get_only_file_name(std::string filePath, bool withExtension,
 // 2 -> _pts.xyz
 // 3 -> _sf_01_scaled.obj // matching matfp?
 // 4 -> _extf.ma
+// 5 -> _pts_fid.xyz
 inline std::string get_other_file_path(std::string filePath, int type) {
   std::string file_path = get_file_no_ext(filePath);
   switch (type) {
@@ -276,6 +277,8 @@ inline std::string get_other_file_path(std::string filePath, int type) {
       return file_path + "_sf_01_scaled.obj";
     case 4:
       return file_path + "_extf.ma";
+    case 5:
+      return file_path + "_pts_fid.xyz";
     default:
       break;
   }
