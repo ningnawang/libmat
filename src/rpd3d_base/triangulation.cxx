@@ -25,17 +25,15 @@ void generate_RT_geogram(const int& n_site, const std::vector<float>& site,
   }
 }
 
-void generate_RT_CGAL_given_spheres(
-    const Parameter& params, const std::vector<float>& spheres /*4D (x,y,z,r)*/,
-    const std::vector<bool>& is_sphere_deleted, RegularTriangulationNN& rt,
-    bool is_debug) {
+void generate_RT_CGAL_given_spheres(const Parameter& params,
+                                    const std::vector<float>& spheres,
+                                    RegularTriangulationNN& rt, bool is_debug) {
   int num_spheres = spheres.size() / 4;
   if (is_debug)
     printf("[RT spheres] generate RT for %d spheres\n", num_spheres);
   rt.clean();
   // add all medial spheres
   for (int mid = 0; mid < num_spheres; mid++) {
-    if (is_sphere_deleted.at(mid)) continue;
     Point_rt p(spheres.at(mid * 4 + 0), spheres.at(mid * 4 + 1),
                spheres.at(mid * 4 + 2));
     Weight weight = std::pow(spheres.at(mid * 4 + 3), 2);

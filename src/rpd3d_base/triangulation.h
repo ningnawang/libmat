@@ -74,10 +74,9 @@ class RegularTriangulationNN : public Rt, public GEO::Counted {
   int nb_vertices;
 };
 
-void generate_RT_CGAL_given_spheres(
-    const Parameter& params, const std::vector<float>& spheres /*4D (x,y,z,r)*/,
-    const std::vector<bool>& is_sphere_deleted, RegularTriangulationNN& rt,
-    bool is_debug);
+void generate_RT_CGAL_given_spheres(const Parameter& params,
+                                    const std::vector<float>& spheres,
+                                    RegularTriangulationNN& rt, bool is_debug);
 
 void generate_RT_CGAL_and_mark_valid_spheres(
     const Parameter& params, std::vector<MedialSphere>& all_medial_spheres,
