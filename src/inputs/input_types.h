@@ -149,24 +149,36 @@ class TetMesh {
   // mapping vertex from <tid, lfid1, lfid2, lfid3> -> tvid
   std::map<aint4, int> tet_vs_lfs2tvs_map;
   // each feature line is grouped by feature edges
-  // index NOT matching FeatureLine::id
+  // 1. index NOT matching FeatureLine::id
+  // 2. index starts from 0
+  // 3. index should have NO intersection with TetMesh::ce_lines
   std::vector<FeatureLine> se_lines;
 
   // for concave edges
   // each feature line is grouped by feature edges
-  // index NOT matching FeatureLine::id
+  // 1. index NOT matching FeatureLine::id
+  // 2. index starts from TetMesh::se_lines.size()
+  // 3. index should have NO intersection with TetMesh::se_lines
   std::vector<FeatureLine> ce_lines;
-  // allow fl to merge with other adjacent feature lines
-  // if the corner is only adjacent to concave lines, no convex lines
+  // allow fl to merge with other adjacent feature lines,
+  // if the corner is only adjacent to concave lines, no convex lines,
   // include the id of itself
+  //
   // updated by function update_allow_to_merge_ce_line_ids()
   //
   // used for clustering fids for msphere type
   // RPD3D_Wrapper::cluster_sphere_type_using_samples_fids()
+  // [deprecated]
   std::map<int, std::set<int>> allow_to_merge_ce_line_ids;
+
+  // not allow fl to merge with other adjacent feature lines,
+  // controlled by TetMesh::corners_se_tet
+  // updated by function update_not_allow_to_merge_ce_line_ids()
+  std::map<int, std::set<int>> not_allow_to_merge_ce_line_ids;
 
   // for concave corners
   // adjacent to > 2 concave edges, no sharp edges
+  // converted from TetMesh::corners_ce_tet
   std::vector<ConcaveCorner> cc_corners;
 
   // 1. regular se corner (connect to > 2 sharp edges)
@@ -174,18 +186,21 @@ class TetMesh {
   //    just to make sure we will add a zero-radius medial sphere
   std::set<int> corners_se_tet;
   // corner_tvs -> set of FeatureLine::id
+  // defined by corners_se_tet
+  // matching both TetMesh::se_lines and TetMesh::ce_lines
   std::map<int, std::set<int>> corner2fl;
   // corner_tvs -> set of FeatureEdge::id
   std::map<int, std::set<int>> corner2fe;
-  // FeatureLine::id -> set of corner MedialSphere::id
+  // FeatureLine::id -> set of corner MedialSphere::isd
   // updated in init_corner_spheres()
   std::map<int, std::set<int>> fl2corner_sphere;
   // for concave corners (#adjacent_ce > 2 only)
+  // convert to TetMesh::cc_corners using function store_concave_corners()
   std::set<int> corners_ce_tet;
   // not real corners
-  // adjacent to > 2 se and ce
+  // adjacent to > 2 (se or ce)
   // used to separate sharp edge (se) into different groups of regions
-  // including all corners_se_tet
+  // including all corners_se_tet and corners_ce_tet
   std::set<int> corner_fake_tet;
 };
 
@@ -397,6 +412,7 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh &sf_mesh,
 void store_feature_line(const TetMesh &tet_mesh, const SurfaceMesh &sf_mesh,
                         const EdgeType &fe_type,
                         const std::vector<std::vector<aint2>> fe_tet_groups,
+                        const int fl_starts_id,
                         std::vector<FeatureEdge> &feature_edges,
                         std::vector<FeatureLine> &feature_lines,
                         std::set<aint4> &fe_tet_info,

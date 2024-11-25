@@ -376,6 +376,7 @@ void print_fe_group(const std::vector<std::vector<aint2>>& fe_groups) {
 void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
                         const EdgeType& fe_type,
                         const std::vector<std::vector<aint2>> fe_tet_groups,
+                        const int fl_starts_id,
                         std::vector<FeatureEdge>& feature_edges,
                         std::vector<FeatureLine>& feature_lines,
                         std::set<aint4>& fe_tet_info,
@@ -391,10 +392,13 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
   };
   if (is_debug) print_fe_group(fe_tet_groups);
   feature_lines.clear();
-  for (int fl_id = 0; fl_id < fe_tet_groups.size(); fl_id++) {
+  int group_id = 0;      // matching index of fe_tet_groups
+  int fl_id = group_id;  // matching FeatureLine::id
+  if (fl_starts_id != -1) fl_id = fl_starts_id;
+  for (; group_id < fe_tet_groups.size(); group_id++, fl_id++) {
     // Note: one_fe_group is pre-sorted in an order
-    const std::vector<aint2>& one_fe_group = fe_tet_groups[fl_id];
-    if (is_debug) print_one_fe(fl_id, one_fe_group);
+    const std::vector<aint2>& one_fe_group = fe_tet_groups[group_id];
+    if (is_debug) print_one_fe(group_id, one_fe_group);
     // create new feature line
     FeatureLine new_fl(fl_id, fe_type);
     new_fl.length = 0.f;

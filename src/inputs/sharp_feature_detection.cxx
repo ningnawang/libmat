@@ -240,8 +240,8 @@ void find_feature_edges(const Parameter& args,
   }
 
   // find all fake corners
-  // connect to >=3 sharp edges or concave edges
-  // including corners_se
+  // connect to > 2 sharp edges or concave edges,
+  // including both corners_se and corners_ce
   for (const auto& pair : neighbor_v_se) {
     int vid = pair.first;
     // 1. regular corner (connect to > 2 sharp edges)
@@ -390,6 +390,7 @@ void convert_vs_tlfs2lvs(const std::vector<int> tet_indices,
   // std::endl;
 }
 
+// [deprecated]
 void update_allow_to_merge_ce_line_ids(
     const std::vector<ConcaveCorner>& cc_corners,
     std::map<int, std::set<int>>& allow_to_merge_ce_line_ids) {
@@ -400,8 +401,46 @@ void update_allow_to_merge_ce_line_ids(
       allow_to_merge_ce_line_ids[fl_id].insert(cc.adj_fl_ids.begin(),
                                                cc.adj_fl_ids.end());
     }
+  }  // for a concave corner
+}
 
-  }  // for a concave  corner
+void update_not_allow_to_merge_ce_line_ids(
+    const std::vector<FeatureLine>& ce_lines,
+    const std::set<int>& corners_se_tet,
+    const std::map<int, std::set<int>>& corner2fl,
+    std::map<int, std::set<int>>& not_allow_to_merge_ce_line_ids) {
+  // get all ce_line_ids
+  std::set<int> all_ce_line_ids;
+  for (const auto& ce : ce_lines) {
+    all_ce_line_ids.insert(ce.id);
+  }
+  // update not_allow_to_merge_ce_line_ids
+  not_allow_to_merge_ce_line_ids.clear();
+  for (const auto& corner_id : corners_se_tet) {
+    // including both se and ce lines
+    assert(corner2fl.find(corner_id) != corner2fl.end());
+    const auto& fls = corner2fl.at(corner_id);
+    for (const auto& fl_id : fls) {
+      if (all_ce_line_ids.find(fl_id) == all_ce_line_ids.end()) continue;
+      for (const auto& fl_id2 : fls) {
+        if (fl_id == fl_id2) continue;
+        if (all_ce_line_ids.find(fl_id2) == all_ce_line_ids.end()) continue;
+        not_allow_to_merge_ce_line_ids[fl_id].insert(fl_id2);
+      }
+    }
+  }  // for corners_se_tet
+
+  // print_set<int>(corners_se_tet);
+  // print_set<int>(all_ce_line_ids);
+  // printf("-------------------------------------------------\n");
+  // // print allow_to_merge_ce_line_ids
+  // for (const auto& pair : not_allow_to_merge_ce_line_ids) {
+  //   printf("concave line %d CANNOT merge with: [", pair.first);
+  //   for (const auto& fl_id : pair.second) {
+  //     printf("%d, ", fl_id);
+  //   }
+  //   printf("]\n");
+  // }
 }
 
 void convert_fe_groups_to_set(std::vector<std::vector<aint3>>& fe_groups,
@@ -683,7 +722,7 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   map_corners_sf2tet(sf2tet_vs_mapping, corners_ce_sf, tet_mesh.corners_ce_tet);
   map_corners_sf2tet(sf2tet_vs_mapping, corners_fake_sf,
                      tet_mesh.corner_fake_tet);
-  print_corners(tet_mesh.corner_fake_tet);
+  // print_corners(tet_mesh.corner_fake_tet);
 
   // here we use TetMesh::corner_fake_tet
   // to split SE and CE into different groups
@@ -702,15 +741,21 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   // format <tet_vs_min, tet_vs_max, fe_id, fe_line_id>
   std::set<aint4> se_tet_info, ce_tet_info;
   store_feature_line(tet_mesh, sf_mesh, EdgeType::SE, se_tet_groups,
-                     tet_mesh.feature_edges, tet_mesh.se_lines, se_tet_info,
-                     tet_mesh.corners_se_tet, tet_mesh.corner2fl,
-                     tet_mesh.corner2fe, false /*is_debug*/);
+                     0 /*fl_starts_id*/, tet_mesh.feature_edges,
+                     tet_mesh.se_lines, se_tet_info, tet_mesh.corners_se_tet,
+                     tet_mesh.corner2fl, tet_mesh.corner2fe,
+                     false /*is_debug*/);
   printf("[Feature] stored SphereType::SE line size: %ld \n",
          tet_mesh.se_lines.size());
+  assert(tet_mesh.se_lines.size() == tet_mesh.se_lines.back().id + 1);
   store_feature_line(tet_mesh, sf_mesh, EdgeType::CE, ce_tet_groups,
+                     tet_mesh.se_lines.size() /*fl_starts_id*/,
                      tet_mesh.feature_edges, tet_mesh.ce_lines, ce_tet_info,
                      tet_mesh.corners_se_tet, tet_mesh.corner2fl,
                      tet_mesh.corner2fe, false /*is_debug*/);
+  assert(tet_mesh.se_lines.size() + tet_mesh.ce_lines.size() ==
+         tet_mesh.ce_lines.back().id + 1);
+
   sf_mesh.update_fe_sf_fs_pairs_to_ce_id(tet_mesh.feature_edges);
   printf("[Feature] stored SphereType::CE line size: %ld \n",
          tet_mesh.ce_lines.size());
@@ -731,6 +776,9 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   store_concave_corners(tet_mesh.corners_ce_tet, tet_mesh.feature_edges,
                         tet_mesh.cc_corners, false);
   // update FeatureLine::allow_to_merge_fl_ids
-  update_allow_to_merge_ce_line_ids(tet_mesh.cc_corners,
-                                    tet_mesh.allow_to_merge_ce_line_ids);
+  // update_allow_to_merge_ce_line_ids(tet_mesh.cc_corners,
+  //                                   tet_mesh.allow_to_merge_ce_line_ids);
+  update_not_allow_to_merge_ce_line_ids(
+      tet_mesh.ce_lines, tet_mesh.corners_se_tet, tet_mesh.corner2fl,
+      tet_mesh.not_allow_to_merge_ce_line_ids);
 }
