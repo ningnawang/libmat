@@ -341,6 +341,7 @@ class MedialSphere {
   bool is_on_extf() const;
   bool is_on_sheet() const;
   bool is_on_junction() const;
+  bool is_on_seam_endpoint() const;
 
   void topo_clear();
   void pcell_insert(int cell_id);

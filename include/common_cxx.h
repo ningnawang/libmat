@@ -384,10 +384,14 @@ void set_intersection(const std::unordered_set<T>& s1,
 }
 
 template <typename T>
-inline bool has_intersection(const std::set<T>& s1, const std::set<T>& s2) {
-  std::vector<int> common;
-  set_intersection(s1, s2, common);
-  return common.empty() ? false : true;
+bool has_intersection(const std::set<T>& s1, const std::set<T>& s2) {
+  if (s1.empty() || s2.empty()) return false;
+  for (uint x : s1) {
+    if (s2.count(x)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 template <typename T>
@@ -461,8 +465,9 @@ inline int get_CC_given_neighbors(
 }
 
 template <typename T>
-inline void print_set(const std::set<T>& to_print) {
-  printf("[");
+inline void print_set(const std::set<T>& to_print,
+                      const std::string name = "") {
+  printf("%s: [", name);
   for (const auto& v : to_print) {
     std::cout << v << ", ";
   }

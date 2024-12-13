@@ -307,6 +307,8 @@ void MedialSphere::print_info() const {
       "is_on_ce_pre: %d, is_on_ce_pre_or_fix: %d, se_line_id: %d\n",
       id, is_deleted, dup_cnt, is_on_se(), is_on_corner(), is_on_ce_pre(),
       is_on_ce_pre_or_fix(), se_line_id);
+  if (is_on_se()) printf("se_edge_id: %d\n", se_edge_id);
+  if (is_on_corner()) print_set<int>(corner_fls, "corner_fls");
   printf(
       "center: (%f,%f,%f), radius: %f, type: %d, is_radius_dilated: %d, "
       "min_sq_dist_2cc: %f\n",
@@ -317,6 +319,7 @@ void MedialSphere::print_info() const {
          pcell.topo_status, covered_sf_fids_in_group.size());
   printf("RT is_rt_valid: %d, rt_change_status: %d\n", is_rt_valid,
          rt_change_status);
+
   // printf("rt_neigh_ids_prev: [");
   // for (const auto rt_neigh_id_prev : rt_neigh_ids_prev)
   //   printf("%d, ", rt_neigh_id_prev);
@@ -946,6 +949,12 @@ bool MedialSphere::is_on_junction() const {
   return false;
 }
 
+bool MedialSphere::is_on_seam_endpoint() const {
+  if (is_on_corner()) return true;
+  if (is_on_junction()) return true;
+  return false;
+}
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // setup different threshold
@@ -1117,8 +1126,8 @@ bool is_two_mspheres_on_same_sl_including_corners(
     return true;
   }
   if (msphere1.is_on_corner() && msphere2.is_on_corner()) {
-    if (msphere1.corner_fes != msphere2.corner_fes) return false;
-    return true;
+    if (has_intersection(msphere1.corner_fes, msphere2.corner_fes)) return true;
+    return false;
   }
   if (msphere1.is_on_se() && msphere2.is_on_corner()) {
     if (msphere2.corner_fls.find(msphere1.se_line_id) !=

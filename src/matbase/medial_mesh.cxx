@@ -548,6 +548,10 @@ void MedialMesh::compute_common_diff_for_medge(const SurfaceMesh& sf_mesh,
   }
 
   // mark medial edge if on external feature
+  //
+  // if (is_two_mspheres_on_same_sl_including_corners(A, B)) {
+  //   medge.is_extf = true;
+  // }
   if (A.is_on_se() && B.is_on_se() && A.se_line_id == B.se_line_id &&
       (medge.v1_non_common_tan_pls.empty() ||
        medge.v2_non_common_tan_pls.empty())) {
@@ -613,6 +617,7 @@ void MedialMesh::generate_medial_edges(const SurfaceMesh& sf_mesh,
     //   me.first[0], me.first[1], me.second);
     // }
 
+    // TODO: deprecate? seems not used anymore
     if (is_compute_common_diff_sfids) {
       // for computing common/diff tangent planes
       compute_common_diff_for_medge(sf_mesh, me, eid);
