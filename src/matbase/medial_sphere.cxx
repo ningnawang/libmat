@@ -307,7 +307,7 @@ void MedialSphere::print_info() const {
       "is_on_ce_pre: %d, is_on_ce_pre_or_fix: %d, se_line_id: %d\n",
       id, is_deleted, dup_cnt, is_on_se(), is_on_corner(), is_on_ce_pre(),
       is_on_ce_pre_or_fix(), se_line_id);
-  if (is_on_se()) printf("se_edge_id: %d\n", se_edge_id);
+  if (is_on_se()) printf("se_line_id: %d\n", se_line_id);
   if (is_on_corner()) print_set<int>(corner_fls, "corner_fls");
   printf(
       "center: (%f,%f,%f), radius: %f, type: %d, is_radius_dilated: %d, "

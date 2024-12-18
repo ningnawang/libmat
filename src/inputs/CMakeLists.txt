@@ -12,6 +12,8 @@ add_library(inputs STATIC
     params.h
     sharp_feature_detection.h
     sharp_feature_detection.cxx
+    mesh_AABB.h
+    mesh_AABB.cxx
 )
 
 

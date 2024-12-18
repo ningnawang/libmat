@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "common_geogram.h"
+#include "mesh_AABB.h"
 #include "params.h"
 
 enum EdgeType {
@@ -211,9 +212,9 @@ class AABBWrapper {
   GEO::Mesh ce_mesh;  // for concave lines
   bool is_ce_mesh_exist = false;
 
-  std::shared_ptr<GEO::MeshFacetsAABB> sf_tree;
-  std::shared_ptr<GEO::MeshFacetsAABB> se_tree;  // sharp edge tree
-  std::shared_ptr<GEO::MeshFacetsAABB> ce_tree;  // convex edge tree
+  std::shared_ptr<GEO::MeshFacetsAABBLambda> sf_tree;
+  std::shared_ptr<GEO::MeshFacetsAABBLambda> se_tree;  // sharp edge tree
+  std::shared_ptr<GEO::MeshFacetsAABBLambda> ce_tree;  // convex edge tree
 
  public:
   AABBWrapper() {}
@@ -246,11 +247,31 @@ class AABBWrapper {
     return fidx;
   }
 
+  inline int project_to_sf_get_nearest_face_with_lambdas(
+      Vector3 &p, double &sq_dist, double &lambda0, double &lambda1,
+      double &lambda2) const {
+    Vector3 nearest_p;
+    sq_dist = std::numeric_limits<double>::max();  //??
+    int fidx = sf_tree->nearest_facet_lambdas(p, nearest_p, sq_dist, lambda0,
+                                              lambda1, lambda2);
+    // printf("lambda0 %f, lambda1 %f, lambda2 %f\n", lambda0, lambda1,
+    // lambda2); Vector3 p0 = sf_tree->mesh()->vertices.point(
+    //     sf_tree->mesh()->facets.vertex(fidx, 0));
+    // Vector3 p1 = sf_tree->mesh()->vertices.point(
+    //     sf_tree->mesh()->facets.vertex(fidx, 1));
+    // Vector3 p2 = sf_tree->mesh()->vertices.point(
+    //     sf_tree->mesh()->facets.vertex(fidx, 2));
+    // Vector3 tmp = p0 * lambda0 + p1 * lambda1 + p2 * lambda2;
+    // assert(GEO::Geom::distance(nearest_p, tmp) < 1e-6);
+    p = nearest_p;
+    return fidx;
+  }
+
   inline bool get_ray_nearest_intersection(const Vector3 &orig,
                                            const Vector3 &dir, Vector3 &p,
                                            int &fid) const {
     GEO::Ray R(orig, dir);
-    GEO::MeshFacetsAABB::Intersection I;
+    GEO::MeshFacetsAABBLambda::Intersection I;
     bool result = sf_tree->ray_nearest_intersection(R, I);
     p = I.p;
     fid = I.f;
@@ -358,6 +379,7 @@ class SurfaceMesh : public GEO::Mesh {
   void cache_sf_fid_neighs();
   void cache_sf_fid_neighs_no_cross();
   void cache_sf_fid_krings_no_cross_se_only(const int k);
+  void cache_sf_fid_to_fe_id(const std::vector<FeatureEdge> &feature_edges);
   bool get_sf_fid_krings_no_cross_se_only(const int fid_given);
   bool get_sf_fid_krings_no_cross_se_only(const int fid_given,
                                           std::set<int> &kring_neighbors) const;
@@ -367,6 +389,16 @@ class SurfaceMesh : public GEO::Mesh {
       const int k, int tan_fid, std::set<int> &kring_neighbors) const;
   void update_fe_sf_fs_pairs_to_ce_id(
       const std::vector<FeatureEdge> &feature_edges);
+
+  // check if the projection point is on FE if any,
+  // either CE or SE as requested in check_proj_type
+  //
+  // return: <SurfaceMesh::fid, FeatureEdge::id>
+  // -1: no fid/FE found
+  // >=0: id/FE id
+  aint2 project_to_sf_and_get_FE_if_any(
+      const std::vector<FeatureEdge> &feature_edges,
+      const EdgeType &check_proj_type, Vector3 &p, bool is_debug) const;
 
  public:
   bool is_non_cad = false;
@@ -396,6 +428,11 @@ class SurfaceMesh : public GEO::Mesh {
 
   // surface samples
   std::vector<v2int> samples_fids;
+
+  // fid -> FeatureEdge::id
+  // updated by function SurfaceMesh::cache_sf_fid_to_fe_id()
+  // used by function SurfaceMesh::project_to_sf_and_get_FE_if_any()
+  std::map<int, int> sf_fid_to_fe_id;
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,
