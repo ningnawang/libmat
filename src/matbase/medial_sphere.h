@@ -69,6 +69,9 @@ class TangentPlane {
   std::set<int> sf_fids_covered;  // fid's k-ring sf_mesh neighbors
 };
 
+// TODO:
+// 1. change name to TangentConcaveEdge
+// 2. remove id_fl, id_fe, t2vs_ids, t2vs_pos, adj_sf_fs_pair, adj_normals
 class TangentConcaveLine {
  public:
   TangentConcaveLine(const SurfaceMesh& sf_mesh, const int _id,

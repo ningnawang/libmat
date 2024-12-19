@@ -49,6 +49,7 @@ bool TangentPlane::is_same_normal(const Vector3& anormal,
 bool TangentPlane::is_same_tan_pl(const TangentPlane& tan_pl2,
                                   bool is_only_normal,
                                   double eps_p_dist) const {
+  if (tan_pl2.fid == fid) return true;
   if (!is_same_normal(tan_pl2.normal)) {
     // if (is_debug) printf("NOT same normal!!\n");
     return false;
@@ -129,8 +130,10 @@ void TangentConcaveLine::print_info() const {
       "---- TangentConcaveLine: id: %d, id_fe: %d, id_fl: %d, is_deleted, "
       "energy: %f, energy_over_sq_radius: %f, tan_point (%f,%f,%f), normal: "
       "(%f,%f,%f) ",
-      id, id_fe, id_fl, is_deleted, energy, energy_over_sq_radius, tan_point[0],
-      tan_point[1], tan_point[2], normal[0], normal[1], normal[2]);
+      id, id_fe, id_fl, is_deleted, energy == DBL_MAX ? 1e10 : energy,
+      energy_over_sq_radius == DBL_MAX ? 1e10 : energy_over_sq_radius,
+      tan_point[0], tan_point[1], tan_point[2], normal[0], normal[1],
+      normal[2]);
   // printf("adj_normals (%f,%f,%f) - (%f,%f,%f), ", adj_normals[0][0],
   //        adj_normals[0][1], adj_normals[0][2], adj_normals[1][0],
   //        adj_normals[1][1], adj_normals[1][2]);
