@@ -80,6 +80,7 @@ bool try_add_tangent_cc_line(const int num_itr, MedialSphere& mat_p,
 bool is_break_iteration(const int iteration_limit, const int num_itr,
                         const double alpha1, const double alpha2,
                         const double alpha3, const double break_threshold,
+                        const bool is_break_use_energy_over_sq_radius,
                         const std::vector<FeatureEdge>& feature_edges,
                         const SurfaceMesh& sf_mesh,
                         const AABBWrapper& aabb_wrapper, MedialSphere& mat_p,
@@ -178,12 +179,21 @@ bool is_break_iteration(const int iteration_limit, const int num_itr,
         mat_p.id, num_itr, sum_energy, sum_energy_over_sq_radius);
   }
   // this minima is small, good
-  if (sum_energy_over_sq_radius < break_threshold) {
+  if (is_break_use_energy_over_sq_radius &&
+      (sum_energy_over_sq_radius < break_threshold)) {
     if (is_debug)
       printf(
           "[Iterate Break] sum_energy_over_sq_radius %f < break_threshold "
           "%f, minima is really small, good \n",
           sum_energy_over_sq_radius, break_threshold);
+    is_good = true;
+    return true;  // break
+  } else if (sum_energy < break_threshold) {
+    if (is_debug)
+      printf(
+          "[Iterate Break] sum_energy %f < break_threshold %f, minima is "
+          "really small, good\n",
+          sum_energy, break_threshold);
     is_good = true;
     return true;  // break
   }
@@ -620,9 +630,7 @@ bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
                     const std::set<aint2>& fe_sf_fs_pairs,
                     const std::vector<FeatureEdge>& feature_edges,
                     MedialSphere& mat_p, bool is_debug,
-                    const bool is_check_new_tan_plane, double alpha1,
-                    double alpha2, double alpha3, const double break_threshold,
-                    const int itr_limit) {
+                    iter_params iter_param) {
   if (is_debug) {
     printf("[Iterate] calling iterate_sphere for mat_p: %d, is_debug: %d \n",
            mat_p.id, is_debug);
@@ -644,18 +652,20 @@ bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
     // update is_good
     // also update (pN, nN)
     bool is_break = is_break_iteration(
-        itr_limit, num_itr, alpha1, alpha2, alpha3, break_threshold,
-        feature_edges, sf_mesh, aabb_wrapper, mat_p, sum_energy_over_sq_radius,
-        pN, nN, c_pN, c_nN, is_good, is_check_new_tan_plane, is_debug);
+        iter_param.itr_limit, num_itr, iter_param.alpha1, iter_param.alpha2,
+        iter_param.alpha3, iter_param.break_threshold,
+        iter_param.is_break_use_energy_over_sq_radius, feature_edges, sf_mesh,
+        aabb_wrapper, mat_p, sum_energy_over_sq_radius, pN, nN, c_pN, c_nN,
+        is_good, iter_param.is_check_new_tan_plane, is_debug);
     if (is_break) break;
     if (is_debug)
       printf("[Iterate] Update sphere then update tangent points \n");
     // Step 1: update sphere given tangent points
     Vector3 new_center(0., 0., 0.);
     double new_radius = 0.;
-    bool is_success =
-        update_sphere_given_plN_opt(alpha1, alpha2, pN, nN, alpha3, c_pN, c_nN,
-                                    new_center, new_radius, is_debug);
+    bool is_success = update_sphere_given_plN_opt(
+        iter_param.alpha1, iter_param.alpha2, pN, nN, iter_param.alpha3, c_pN,
+        c_nN, new_center, new_radius, is_debug);
     if (is_debug)
       printf("[Iterate] update_sphere_given_plN_opt is_success: %d\n",
              is_success);
@@ -670,9 +680,10 @@ bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
     mat_p.radius = new_radius;
 
     // Step 2: update tangent points given new sphere
-    update_tangent_points_on_tan_pls(sf_mesh, fe_sf_fs_pairs, mat_p, alpha1,
-                                     alpha2, is_debug /*is_debug*/);
-    update_tangent_points_on_cc_lines(mat_p, alpha3, is_debug);
+    update_tangent_points_on_tan_pls(sf_mesh, fe_sf_fs_pairs, mat_p,
+                                     iter_param.alpha1, iter_param.alpha2,
+                                     is_debug /*is_debug*/);
+    update_tangent_points_on_cc_lines(mat_p, iter_param.alpha3, is_debug);
     if (is_debug) {
       printf("[Iterate] mat_p %d has tangent elements after update: \n",
              mat_p.id);
@@ -743,10 +754,8 @@ bool iterate_sphere_reversed(const SurfaceMesh& sf_mesh,
                              const AABBWrapper& aabb_wrapper,
                              const std::set<aint2>& fe_sf_fs_pairs,
                              const std::vector<FeatureEdge>& feature_edges,
-                             MedialSphere& mat_p, bool is_check_new_tan_plane,
-                             bool is_debug, double alpha1, double alpha2,
-                             double alpha3, const double break_threshold,
-                             const int itr_limit) {
+                             MedialSphere& mat_p, bool is_debug,
+                             iter_params params) {
   if (is_debug) {
     printf(
         "[Iterate Reversed] calling iterate_sphere for mat_p: %d, is_debug: "
@@ -773,15 +782,17 @@ bool iterate_sphere_reversed(const SurfaceMesh& sf_mesh,
     // update is_good
     // also update (pN, nN)
     bool is_break = is_break_iteration(
-        itr_limit, num_itr, alpha1, alpha2, alpha3, break_threshold,
+        params.itr_limit, num_itr, params.alpha1, params.alpha2, params.alpha3,
+        params.break_threshold, params.is_break_use_energy_over_sq_radius,
         feature_edges, sf_mesh, aabb_wrapper, mat_p, sum_energy_over_sq_radius,
-        pN, nN, c_pN, c_nN, is_good, is_check_new_tan_plane, is_debug);
+        pN, nN, c_pN, c_nN, is_good, params.is_check_new_tan_plane, is_debug);
     if (is_break) break;
 
     // Step 2: update tangent points given new sphere
-    update_tangent_points_on_tan_pls(sf_mesh, fe_sf_fs_pairs, mat_p, alpha1,
-                                     alpha2, is_debug /*is_debug*/);
-    update_tangent_points_on_cc_lines(mat_p, alpha3, is_debug);
+    update_tangent_points_on_tan_pls(sf_mesh, fe_sf_fs_pairs, mat_p,
+                                     params.alpha1, params.alpha2,
+                                     is_debug /*is_debug*/);
+    update_tangent_points_on_cc_lines(mat_p, params.alpha3, is_debug);
     if (is_debug) {
       printf(
           "[Iterate Reversed] mat_p %d has tangent elements after update: \n",
@@ -793,9 +804,9 @@ bool iterate_sphere_reversed(const SurfaceMesh& sf_mesh,
     // Step 1: update sphere given tangent points
     Vector3 new_center(0., 0., 0.);
     double new_radius = 0.;
-    bool is_success =
-        update_sphere_given_plN_opt(alpha1, alpha2, pN, nN, alpha3, c_pN, c_nN,
-                                    new_center, new_radius, is_debug);
+    bool is_success = update_sphere_given_plN_opt(
+        params.alpha1, params.alpha2, pN, nN, params.alpha3, c_pN, c_nN,
+        new_center, new_radius, is_debug);
     if (is_debug)
       printf("[Iterate Reversed] update_sphere_given_plN_opt is_success: %d\n",
              is_success);
@@ -938,8 +949,7 @@ void relax_and_iterate_spheres(const SurfaceMesh& sf_mesh,
     // update tangent planes (step2) then update sphere (step1)
     if (!iterate_sphere_reversed(sf_mesh, sf_mesh.aabb_wrapper,
                                  sf_mesh.fe_sf_fs_pairs, feature_edges,
-                                 new_msphere, is_check_new_tan_plane,
-                                 is_debug /*is_debug*/)) {
+                                 new_msphere, is_debug /*is_debug*/)) {
       // msphere.is_deleted = true;
       // printf("[Relax] after relax, msphere %d is deleted \n", msphere.id);
 
@@ -1028,8 +1038,7 @@ void relax_and_iterate_spheres_ODT(
     // update tangent planes (step2) then update sphere (step1)
     if (!iterate_sphere_reversed(sf_mesh, sf_mesh.aabb_wrapper,
                                  sf_mesh.fe_sf_fs_pairs, feature_edges,
-                                 new_msphere, is_check_new_tan_plane,
-                                 is_debug /*is_debug*/)) {
+                                 new_msphere, is_debug /*is_debug*/)) {
       // msphere.is_deleted = true;
       // printf("[Relax ODT] after relax, msphere %d is deleted \n",
       // msphere.id);
@@ -1133,9 +1142,9 @@ void relax_and_iterate_spheres_Laplacian(
 
     // then iterate spheres
     // update tangent planes (step2) then update sphere (step1)
-    if (!iterate_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
-                        feature_edges, msphere, is_debug /*is_debug*/,
-                        true /*is_step2_first*/)) {
+    if (!iterate_sphere_reversed(sf_mesh, sf_mesh.aabb_wrapper,
+                                 sf_mesh.fe_sf_fs_pairs, feature_edges, msphere,
+                                 is_debug /*is_debug*/)) {
       msphere.is_deleted = true;
       printf("[Relax] after relax, msphere %d is deleted \n", msphere.id);
     }
@@ -1264,9 +1273,9 @@ void relax_and_iterate_spheres_both(
 
     // then iterate spheres
     // update tangent planes (step2) then update sphere (step1)
-    if (!iterate_sphere(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
-                        feature_edges, msphere, is_debug /*is_debug*/,
-                        true /*is_step2_first*/)) {
+    if (!iterate_sphere_reversed(sf_mesh, sf_mesh.aabb_wrapper,
+                                 sf_mesh.fe_sf_fs_pairs, feature_edges, msphere,
+                                 is_debug /*is_debug*/)) {
       msphere.is_deleted = true;
       printf("[Relax] after relax, msphere %d is deleted \n", msphere.id);
     }

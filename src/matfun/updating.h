@@ -19,29 +19,54 @@
 // alpha2 = 1;     // energy of distance to tangent plane
 // alpha3 = 1;     // energy of distance to concave line
 
+struct iter_params {
+  bool is_check_new_tan_plane;
+  double alpha1;
+  double alpha2;
+  double alpha3;
+  double break_threshold;
+  int itr_limit;
+  bool is_break_use_energy_over_sq_radius;
+
+  iter_params() {
+    is_check_new_tan_plane = true;
+    alpha1 = 0.01;
+    alpha2 = 1.;
+    alpha3 = 1.;
+    break_threshold = SCALAR_ZERO_3;
+    itr_limit = 30;
+    is_break_use_energy_over_sq_radius = true;
+  };
+};
+
 // Two steps:
 // 1. update medial sphere center and radius
 // 2. update tangent planes and concave lines
-bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
-                    const std::set<aint2>& fe_sf_fs_pairs,
-                    const std::vector<FeatureEdge>& feature_edges,
-                    MedialSphere& mat_p, bool is_debug,
-                    const bool is_check_new_tan_plane = true,
-                    double alpha1 = 0.01, double alpha2 = 1, double alpha3 = 1.,
-                    const double break_threshold = SCALAR_ZERO_3,
-                    const int itr_limit = 30);
+bool iterate_sphere(
+    const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
+    const std::set<aint2>& fe_sf_fs_pairs,
+    const std::vector<FeatureEdge>& feature_edges, MedialSphere& mat_p,
+    bool is_debug,
+    // const bool is_check_new_tan_plane = true,
+    // double alpha1 = 0.01, double alpha2 = 1, double alpha3 = 1.,
+    // const double break_threshold = SCALAR_ZERO_3,
+    // const int itr_limit = 30
+    iter_params params = iter_params());
+
 // Two steps (reversed):
 // 1. update medial sphere center and radius
 // 2. update tangent planes and concave lines
-bool iterate_sphere_reversed(const SurfaceMesh& sf_mesh,
-                             const AABBWrapper& aabb_wrapper,
-                             const std::set<aint2>& fe_sf_fs_pairs,
-                             const std::vector<FeatureEdge>& feature_edges,
-                             MedialSphere& mat_p, bool is_debug,
-                             bool is_check_new_tan_plane, double alpha1 = 0.01,
-                             double alpha2 = 1, double alpha3 = 1.,
-                             const double break_threshold = SCALAR_ZERO_3,
-                             const int itr_limit = 30);
+bool iterate_sphere_reversed(
+    const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
+    const std::set<aint2>& fe_sf_fs_pairs,
+    const std::vector<FeatureEdge>& feature_edges, MedialSphere& mat_p,
+    bool is_debug,
+    // bool is_check_new_tan_plane = true, double alpha1 = 0.01,
+    // double alpha2 = 1, double alpha3 = 1.,
+    // const double break_threshold = SCALAR_ZERO_3,
+    // const bool is_break_use_energy_over_sq_radius = true,
+    // const int itr_limit = 30
+    iter_params params = iter_params());
 
 // void init_shrink_and_update(const SurfaceMesh& sf_mesh, const TetMesh&
 // tet_mesh,
