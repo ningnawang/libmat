@@ -169,7 +169,8 @@ void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
 
 aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
     const std::vector<FeatureEdge>& feature_edges,
-    const EdgeType& check_proj_type, Vector3& p, bool is_debug) const {
+    const EdgeType& check_proj_type, Vector3& p, double& sq_dist,
+    bool is_debug) const {
   // if not cache, this loop will be slow
   if (!feature_edges.empty() && this->sf_fid_to_fe_id.empty()) {
     // this->cache_sf_fid_to_fe_id(feature_edges);
@@ -183,7 +184,6 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
   aint2 return_fid_fe_id = {{-1, -1}};
   // get projection fid and lambdas
   double lambda[3];
-  double sq_dist;
   Vector3 old_p = p;  // for debug
   int fid = this->aabb_wrapper.project_to_sf_get_nearest_face_with_lambdas(
       p, sq_dist, lambda[0], lambda[1], lambda[2]);

@@ -398,7 +398,8 @@ class SurfaceMesh : public GEO::Mesh {
   // >=0: id/FE id
   aint2 project_to_sf_and_get_FE_if_any(
       const std::vector<FeatureEdge> &feature_edges,
-      const EdgeType &check_proj_type, Vector3 &p, bool is_debug) const;
+      const EdgeType &check_proj_type, Vector3 &p, double &sq_dist,
+      bool is_debug) const;
 
  public:
   bool is_non_cad = false;
