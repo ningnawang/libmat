@@ -110,6 +110,7 @@ void mark_feature_attributes(const std::set<aint2>& s_edges,
 void find_feature_edges(const Parameter& args,
                         const std::vector<Vector3>& input_vertices,
                         const std::vector<Vector3i>& input_faces,
+                        std::map<int, std::set<int>>& sf_vs2fids,
                         std::set<aint2>& s_edges, std::set<aint2>& cc_edges,
                         std::set<int>& corners_se, std::set<int>& corners_ce,
                         std::set<int>& corners_fake,
@@ -127,14 +128,13 @@ void find_feature_edges(const Parameter& args,
   fe_sf_fs_pairs_ce_only.clear();
 
   std::vector<aint2> edges;
-  std::map<int, std::unordered_set<int>> conn_tris;
   for (int i = 0; i < input_faces.size(); i++) {
     const auto& f = input_faces[i];
     for (int j = 0; j < 3; j++) {
       aint2 e = {{f[j], f[(j + 1) % 3]}};
       if (e[0] > e[1]) std::swap(e[0], e[1]);
       edges.push_back(e);
-      conn_tris[input_faces[i][j]].insert(i);
+      sf_vs2fids[input_faces[i][j]].insert(i);
     }
   }
   vector_unique(edges);
@@ -142,7 +142,7 @@ void find_feature_edges(const Parameter& args,
   // find sharp edges and concave edges
   for (const auto& e : edges) {
     std::vector<int> n12_f_ids;
-    set_intersection(conn_tris[e[0]], conn_tris[e[1]], n12_f_ids);
+    set_intersection(sf_vs2fids[e[0]], sf_vs2fids[e[1]], n12_f_ids);
 
     if (n12_f_ids.size() == 1) {  // open boundary
       printf("Detect open boundary!!! edge (%d,%d) has only 1 face: %ld\n",
@@ -708,8 +708,8 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   // find feature edges and corners on GEO::Mesh
   std::set<aint2> s_edges_sf, cc_edges_sf;
   std::set<int> corners_se_sf, corners_ce_sf, corners_fake_sf;
-  find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
-                     corners_se_sf, corners_ce_sf, corners_fake_sf,
+  find_feature_edges(args, points, faces, sf_mesh.sf_vs2fids, s_edges_sf,
+                     cc_edges_sf, corners_se_sf, corners_ce_sf, corners_fake_sf,
                      sf_mesh.fe_sf_fs_pairs, sf_mesh.fe_sf_fs_pairs_se_only,
                      sf_mesh.fe_sf_fs_pairs_ce_only);
   mark_feature_attributes(s_edges_sf, cc_edges_sf, corners_se_sf, sf_mesh);

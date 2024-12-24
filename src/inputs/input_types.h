@@ -372,13 +372,26 @@ class AABBWrapper {
   }
 };
 
+class SurfaceRegion {
+ public:
+  SurfaceRegion(const int _id) : id(_id) {};
+  ~SurfaceRegion() {};
+
+  inline void print_info() const {
+    printf("--- Region %d,", id);
+    print_set(fids, "fids");
+  }
+  inline void add_fid(const int fid) { fids.insert(fid); }
+
+  int id;
+  std::set<int> fids;
+};
+
 class SurfaceMesh : public GEO::Mesh {
  public:
   void reload_sf2tet_vs_mapping();
   void collect_fid_centroids(const std::set<int> &given_fids,
                              std::vector<v2int> &one_group_fids) const;
-  void cache_sf_fid_neighs();
-  void cache_sf_fid_neighs_no_cross();
   void cache_sf_fid_krings_no_cross_se_only(const int k);
   void cache_sf_fid_to_fe_id(const std::vector<FeatureEdge> &feature_edges);
   void cache_fe_sf_fs_map_se_only();
@@ -391,6 +404,7 @@ class SurfaceMesh : public GEO::Mesh {
       const int k, int tan_fid, std::set<int> &kring_neighbors) const;
   void update_fe_sf_fs_pairs_to_ce_id(
       const std::vector<FeatureEdge> &feature_edges);
+  void collect_sf_regions(const std::set<aint2> &fe_sf_fs_pairs);
 
   // check if the projection point is on FE if any,
   // either CE or SE as requested in check_proj_type
@@ -407,21 +421,28 @@ class SurfaceMesh : public GEO::Mesh {
   bool is_non_cad = false;
   AABBWrapper aabb_wrapper;
   std::vector<int> sf2tet_vs_mapping;  // matching TetMesh::tet_vertices
-  // fid -> {neigh fids}
-  // [no use]
-  std::map<int, std::set<int>> sf_fid_neighs;
-  // fid -> {neigh fids} but NOT cross fe_sf_fs_pairs,
-  // updated in cache_sf_fid_neighs_no_cross(), after calling
-  // detect_mark_sharp_features()
-  // [no use]
-  std::map<int, std::set<int>> sf_fid_neighs_no_cross;
-  // fid -> {kring fids} but NOT cross fe_sf_fs_pairs_se_only,
+  // sf vid -> {fids}
+  std::map<int, std::set<int>> sf_vs2fids;
+
+  //  for CAD models, define surface regions
+  // split the surface into regions
+  // based on both SE and CE, in SurfaceMesh::fe_sf_fs_pairs
+  std::vector<SurfaceRegion> regions;
+  std::vector<int> sf_fid2regions;  // fid -> SurfaceRegion::id
+  // for SE and CE, not cross regions
+  std::set<aint2> fe_sf_region_pairs;  // <region_id_min, region_id_max>
+  // for SE, do not cross regions
+  std::set<aint2> fe_sf_region_pairs_se_only;  // <region_id_min, region_id_max>
+
+  // fid -> {kring fids} but NOT cross SurfaceMesh::fe_sf_region_pairs_se_only,
   // updated in cache_sf_fid_krings_no_cross_se_only()
+  // must call after detect_mark_sharp_features()
   std::map<int, std::set<int>> sf_fid_krings_no_cross_se_only;
 
   // for feature edges, both SE and CE
   // store <sf_fid_min, sf_fid_max> if on feature edge
   // updated in detect_mark_sharp_features()
+  // updated in find_feature_edges(), used by updating.cxx/shrinking.cxx
   std::set<aint2> fe_sf_fs_pairs;
   // same as fe_sf_fs_pairs, but only for SE
   std::set<aint2> fe_sf_fs_pairs_se_only;
@@ -446,11 +467,10 @@ void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,
                          std::map<int, std::set<int>> &vs2fids,
                          std::map<int, std::set<int>> &tet_vs2sf_fids);
 
-void get_k_ring_neighbors_no_cross(const GEO::Mesh &sf_mesh,
-                                   const std::set<aint2> &fe_sf_pairs_not_cross,
-                                   const int fid_given, const int k,
-                                   std::set<int> &k_ring_fids,
-                                   bool is_clear_cur, bool is_debug);
+void get_k_ring_neighbors_no_cross(
+    const SurfaceMesh &sf_mesh,
+    const std::set<aint2> &fe_sf_region_pairs_not_cross, const int fid_given,
+    const int k, std::set<int> &k_ring_fids, bool is_clear_cur, bool is_debug);
 
 void store_feature_line(const TetMesh &tet_mesh, const SurfaceMesh &sf_mesh,
                         const EdgeType &fe_type,

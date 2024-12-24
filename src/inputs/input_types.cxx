@@ -72,36 +72,6 @@ void SurfaceMesh::reload_sf2tet_vs_mapping() {
   }
 }
 
-void SurfaceMesh::cache_sf_fid_neighs() {
-  // load input_mesh adjacent info
-  sf_fid_neighs.clear();
-  // std::map<int, std::set<int>> conn_tris;
-  for (int i = 0; i < this->facets.nb(); i++) {
-    // printf("Input mesh facet %d has neighbors: [", i);
-    FOR(le, 3) {
-      int nfid = this->facets.adjacent(i, le);
-      sf_fid_neighs[i].insert(nfid);
-      // printf("%d, ", nfid);
-    }
-    // printf("]\n");
-  }
-}
-
-// must call after detect_mark_sharp_features()
-void SurfaceMesh::cache_sf_fid_neighs_no_cross() {
-  sf_fid_neighs_no_cross.clear();
-  // load input_mesh adjacent info, not cross sharp features
-  for (int i = 0; i < this->facets.nb(); i++) {
-    FOR(le, 3) {
-      int nfid = this->facets.adjacent(i, le);
-      aint2 fpair = {{i, nfid}};
-      std::sort(fpair.begin(), fpair.end());
-      if (fe_sf_fs_pairs.find(fpair) != fe_sf_fs_pairs.end()) continue;
-      sf_fid_neighs_no_cross[i].insert(nfid);
-    }
-  }
-}
-
 // must call after detect_mark_sharp_features()
 void SurfaceMesh::cache_sf_fid_krings_no_cross_se_only(const int k) {
   sf_fid_krings_no_cross_se_only.clear();
@@ -133,7 +103,8 @@ void SurfaceMesh::cache_fe_sf_fs_map_se_only() {
 bool SurfaceMesh::get_sf_fid_krings_no_cross_se_only(
     const int fid_given, std::set<int>& kring_neighbors) const {
   kring_neighbors.clear();
-  if (sf_fid_krings_no_cross_se_only.empty()) return false;
+  assert(!sf_fid_krings_no_cross_se_only.empty());
+  // if (sf_fid_krings_no_cross_se_only.empty()) return false;
   if (sf_fid_krings_no_cross_se_only.find(fid_given) ==
       sf_fid_krings_no_cross_se_only.end())
     return false;
@@ -145,7 +116,7 @@ bool SurfaceMesh::collect_kring_neighbors_given_fid(
     const int k, int tan_fid, std::set<int>& kring_neighbors) const {
   assert(tan_fid >= 0);
   kring_neighbors.clear();
-  get_k_ring_neighbors_no_cross(*this, this->fe_sf_fs_pairs, tan_fid, k,
+  get_k_ring_neighbors_no_cross(*this, this->fe_sf_region_pairs, tan_fid, k,
                                 kring_neighbors, true /*is_clear_cur*/,
                                 false /*is_debug*/);
   return kring_neighbors.empty() ? false : true;
@@ -155,9 +126,11 @@ bool SurfaceMesh::collect_kring_neighbors_given_fid_se_only(
     const int k, int tan_fid, std::set<int>& kring_neighbors) const {
   assert(tan_fid >= 0);
   kring_neighbors.clear();
-  get_k_ring_neighbors_no_cross(*this, this->fe_sf_fs_pairs_se_only, tan_fid, k,
-                                kring_neighbors, true /*is_clear_cur*/,
-                                false /*is_debug*/);
+  bool is_debug = false;
+  if (tan_fid == 1065) is_debug = true;
+  get_k_ring_neighbors_no_cross(*this, this->fe_sf_region_pairs_se_only,
+                                tan_fid, k, kring_neighbors,
+                                true /*is_clear_cur*/, is_debug /*is_debug*/);
   return kring_neighbors.empty() ? false : true;
 }
 
@@ -171,6 +144,88 @@ void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
       this->fe_sf_fs_pairs_to_ce_id[fs_pair] = fe.id;
     }
   }
+}
+
+// do not pass SurfaceMesh::fe_sf_fs_pairs
+void SurfaceMesh::collect_sf_regions(const std::set<aint2>& fe_sf_fs_pairs) {
+  this->regions.clear();
+  this->sf_fid2regions.clear();
+  if (fe_sf_fs_pairs.empty()) return;
+  this->sf_fid2regions.resize(this->facets.nb(), -1);
+
+  // start expanding
+  std::queue<int> queue;
+  std::set<int> visited_fids;
+  int region_id = 0;
+  for (int fid = 0; fid < this->facets.nb(); fid++) {
+    // printf("fid %d\n", fid);
+    if (visited_fids.find(fid) != visited_fids.end()) continue;
+    visited_fids.insert(fid);
+    queue.push(fid);
+    SurfaceRegion one_region(region_id);
+    one_region.add_fid(fid);
+    this->sf_fid2regions[fid] = region_id;
+    while (!queue.empty()) {
+      int cur_fid = queue.front();
+      queue.pop();
+      for (GEO::index_t le = 0; le < this->facets.nb_vertices(cur_fid); le++) {
+        GEO::index_t nfid = this->facets.adjacent(cur_fid, le);
+        if (nfid == GEO::NO_FACET) continue;
+        if (visited_fids.find(nfid) != visited_fids.end()) continue;
+        aint2 fs_pair = {{cur_fid, nfid}};
+        std::sort(fs_pair.begin(), fs_pair.end());
+        if (fe_sf_fs_pairs.find(fs_pair) != fe_sf_fs_pairs.end()) continue;
+        // printf("nfid %d\n", nfid);
+        visited_fids.insert(nfid);
+        queue.push(nfid);
+        one_region.add_fid(nfid);
+        this->sf_fid2regions[nfid] = region_id;
+      }
+    }
+    this->regions.push_back(one_region);
+    region_id++;
+    // printf("saved region %d\n", one_region.id);
+  }
+
+  // make sure none of the fids are missed, not -1
+  for (int fid = 0; fid < this->facets.nb(); fid++) {
+    if (this->sf_fid2regions[fid] == -1) {
+      printf("[collect_sf_regions] ERROR: fid %d is not in any region\n", fid);
+      assert(false);
+    }
+  }
+
+  // for both SE and CE, not cross regions
+  // update SurfaceMesh::fe_sf_region_pairs
+  for (const auto& fe : this->fe_sf_fs_pairs) {
+    int region_id_0 = this->sf_fid2regions.at(fe[0]);
+    int region_id_1 = this->sf_fid2regions.at(fe[1]);
+    if (region_id_0 == region_id_1) continue;
+    aint2 region_pair = {{region_id_0, region_id_1}};
+    std::sort(region_pair.begin(), region_pair.end());
+    this->fe_sf_region_pairs.insert(region_pair);
+  }
+  printf("fe_sf_region_pairs:");
+  for (const auto& region_pair : this->fe_sf_region_pairs) {
+    printf("[(%d,%d) ", region_pair[0], region_pair[1]);
+  }
+  printf("]\n");
+
+  // for SE only, not cross regions
+  // update SurfaceMesh::fe_sf_region_pairs_se_only
+  for (const auto& se : this->fe_sf_fs_pairs_se_only) {
+    int region_id_0 = this->sf_fid2regions.at(se[0]);
+    int region_id_1 = this->sf_fid2regions.at(se[1]);
+    if (region_id_0 == region_id_1) continue;
+    aint2 region_pair = {{region_id_0, region_id_1}};
+    std::sort(region_pair.begin(), region_pair.end());
+    this->fe_sf_region_pairs_se_only.insert(region_pair);
+  }
+  printf("fe_sf_region_pairs_se_only:");
+  for (const auto& region_pair : this->fe_sf_region_pairs_se_only) {
+    printf("[(%d,%d) ", region_pair[0], region_pair[1]);
+  }
+  printf("]\n");
 }
 
 aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
@@ -391,21 +446,28 @@ void load_sf_tet_mapping(const GEO::Mesh& sf_mesh,
 }
 
 // Given fid_given, we fetch the k_ring neighboring faces
-// not crossing sharp edges
-void get_k_ring_neighbors_no_cross(const GEO::Mesh& sf_mesh,
-                                   const std::set<aint2>& fe_sf_pairs_not_cross,
-                                   const int fid_given, const int k,
-                                   std::set<int>& k_ring_fids,
-                                   bool is_clear_cur, bool is_debug) {
+// not crossing sharp edges, defined by SurfaceRegion
+//
+// here we use fe_sf_region_pairs_not_cross as argument, because we want to use
+// 1. SurfaceMesh::fe_sf_region_pairs or
+// 2. SurfaceMesh::fe_sf_region_pairs_se_only
+void get_k_ring_neighbors_no_cross(
+    const SurfaceMesh& sf_mesh,
+    const std::set<aint2>& fe_sf_region_pairs_not_cross, const int fid_given,
+    const int k, std::set<int>& k_ring_fids, bool is_clear_cur, bool is_debug) {
   auto is_skip_se_neighbor = [&](const int f, const int nf) {
-    aint2 ref_fs_pair = {{f, nf}};
-    std::sort(ref_fs_pair.begin(), ref_fs_pair.end());
-    if (fe_sf_pairs_not_cross.find(ref_fs_pair) !=
-        fe_sf_pairs_not_cross.end()) {
+    if (sf_mesh.sf_fid2regions.empty() || fe_sf_region_pairs_not_cross.empty())
+      return false;
+    assert(sf_mesh.sf_fid2regions.size() == sf_mesh.facets.nb());
+    // check surface regions
+    aint2 region_pair = {
+        {sf_mesh.sf_fid2regions.at(f), sf_mesh.sf_fid2regions.at(nf)}};
+    std::sort(region_pair.begin(), region_pair.end());
+    if (fe_sf_region_pairs_not_cross.find(region_pair) !=
+        fe_sf_region_pairs_not_cross.end()) {
       if (is_debug)
-        printf("[K_RING] face %d skip nf %d since sharing a sharp edge \n", f,
-               nf);
-      return true;  // skip checking its neighbor
+        printf("[K_RING] face %d skip nf %d since non-cross regions \n", f, nf);
+      return true;
     }
     return false;
   };
@@ -424,12 +486,16 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh& sf_mesh,
     new_added_fids.clear();
     for (const auto& fid : new_added_fids_copy) {
       for (GEO::index_t le = 0; le < sf_mesh.facets.nb_vertices(fid); le++) {
-        GEO::index_t nfid = sf_mesh.facets.adjacent(fid, le);
-        if (nfid == GEO::NO_FACET) continue;
-        if (is_skip_se_neighbor(fid, nfid)) continue;
-        if (is_debug) printf("fid %d has neighbor face nfid %d\n", fid, nfid);
-        k_ring_fids.insert(nfid);
-        new_added_fids.insert(nfid);
+        int fvid = sf_mesh.facets.vertex(fid, le);
+        assert(sf_mesh.sf_vs2fids.find(fvid) != sf_mesh.sf_vs2fids.end());
+        for (const auto& nfid : sf_mesh.sf_vs2fids.at(fvid)) {
+          assert(nfid != GEO::NO_FACET);
+          if (new_added_fids.find(nfid) != new_added_fids.end()) continue;
+          if (is_skip_se_neighbor(fid, nfid)) continue;
+          if (is_debug) printf("fid %d has neighbor face nfid %d\n", fid, nfid);
+          k_ring_fids.insert(nfid);
+          new_added_fids.insert(nfid);
+        }
       }  // for facets.nb_vertices
     }  // for k_ring_fids
     i++;
@@ -437,6 +503,7 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh& sf_mesh,
   if (is_debug) {
     printf("[K_RING] fid %d found k_ring %d neighbors: %ld\n", fid_given, k,
            k_ring_fids.size());
+    print_set<int>(k_ring_fids);
   }
 }
 

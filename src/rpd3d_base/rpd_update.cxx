@@ -520,45 +520,6 @@ void update_pc_edge_cc_info(PowerCell& pcell) {
   }
 }
 
-// [no use]
-void update_sphere_type_based_on_pcells(const SurfaceMesh& input_mesh,
-                                        MedialSphere& msphere, bool is_debug) {
-  if (msphere.type == SphereType::T_N) {
-    // TODO: use msphere.pcell.surf_v2fid_in_groups instead!!
-    //
-    // group pcells' surface fids in CC not cross sharp edges
-    for (const auto& one_surf_cc : msphere.pcell.cc_surf_v2fids) {
-      std::set<int> facets_to_group;
-      for (const v2int& tmp : one_surf_cc) {
-        facets_to_group.insert(tmp.second);  // CC contains surface fids
-      }
-      std::vector<std::set<int>> cc_facets;
-      get_CC_given_neighbors<int>(facets_to_group,
-                                  input_mesh.sf_fid_neighs_no_cross, cc_facets);
-      int num_surf_cc = cc_facets.size();
-      int old_type = msphere.type;
-      if (num_surf_cc < 3) {
-        msphere.type = SphereType::T_2;
-        if (is_debug) {
-          printf(
-              "[Pcell CC] update msphere %d type %d->%d with num_surf_cc: %d, "
-              "contains surface fid in CC: \n",
-              msphere.id, old_type, msphere.type, num_surf_cc);
-          for (const auto& fset : cc_facets) {
-            printf("[");
-            for (const auto& fid : fset) {
-              printf("%d, ", fid);
-            }
-            printf("]\n");
-          }
-        }
-      }  // num_surf_cc < 3
-    }  // for msphere.pcell.cc_surf_v2fids
-  }
-
-  // TODO: update T_N_c
-}
-
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // map_site2msphere: site id -> MedialSphere::id
@@ -596,7 +557,6 @@ void update_power_cells(const SurfaceMesh& sf_mesh,
     update_pc_facet_cc_info(msphere.pcell, msphere.id);
     update_pc_edge_cc_info(msphere.pcell);
     // // TODO: use msphere.pcell.surf_v2fid_in_groups instead!!
-    // update_sphere_type_based_on_pcells(sf_mesh, msphere, is_debug);
     msphere.update_sphere_covered_sf_fids(sf_mesh, is_debug);
   };
 
