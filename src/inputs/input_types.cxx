@@ -89,9 +89,8 @@ void SurfaceMesh::cache_sf_fid_neighs() {
 
 // must call after detect_mark_sharp_features()
 void SurfaceMesh::cache_sf_fid_neighs_no_cross() {
-  if (fe_sf_fs_pairs.empty()) return;
-  // load input_mesh adjacent info, not cross sharp features
   sf_fid_neighs_no_cross.clear();
+  // load input_mesh adjacent info, not cross sharp features
   for (int i = 0; i < this->facets.nb(); i++) {
     FOR(le, 3) {
       int nfid = this->facets.adjacent(i, le);
@@ -105,9 +104,8 @@ void SurfaceMesh::cache_sf_fid_neighs_no_cross() {
 
 // must call after detect_mark_sharp_features()
 void SurfaceMesh::cache_sf_fid_krings_no_cross_se_only(const int k) {
-  if (fe_sf_fs_pairs_se_only.empty()) return;
-  // load input_mesh adjacent info, not cross sharp features
   sf_fid_krings_no_cross_se_only.clear();
+  // load input_mesh adjacent info, not cross sharp features
   std::set<int> kring_neighbors;
   for (int fid = 0; fid < this->facets.nb(); fid++) {
     collect_kring_neighbors_given_fid_se_only(k, fid, kring_neighbors);
@@ -121,6 +119,14 @@ void SurfaceMesh::cache_sf_fid_to_fe_id(
   for (const auto& fe : feature_edges) {
     this->sf_fid_to_fe_id[fe.adj_sf_fs_pair[0]] = fe.id;
     this->sf_fid_to_fe_id[fe.adj_sf_fs_pair[1]] = fe.id;
+  }
+}
+
+void SurfaceMesh::cache_fe_sf_fs_map_se_only() {
+  this->fe_sf_fs_map_se_only.clear();
+  for (const auto& fe : this->fe_sf_fs_pairs_se_only) {
+    this->fe_sf_fs_map_se_only[fe[0]] = fe[1];
+    this->fe_sf_fs_map_se_only[fe[1]] = fe[0];
   }
 }
 

@@ -273,9 +273,13 @@ enum SphereType {
   T_1_N = -3,  // external feature, corners
   T_1_2 = -2,  // external feature, sharp edge
   T_UNK = -1,
-  T_2 = 2,
+  T_2 = 2,       // on the sheet
   T_N = 3,       // including T_3, T_4 ...
   T_N_JUNC = 4,  // potential junctions T_4, T_5 ...
+  T_1_INF = 5,   // = A_3 sphere [Giblin et al. 2004],
+                 // should also on the seam
+  T_2_INF = 6,   // = A_1A_3 sphere [Giblin et al. 2004],
+                 // should be on junction
   T_c = 10,      // invisible pin sphere added on concave line to avoid RPD
                  // degeneration [no use?]
   T_2_c = 11,    // added for one concave line using sphere shrinking

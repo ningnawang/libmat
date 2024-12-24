@@ -6,6 +6,7 @@
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_geometry.h>
 
+#include <algorithm>
 #include <array>
 #include <ctime>
 #include <fstream>
@@ -406,4 +407,37 @@ inline Matrix4 vec_vec_trans(Vector4 A, Vector4 B) {
 
 inline Vector3 convert_std2geo(const adouble3& p) {
   return Vector3(p[0], p[1], p[2]);
+}
+
+// Function to compute variance of 3D normals
+//
+// eg. If the normals are distributed within 60 degree (pi/3) of each other,
+// the variance should be estimated as 0.366 = 1/3 * (pi/3)^2
+inline double compute_normals_variance(const std::vector<Vector3>& _) {
+  assert(_.size() > 0);
+  int size = _.size();
+
+  // normalize all normals
+  std::vector<Vector3> normals_normalized;
+  for (const auto& normal : _)
+    normals_normalized.push_back(GEO::normalize(normal));
+
+  // Compute mean direction (average vector)
+  Vector3 mean = {0.0, 0.0, 0.0};
+  for (const auto& normal : normals_normalized) mean = mean + normal;
+  mean = mean / static_cast<double>(size);
+  mean = GEO::normalize(mean);
+
+  // Compute variance of angles
+  double variance = 0.0;
+  for (const auto& normal : normals_normalized) {
+    double dot_product = GEO::dot(mean, normal);
+    // Clamp to handle floating-point precision issues
+    if (dot_product > 1.0) dot_product = 1.0;
+    if (dot_product < -1.0) dot_product = -1.0;
+    double angle = std::acos(dot_product);  // Angle in radians
+    variance += angle * angle;
+  }
+
+  return variance / size;
 }

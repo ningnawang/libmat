@@ -316,7 +316,7 @@ void MedialSphere::print_info() const {
       "center: (%f,%f,%f), radius: %f, type: %d, is_radius_dilated: %d, "
       "min_sq_dist_2cc: %f\n",
       center[0], center[1], center[2], radius, type, is_radius_dilated,
-      min_sq_dist_2cc);
+      min_sq_dist_2cc == DBL_MAX ? 1e10 : min_sq_dist_2cc);
   print_ss_info();
   printf("pcell: topo_status: %d, covered_sf_fids_in_group: %zu\n",
          pcell.topo_status, covered_sf_fids_in_group.size());
@@ -933,7 +933,8 @@ bool MedialSphere::is_on_ce() const {
 }
 bool MedialSphere::is_on_intf() const {
   if (type == SphereType::T_N || type == SphereType::T_N_c ||
-      type == SphereType::T_N_JUNC)
+      type == SphereType::T_N_JUNC || type == SphereType::T_1_INF ||
+      type == SphereType::T_2_INF)
     return true;
   return false;
 }
@@ -948,7 +949,7 @@ bool MedialSphere::is_on_sheet() const {
   return true;
 }
 bool MedialSphere::is_on_junction() const {
-  if (type == SphereType::T_N_JUNC) return true;
+  if (type == SphereType::T_N_JUNC || type == SphereType::T_2_INF) return true;
   return false;
 }
 
