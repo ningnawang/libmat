@@ -14,8 +14,8 @@ enum MedialType {
 
 class MedialStruc {
  public:
-  MedialStruc(int _id, MedialType _t) : id(_id), type(_t){};
-  ~MedialStruc(){};
+  MedialStruc(int _id, MedialType _t) : id(_id), type(_t) {};
+  ~MedialStruc() {};
 
  public:
   int id;
@@ -107,6 +107,9 @@ class MedialFace {
   Vector3 circumcenter;
   Vector3 centroid;
   bool is_on_boundary = false;
+
+  // for type
+  bool is_on_same_sheet = false;
 };
 
 // These tets need to be removed
