@@ -281,7 +281,12 @@ void Thinning::prune_faces_while_iteration(
   //   return false;
   // };
   auto is_edge_on_ext_feature = [&](const int eid) {
-    return mat.edges.at(eid).is_extf;
+    const auto& medge = mat.edges.at(eid);
+    if (medge.is_extf) return true;
+    const auto& mv0 = mat.vertices->at(medge.vertices_.at(0));
+    const auto& mv1 = mat.vertices->at(medge.vertices_.at(1));
+    if (is_two_mspheres_on_same_se(mv0, mv1)) return true;
+    return false;
   };
 
   int num_tet_faces_are_good = 0;
