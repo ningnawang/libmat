@@ -67,6 +67,9 @@ class MedialFace {
   std::set<int> tets_;  // neighboring tetrahedrons
   bool is_deleted = false;
 
+  // for type
+  bool is_on_same_sheet = false;
+
   // for medial structure
   int mstruc_id = -1;  // MedialStruc::id
 
@@ -107,9 +110,6 @@ class MedialFace {
   Vector3 circumcenter;
   Vector3 centroid;
   bool is_on_boundary = false;
-
-  // for type
-  bool is_on_same_sheet = false;
 };
 
 // These tets need to be removed
@@ -149,6 +149,17 @@ class MedialMesh {
   std::vector<MedialFace> faces;
   std::vector<MedialTet> tets;  // the one to remove!!!
   std::vector<MedialStruc> mstructure;
+
+  // (mfid_min, mfid_max) -> int
+  // -1: not visited
+  // 0: not on the same sheet
+  // 1: on the same sheet
+  //
+  // stored as a upper triangular matrix with size n,
+  // given two sorted MedialFace:id indices (mfid_min, mfid_max),
+  // we can get the index for the matrix by calling get_upper_tri_matrix_idx()
+  // updated by RPD3D_Wrapper::cluster_mface_adj_type()
+  std::vector<int> is_two_faces_on_the_same_sheet;
 
   int numSpheres_active;
   int numEdges_active;

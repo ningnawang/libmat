@@ -482,3 +482,26 @@ inline void print_vec(const std::vector<T>& to_print) {
   }
   printf("]\n");
 }
+
+// Define a upper triangular matrix with size n.
+// matrix index -> (v1_min, v2_max)
+// n -> #vertices
+// idx = idx(v1_min, v2_max)
+//     = n + (n-1) + ... + (n-vid_min) - (n - vid_max)
+inline int get_upper_tri_matrix_size(const int n) {
+  return n * (1 + n) / 2 + 1;
+}
+inline int get_upper_tri_matrix_idx(int v1, int v2, int n) {
+  int vmin = v1;
+  int vmax = v2;
+  if (v1 > v2) {
+    vmin = v2;
+    vmax = v1;
+  }
+  int idx = 0;
+  for (uint j = 0; j <= vmin; j++) {
+    idx += (n - j);
+  }
+  idx -= (n - vmax);
+  return idx;
+}

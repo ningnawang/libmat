@@ -9,15 +9,9 @@ void MedialFace::print_medial_face() const {
   //     "dual_segment len: %f\n",
   //     (dual_edge_endpoints[0].first -
   //     dual_edge_endpoints[1].first).length());
-  printf("vertices_: (%d,%d,%d), importance: %f \n", vertices_[0], vertices_[1],
+  printf("vertices_: (%d,%d,%d), importance: %f\n", vertices_[0], vertices_[1],
          vertices_[2], importance);
-  if (!tets_.empty()) {
-    printf("tets_: ");
-    for (const auto tid : tets_) {
-      printf("%d, ", tid);
-    }
-    printf("\n");
-  }
+  if (!tets_.empty()) print_set(tets_, "tets_");
 }
 
 void MedialTet::print_medial_tet() const {
@@ -37,12 +31,14 @@ void MedialTet::print_medial_tet() const {
 MedialMesh::MedialMesh() {
   numSpheres_active = numEdges_active = numFaces_active = numTets_active = 0;
   numEdges_no_dup = numFaces_no_dup = 0;
+  is_two_faces_on_the_same_sheet.clear();
 };
 
 MedialMesh::MedialMesh(std::vector<MedialSphere>& all_medial_spheres) {
   vertices = &all_medial_spheres;
   numSpheres_active = numEdges_active = numFaces_active = numTets_active = 0;
   numEdges_no_dup = numFaces_no_dup = 0;
+  is_two_faces_on_the_same_sheet.clear();
 };
 
 MedialMesh::~MedialMesh() { delete vertices; };
