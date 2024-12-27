@@ -403,6 +403,7 @@ void load_spheres_from_file(const char* filename,
 
   all_medial_spheres.clear();
   for (int i = 0; i < n_site; i++) {
+    bool is_store_msphere = true;
     MedialSphere msphere(all_medial_spheres.size(), Vector3(0, 0, 0),
                          INIT_RADIUS, SphereType::T_UNK);
     file >> msphere.center[0] >> msphere.center[1] >> msphere.center[2];
@@ -412,18 +413,21 @@ void load_spheres_from_file(const char* filename,
       msphere.radius = 1;
     if (is_load_type) {
       file >> type;
-      if (type != SphereType::T_UNK)
-        msphere.type = SphereType(type);  // else as T2 sphere
+      msphere.type = SphereType(type);
+      // do not load
+      if (msphere.type == SphereType::T_UNK) is_store_msphere = false;
     }
     if (is_load_deleted) {
       file >> is_deleted;
       msphere.is_deleted = false;
       if (is_deleted) msphere.is_deleted = true;
     }
-    all_medial_spheres.push_back(msphere);
-    // printf("site %d has sphere: (%lf %lf %lf %lf), type: %d\n", i,
-    //        msphere.center[0], msphere.center[1], msphere.center[2],
-    //        msphere.radius, msphere.type);
+    if (is_store_msphere) {
+      all_medial_spheres.push_back(msphere);
+      // printf("site %d has sphere: (%lf %lf %lf %lf), type: %d\n", i,
+      //        msphere.center[0], msphere.center[1], msphere.center[2],
+      //        msphere.radius, msphere.type);
+    }
   }
   file.close();
 }

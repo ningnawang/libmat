@@ -272,20 +272,21 @@ void Thinning::prune_faces_while_iteration(
            imp_queue.size());
     return;
   }
-  // auto is_edge_on_ext_feature = [&](const aint2& vs_pair) {
-  //   int vidx1 = mat.vertices->at(vs_pair[0]).id;
-  //   int vidx2 = mat.vertices->at(vs_pair[1]).id;
-  //   const auto mat_p1 = all_medial_spheres.at(vidx1);
-  //   const auto mat_p2 = all_medial_spheres.at(vidx2);
-  //   if (mat_p1.is_on_extf() && mat_p2.is_on_extf()) return true;
-  //   return false;
-  // };
   auto is_edge_on_ext_feature = [&](const int eid) {
     const auto& medge = mat.edges.at(eid);
     if (medge.is_extf) return true;
     const auto& mv0 = mat.vertices->at(medge.vertices_.at(0));
     const auto& mv1 = mat.vertices->at(medge.vertices_.at(1));
-    if (is_two_mspheres_on_same_se(mv0, mv1)) return true;
+    if (is_two_mspheres_on_same_sl_including_corners(mv0, mv1)) return true;
+    return false;
+  };
+
+  auto is_skip_edge_if_on_boundary = [&](const int eid) {
+    const auto& medge = mat.edges.at(eid);
+    const auto& mv0 = mat.vertices->at(medge.vertices_.at(0));
+    const auto& mv1 = mat.vertices->at(medge.vertices_.at(1));
+    if (medge.is_on_same_sheet && (mv0.is_on_corner() || mv1.is_on_corner()))
+      return true;
     return false;
   };
 
@@ -321,8 +322,10 @@ void Thinning::prune_faces_while_iteration(
         if (edge.faces_.size() > 1) continue;  // check next edge
 
         // if edge is on sharp edge, then skip
-        // if (is_edge_on_ext_feature(edge.vertices_)) continue;
         if (is_edge_on_ext_feature(eid)) continue;
+
+        // if edge is on corner, and single face, then skip
+        if (is_skip_edge_if_on_boundary(eid)) continue;
 
         // push <face, edge> to delete
         auto sp_del = simple_pair(1, fid, eid, -1);
