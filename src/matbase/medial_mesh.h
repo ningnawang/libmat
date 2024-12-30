@@ -12,10 +12,10 @@ enum MedialType {
   JUNCTION = 3
 };
 
-class MedialStruc {
+class MedialStruct {
  public:
-  MedialStruc(int _id, MedialType _t) : id(_id), type(_t) {};
-  ~MedialStruc() {};
+  MedialStruct(int _id, MedialType _t) : id(_id), type(_t) {};
+  ~MedialStruct() {};
 
  public:
   int id;
@@ -37,7 +37,7 @@ class MedialEdge {
   bool is_on_same_sheet = false;  // including is_intf
 
   // for medial structure
-  int mstruc_id = -1;  // MedialStruc::id
+  int mstruct_id = -1;  // MedialStruct::id
   std::vector<TangentPlane> common_tan_pls;
   // order may NOT matches MedialEdge::vertices_
   // we want to make sure v1 is on internal feature as possible
@@ -71,7 +71,7 @@ class MedialFace {
   bool is_on_same_sheet = false;
 
   // for medial structure
-  int mstruc_id = -1;  // MedialStruc::id
+  int mstruct_id = -1;  // MedialStruct::id
 
   void print_medial_face() const;
 
@@ -148,7 +148,7 @@ class MedialMesh {
   std::vector<MedialEdge> edges;
   std::vector<MedialFace> faces;
   std::vector<MedialTet> tets;  // the one to remove!!!
-  std::vector<MedialStruc> mstructure;
+  std::vector<MedialStruct> mstructure;
 
   // (mfid_min, mfid_max) -> int
   // -1: not visited

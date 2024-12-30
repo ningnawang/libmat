@@ -332,7 +332,7 @@ void MedialSphere::print_info() const {
   // printf("]\n");
   print_tan_planes();
   print_tan_cc_lines();
-  print_covered_sf_fids_in_group();
+  // print_covered_sf_fids_in_group();
 }
 
 void MedialSphere::print_covered_sf_fids_in_group() const {
@@ -932,8 +932,8 @@ bool MedialSphere::is_on_ce() const {
   return false;
 }
 bool MedialSphere::is_on_intf() const {
-  if (type == SphereType::T_N || type == SphereType::T_N_c ||
-      type == SphereType::T_N_JUNC || type == SphereType::T_1_INF ||
+  if (type == SphereType::T_3_MORE || type == SphereType::T_N_c ||
+      type == SphereType::T_4_MORE || type == SphereType::T_1_INF ||
       type == SphereType::T_2_INF)
     return true;
   return false;
@@ -949,7 +949,7 @@ bool MedialSphere::is_on_sheet() const {
   return true;
 }
 bool MedialSphere::is_on_junction() const {
-  if (type == SphereType::T_N_JUNC || type == SphereType::T_2_INF) return true;
+  if (type == SphereType::T_4_MORE || type == SphereType::T_2_INF) return true;
   return false;
 }
 
@@ -1005,7 +1005,7 @@ bool add_new_sphere_validate(std::vector<MedialSphere>& all_medial_spheres,
       new_sphere.tan_cc_lines.size() + new_sphere.tan_planes.size() > 2)
     new_sphere.type = SphereType::T_N_c;
   else if (new_sphere.tan_planes.size() > 2)
-    new_sphere.type = SphereType::T_N;
+    new_sphere.type = SphereType::T_3_MORE;
   if (is_debug)
     printf("[NewSphereAdd Success] new_sphere added %d, old_id: %d, type %d\n",
            new_sphere.id, old_sphere_id, new_sphere.type);

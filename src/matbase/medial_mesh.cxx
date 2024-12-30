@@ -781,7 +781,7 @@ bool is_add_neigh_eid(const MedialMesh& mmesh, int cur_eid, int n_eid) {
   if (cur_msphere.is_on_sheet() && !nxt_msphere.is_on_sheet()) return false;
 
   printf(
-      "[MedialStruc] n_eid %d (%d,%d) has common_tan_pls %zu, "
+      "[MedialStruct] n_eid %d (%d,%d) has common_tan_pls %zu, "
       "A_non_common_tan_pls: %zu \n",
       n_eid, common_vid, nxt_vid, common_tan_pls.size(),
       A_non_common_tan_pls->size());
@@ -993,7 +993,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
     // assert(false);
   };
 
-  printf("[MedialStruc] start tracing medial structure ...\n");
+  printf("[MedialStruct] start tracing medial structure ...\n");
   this->mstructure.clear();
   std::set<int> visited;
   std::queue<int> visit_queue;
@@ -1003,13 +1003,13 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
     const auto& mface = this->faces.at(rand_fid);
     if (mface.is_deleted) continue;
     if (is_debug)
-      printf("[MedialStruc] checking mface %d (%d,%d,%d), visited: %zu\n",
+      printf("[MedialStruct] checking mface %d (%d,%d,%d), visited: %zu\n",
              mface.fid, mface.vertices_[0], mface.vertices_[1],
              mface.vertices_[2], visited.size());
     if (visited.find(mface.fid) != visited.end()) continue;
 
     // create a new MedialStruct
-    MedialStruc mstruct(this->mstructure.size(), MedialType::MUNKOWN);
+    MedialStruct mstruct(this->mstructure.size(), MedialType::MUNKOWN);
     mstruct.type = get_medial_structure(mface.fid);
 
     // expand a new medial structure
@@ -1021,7 +1021,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
       if (visited.find(cur_fid) != visited.end()) continue;
       visited.insert(cur_fid);
       mstruct.m_face_ids.insert(cur_fid);
-      this->faces.at(cur_fid).mstruc_id = mstruct.id;
+      this->faces.at(cur_fid).mstruct_id = mstruct.id;
 
       // check if adding next edge to queue
       for (int eid : this->faces.at(cur_fid).edges_) {
@@ -1032,7 +1032,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
           // check cur_fid and nxt_fid
           bool is_add = is_add_neigh_fid(*this, cur_fid, nxt_fid);
           if (is_debug)
-            printf("[MedialStruc] cur_fid %d nxt_fid %d is_add %d\n", cur_fid,
+            printf("[MedialStruct] cur_fid %d nxt_fid %d is_add %d\n", cur_fid,
                    nxt_fid, is_add);
           if (!is_add) continue;
           visit_queue.push(nxt_fid);
@@ -1042,18 +1042,18 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
 
     // print
     if (is_debug) {
-      printf("[MedialStruc] saved mstruc %d type %d, fid: (", mstruct.id,
+      printf("[MedialStruct] saved mstruc %d type %d, fid: (", mstruct.id,
              mstruct.type);
       for (const auto fid : mstruct.m_face_ids) printf("%d ", fid);
       printf("), visited %zu/%zu \n", visited.size(), faces.size());
     }
 
-    // save MedialStruc
+    // save MedialStruct
     this->mstructure.push_back(mstruct);
   }  // for faces
 
   if (is_debug)
-    printf("[MedialStruc] mstruc size %zu, visited: %zu, faces: %zu\n",
+    printf("[MedialStruct] mstruc size %zu, visited: %zu, faces: %zu\n",
            this->mstructure.size(), visited.size(), faces.size());
 }
 

@@ -274,8 +274,8 @@ enum SphereType {
   T_1_2 = -2,  // external feature, sharp edge
   T_UNK = -1,
   T_2 = 2,       // on the sheet
-  T_N = 3,       // including T_3, T_4 ...
-  T_N_JUNC = 4,  // potential junctions T_4, T_5 ...
+  T_3_MORE = 3,  // including T_3, T_4 ...
+  T_4_MORE = 4,  // potential junctions T_4, T_5 ...
   T_1_INF = 5,   // = A_3 sphere [Giblin et al. 2004],
                  // should also on the seam
   T_2_INF = 6,   // = A_1A_3 sphere [Giblin et al. 2004],
@@ -372,6 +372,12 @@ class MedialSphere {
   int itr_cnt;  // count the number of iteration when this sphere is created
   bool is_deleted = false;
   int dup_cnt = 0;  // duplicated count, one matching a connected pcell
+
+  // for medial struct
+  // storing id for junction only
+  int mstruct_jun_id = -1;
+  // storing id for sheets, seams and junctions
+  std::set<int> mstruct_ids;  // matching MedialStruct::id [no use]
 
   Vector3 center;
   double radius;

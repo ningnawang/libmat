@@ -523,7 +523,7 @@ void update_pc_edge_cc_info(PowerCell& pcell) {
 // [no use]
 void update_sphere_type_based_on_pcells(const SurfaceMesh& input_mesh,
                                         MedialSphere& msphere, bool is_debug) {
-  if (msphere.type == SphereType::T_N) {
+  if (msphere.type == SphereType::T_3_MORE) {
     // TODO: use msphere.pcell.surf_v2fid_in_groups instead!!
     //
     // group pcells' surface fids in CC not cross sharp edges

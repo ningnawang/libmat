@@ -283,6 +283,7 @@ void Thinning::prune_faces_while_iteration(
 
   auto is_skip_edge_if_on_boundary = [&](const int eid) {
     const auto& medge = mat.edges.at(eid);
+    if (medge.is_deleted) return true;
     const auto& mv0 = mat.vertices->at(medge.vertices_.at(0));
     const auto& mv1 = mat.vertices->at(medge.vertices_.at(1));
     if (medge.is_on_same_sheet && (mv0.is_on_corner() || mv1.is_on_corner()))

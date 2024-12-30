@@ -727,7 +727,7 @@ bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
       mat_p.tan_cc_lines.size() + mat_p.tan_planes.size() > 2) {
     mat_p.type = SphereType::T_N_c;
   } else if (mat_p.tan_planes.size() > 2) {
-    mat_p.type = SphereType::T_N;
+    mat_p.type = SphereType::T_3_MORE;
   }
 
   if (is_debug)
@@ -968,7 +968,7 @@ void relax_and_iterate_spheres(const SurfaceMesh& sf_mesh,
 
     // TODO: update type of sphere after relaxation?
     if (msphere.type == SphereType::T_2 && msphere.tan_planes.size() >= 3) {
-      msphere.type = SphereType::T_N;
+      msphere.type = SphereType::T_3_MORE;
     }
 
     if (is_debug)
@@ -1058,7 +1058,7 @@ void relax_and_iterate_spheres_ODT(
 
     // TODO: update type of sphere after relaxation?
     if (msphere.type == SphereType::T_2 && msphere.tan_planes.size() >= 3) {
-      msphere.type = SphereType::T_N;
+      msphere.type = SphereType::T_3_MORE;
     }
 
     if (is_debug)
@@ -1104,15 +1104,15 @@ void relax_and_iterate_spheres_Laplacian(
     // 3. T4/TN no move
     Vector3 new_center(0., 0., 0.);
     const auto& all_neighbors = sphere_neighbors.at(msphere.id);
-    if (msphere.type == SphereType::T_N &&
+    if (msphere.type == SphereType::T_3_MORE &&
         msphere.tan_planes.size() > 3) {  // T4/TN
       continue;                           // no move
     }
     std::set<int> neighbors_filtered;
-    if (msphere.type == SphereType::T_N) {  // T3
+    if (msphere.type == SphereType::T_3_MORE) {  // T3
       for (const int& nid : all_neighbors) {
         const auto& neigh_sphere = all_medial_spheres.at(nid);
-        if (neigh_sphere.type == SphereType::T_N ||
+        if (neigh_sphere.type == SphereType::T_3_MORE ||
             neigh_sphere.is_on_corner()) {
           new_center += neigh_sphere.center;
           neighbors_filtered.insert(nid);
@@ -1153,7 +1153,7 @@ void relax_and_iterate_spheres_Laplacian(
 
     // TODO: update type of sphere after relaxation?
     if (msphere.type == SphereType::T_2 && msphere.tan_planes.size() >= 3) {
-      msphere.type = SphereType::T_N;
+      msphere.type = SphereType::T_3_MORE;
     }
 
     if (is_debug)
@@ -1221,15 +1221,15 @@ void relax_and_iterate_spheres_both(
     // 3. T4/TN no move
     Vector3 new_center2(0., 0., 0.);
     const auto& all_neighbors = sphere_neighbors.at(msphere.id);
-    if (msphere.type == SphereType::T_N &&
+    if (msphere.type == SphereType::T_3_MORE &&
         msphere.tan_planes.size() > 3) {  // T4/TN
       continue;                           // no move
     }
     std::set<int> neighbors_filtered;
-    if (msphere.type == SphereType::T_N) {  // T3
+    if (msphere.type == SphereType::T_3_MORE) {  // T3
       for (const int& nid : all_neighbors) {
         const auto& neigh_sphere = all_medial_spheres.at(nid);
-        if (neigh_sphere.type == SphereType::T_N ||
+        if (neigh_sphere.type == SphereType::T_3_MORE ||
             neigh_sphere.is_on_corner()) {
           new_center2 += neigh_sphere.center;
           neighbors_filtered.insert(nid);
@@ -1257,7 +1257,7 @@ void relax_and_iterate_spheres_both(
     // double alpha1 = 1. / 3., alpha2 = 2. / 3.;
     // double alpha1 = 2. / 3., alpha2 = 1. / 3.;
     double alpha1 = 1., alpha2 = 0;
-    if (msphere.type == SphereType::T_N)
+    if (msphere.type == SphereType::T_3_MORE)
       msphere.center = new_center2;
     else
       msphere.center = alpha1 * new_center1 + alpha2 * new_center2;
@@ -1284,7 +1284,7 @@ void relax_and_iterate_spheres_both(
 
     // TODO: update type of sphere after relaxation?
     if (msphere.type == SphereType::T_2 && msphere.tan_planes.size() >= 3) {
-      msphere.type = SphereType::T_N;
+      msphere.type = SphereType::T_3_MORE;
     }
 
     if (is_debug)
