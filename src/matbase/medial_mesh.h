@@ -16,6 +16,12 @@ class MedialStruct {
  public:
   MedialStruct(int _id, MedialType _t) : id(_id), type(_t) {};
   ~MedialStruct() {};
+  inline void print_info() {
+    printf("----- MedialStruct, id %d, type %d \n", id, type);
+    if (!m_face_ids.empty()) print_set(m_face_ids, "m_face_ids");
+    if (!m_edge_ids.empty()) print_set(m_edge_ids, "m_edge_ids");
+    if (!m_sphere_ids.empty()) print_set(m_sphere_ids, "m_sphere_ids");
+  }
 
  public:
   int id;

@@ -959,6 +959,11 @@ bool MedialSphere::is_on_seam_endpoint() const {
   return false;
 }
 
+bool MedialSphere::is_on_mstruct_junction() const {
+  if (mstruct_jun_id != -1) return true;
+  return false;
+}
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // setup different threshold

@@ -350,6 +350,9 @@ class MedialSphere {
   bool is_on_junction() const;
   bool is_on_seam_endpoint() const;
 
+  // for medial struct
+  bool is_on_mstruct_junction() const;
+
   void topo_clear();
   void pcell_insert(int cell_id);
   // We only consider Topo_Status::high_facet_cc as true
@@ -375,9 +378,8 @@ class MedialSphere {
 
   // for medial struct
   // storing id for junction only
+  // matching MedialStruct::id for MedialType::Junction
   int mstruct_jun_id = -1;
-  // storing id for sheets, seams and junctions
-  std::set<int> mstruct_ids;  // matching MedialStruct::id [no use]
 
   Vector3 center;
   double radius;
