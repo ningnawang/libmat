@@ -111,7 +111,6 @@ void get_mat_clean(const MedialMesh& mat, std::vector<Vector4>& vertices,
                    std::vector<std::array<int, 3>>& faces);
 void export_ma_clean(const std::string& maname, const MedialMesh& mat,
                      bool is_use_given_name = false);
-void write_ma_ply(const std::string& maname, const MedialMesh& mat,
-                  bool is_use_given_name = false);
+void write_ma_ply(const std::string& maname, const MedialMesh& mat);
 
 #endif  // __IO_H__

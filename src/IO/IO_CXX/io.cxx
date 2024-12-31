@@ -435,10 +435,13 @@ void load_spheres_from_file(const char* filename,
 void save_spheres_file(const std::vector<MedialSphere>& all_medial_spheres,
                        const std::string filename, bool is_save_type,
                        bool is_load_deleted, int num_rpd_itr) {
+  std::string folder_name = "../out/" + filename + "/sph/";
+  create_dir(folder_name);
   std::string sphere_path =
-      "../out/sph/sph_" + filename + "itr" +
+      folder_name + "sph_" + filename + "itr" +
       (num_rpd_itr == -1 ? get_timestamp() : std::to_string(num_rpd_itr)) +
       ".sph";
+
   int n_site = all_medial_spheres.size();
   std::fstream file;
   file.open(sphere_path, std::ios_base::out);
@@ -985,8 +988,10 @@ void load_mat_clean(const std::string& ma_path,
  * f v1 v2 v3 flag_delete
  */
 void export_ma(const std::string& maname, const MedialMesh& mat) {
+  std::string folder_name = "../out/" + maname + "/mat/";
+  create_dir(folder_name);
   std::string ma_name_full =
-      "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+      folder_name + "mat_" + maname + "_" + get_timestamp() + ".ma";
 
   std::ofstream fout(ma_name_full);
   fout << mat.vertices->size() << " " << mat.numEdges_no_dup << " "
@@ -1055,8 +1060,12 @@ void export_ma_given(const std::string& maname,
                      const std::vector<std::array<int, 3>>& mat_faces,
                      bool is_use_given_name) {
   std::string ma_name_full = maname;
-  if (!is_use_given_name)
-    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+  if (!is_use_given_name) {
+    std::string folder_name = "../out/" + maname + "/mat/";
+    create_dir(folder_name);
+    ma_name_full =
+        folder_name + "mat_" + maname + "_" + get_timestamp() + ".ma";
+  }
 
   std::ofstream fout;
   fout.open(ma_name_full, std::ofstream::out | std::ofstream::app);  //   append
@@ -1174,8 +1183,12 @@ void get_mat_clean(const MedialMesh& mat, std::vector<Vector4>& vertices,
 void export_ma_clean(const std::string& maname, const MedialMesh& mat,
                      bool is_use_given_name) {
   std::string ma_name_full = maname;
-  if (!is_use_given_name)
-    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+  if (!is_use_given_name) {
+    std::string folder_name = "../out/" + maname + "/mat/";
+    create_dir(folder_name);
+    ma_name_full =
+        folder_name + "mat_" + maname + "_" + get_timestamp() + ".ma";
+  }
   printf("start saving mat .m file: %s \n", ma_name_full.c_str());
 
   std::vector<Vector4> vertices;
@@ -1187,13 +1200,18 @@ void export_ma_clean(const std::string& maname, const MedialMesh& mat,
   export_ma_given(maname, vertices, edges, faces, true);
 }
 
-// no use
+// [no use]
 // some vertices/faces are deleted
 void write_ma_ply(const std::string& maname, const MedialMesh& mat,
                   bool is_use_given_name) {
   std::string ma_name_full = maname;
-  if (!is_use_given_name)
-    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ply";
+  if (!is_use_given_name) {
+    std::string folder_name = "../out/" + maname + "/mat/";
+    create_dir(folder_name);
+    ma_name_full =
+        folder_name + "mat_" + maname + "_" + get_timestamp() + ".ply";
+  }
+
   printf("start saving mat .ply file: %s \n", ma_name_full.c_str());
 
   std::map<int, int> map_vertices;  // mat vertex tag to new ply

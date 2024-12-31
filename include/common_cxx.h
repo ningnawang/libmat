@@ -234,6 +234,16 @@ inline std::string get_file_no_ext(std::string filePath) {
   return filename;
 }
 
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+inline bool create_dir(const std::string& dir) {
+  // if dir not exists, create it
+  if (!fs::is_directory(dir.c_str())) {
+    return fs::create_directories(dir.c_str());
+  }
+  return true;
+}
+
 inline std::string get_only_file_name(std::string filePath, bool withExtension,
                                       char seperator = '/') {
   std::string filename_ext =

@@ -142,9 +142,10 @@ bool save_convex_cells_houdini(
     const std::vector<ConvexCellHost>& convex_cells_returned,
     std::string rpd_name, const int max_sf_fid, const bool is_boundary_only,
     bool is_slice_plane) {
-  IO::Geometry geometry;
-  IO::GeometryWriter geometry_writer(".");
-  std::string rpd_path = "../out/rpd/rpd_" + rpd_name + "_" + get_timestamp();
+  std::string folder_name = "../out/" + rpd_name + "/rpd/";
+  create_dir(folder_name);
+  std::string rpd_path =
+      folder_name + "rpd_" + rpd_name + "_" + get_timestamp();
 
   std::vector<float3> voro_points;
   std::vector<std::vector<unsigned>> all_voro_faces;
@@ -158,6 +159,9 @@ bool save_convex_cells_houdini(
                               voro_faces_sites, false /*is_triangle*/,
                               max_sf_fid, is_boundary_only);
   }
+
+  IO::Geometry geometry;
+  IO::GeometryWriter geometry_writer(".");
   geometry.AddParticleAttribute("P", voro_points);
   geometry.AddPolygon(all_voro_faces);
   geometry.AddPrimitiveAttribute("PrimAttr", voro_faces_sites);
