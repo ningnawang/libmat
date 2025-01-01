@@ -122,11 +122,17 @@ void SurfaceMesh::cache_sf_fid_to_fe_id(
   }
 }
 
-void SurfaceMesh::cache_fe_sf_fs_map_se_only() {
+void SurfaceMesh::cache_fe_sf_fs_map() {
   this->fe_sf_fs_map_se_only.clear();
   for (const auto& fe : this->fe_sf_fs_pairs_se_only) {
     this->fe_sf_fs_map_se_only[fe[0]] = fe[1];
     this->fe_sf_fs_map_se_only[fe[1]] = fe[0];
+  }
+
+  this->fe_sf_fs_map_ce_only.clear();
+  for (const auto& ce : this->fe_sf_fs_pairs_ce_only) {
+    this->fe_sf_fs_map_ce_only[ce[0]] = ce[1];
+    this->fe_sf_fs_map_ce_only[ce[1]] = ce[0];
   }
 }
 
@@ -161,6 +167,7 @@ bool SurfaceMesh::collect_kring_neighbors_given_fid_se_only(
   return kring_neighbors.empty() ? false : true;
 }
 
+// called by detect_mark_sharp_features()
 void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
     const std::vector<FeatureEdge>& feature_edges) {
   this->fe_sf_fs_pairs_to_ce_id.clear();
@@ -200,10 +207,10 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
   auto& one_fe = feature_edges.at(fe_id);
   if (check_proj_type != one_fe.type) return return_fid_fe_id;
 
-  if (is_debug && fe_id == 238)
-    is_debug = true;
-  else
-    is_debug = false;
+  // if (is_debug && fe_id == 238)
+  //   is_debug = true;
+  // else
+  //   is_debug = false;
 
   // if (is_debug)
   //   printf(

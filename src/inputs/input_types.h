@@ -381,7 +381,7 @@ class SurfaceMesh : public GEO::Mesh {
   void cache_sf_fid_neighs_no_cross();
   void cache_sf_fid_krings_no_cross_se_only(const int k);
   void cache_sf_fid_to_fe_id(const std::vector<FeatureEdge> &feature_edges);
-  void cache_fe_sf_fs_map_se_only();
+  void cache_fe_sf_fs_map();
   bool get_sf_fid_krings_no_cross_se_only(const int fid_given);
   bool get_sf_fid_krings_no_cross_se_only(const int fid_given,
                                           std::set<int> &kring_neighbors) const;
@@ -425,11 +425,15 @@ class SurfaceMesh : public GEO::Mesh {
   std::set<aint2> fe_sf_fs_pairs;
   // same as fe_sf_fs_pairs, but only for SE
   std::set<aint2> fe_sf_fs_pairs_se_only;
-  // updated in cache_fe_sf_fs_map_se_only()
+  // updated in cache_fe_sf_fs_map()
   // same info as fe_sf_fs_pairs_se_only()
   std::map<int, int> fe_sf_fs_map_se_only;
   // same as fe_sf_fs_pairs, but only for CE
-  std::set<aint2> fe_sf_fs_pairs_ce_only;        // [no use]
+  std::set<aint2> fe_sf_fs_pairs_ce_only;
+  // updated in cache_fe_sf_fs_map()
+  // same info as fe_sf_fs_pairs_ce_only
+  std::map<int, int> fe_sf_fs_map_ce_only;
+  // updated in update_fe_sf_fs_pairs_to_ce_id()
   std::map<aint2, int> fe_sf_fs_pairs_to_ce_id;  // mapping to FeatureEdge::id
 
   // surface samples
