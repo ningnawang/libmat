@@ -16,9 +16,10 @@ Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans) {
   return Vector3(bary.x, bary.y, bary.z);
 }
 
-// return 3d triangle mesh if is_triangle is true
-void get_one_convex_cell_faces(
-    const ConvexCellHost& cc_trans, std::vector<float3>& voro_points,
+// 1. return 3d triangle mesh if is_triangle is true
+// 2. call ConvexCellHost::reload_active() before calling
+void get_one_convex_cell_faces_const(
+    const ConvexCellHost& cc_trans, std::vector<cfloat3>& voro_points,
     std::vector<std::vector<unsigned>>& one_voro_cell_faces,
     std::vector<int>& voro_faces_sites, bool is_triangle, int max_sf_fid,
     bool is_boundary_only) {
@@ -42,7 +43,7 @@ void get_one_convex_cell_faces(
       return;
     }
     voro_points.push_back(
-        make_float3(voro_vertex.x, voro_vertex.y, voro_vertex.z));
+        cmake_float3(voro_vertex.x, voro_vertex.y, voro_vertex.z));
   }
 
   // some clipping planes may not exist in tri but
@@ -121,6 +122,7 @@ void get_one_convex_cell_faces(
         one_face.push_back(row + voro_local_faces[lf][p]);
         one_face.push_back(row + voro_local_faces[lf][(p + 1) % nb_pts]);
         one_voro_cell_faces.push_back(one_face);
+        voro_faces_sites.push_back(cc_trans.voro_id);
       }
     } else {
       one_face.clear();
@@ -128,9 +130,9 @@ void get_one_convex_cell_faces(
         one_face.push_back(row + voro_local_faces[lf][p]);
       }
       one_voro_cell_faces.push_back(one_face);
+      voro_faces_sites.push_back(cc_trans.voro_id);
     }
 
-    voro_faces_sites.push_back(cc_trans.voro_id);
     lf++;
   }
 }
@@ -147,7 +149,7 @@ bool save_convex_cells_houdini(
   std::string rpd_path =
       folder_name + "rpd_" + rpd_name + "_" + get_timestamp();
 
-  std::vector<float3> voro_points;
+  std::vector<cfloat3> voro_points;
   std::vector<std::vector<unsigned>> all_voro_faces;
   std::vector<int> voro_faces_sites;
 
@@ -155,14 +157,18 @@ bool save_convex_cells_houdini(
     // filter spheres by slicing plane
     Vector3 last_bary = compute_cell_barycenter(cc_trans);
     if (is_slice_plane && is_slice_by_plane(last_bary, params)) continue;
-    get_one_convex_cell_faces(cc_trans, voro_points, all_voro_faces,
-                              voro_faces_sites, false /*is_triangle*/,
-                              max_sf_fid, is_boundary_only);
+    get_one_convex_cell_faces_const(cc_trans, voro_points, all_voro_faces,
+                                    voro_faces_sites, false /*is_triangle*/,
+                                    max_sf_fid, is_boundary_only);
+  }
+  std::vector<float3> voro_points_houdini;
+  for (const auto& p : voro_points) {
+    voro_points_houdini.push_back(make_float3(p.x, p.y, p.z));
   }
 
   IO::Geometry geometry;
   IO::GeometryWriter geometry_writer(".");
-  geometry.AddParticleAttribute("P", voro_points);
+  geometry.AddParticleAttribute("P", voro_points_houdini);
   geometry.AddPolygon(all_voro_faces);
   geometry.AddPrimitiveAttribute("PrimAttr", voro_faces_sites);
   geometry_writer.OutputGeometry(rpd_path, geometry);
