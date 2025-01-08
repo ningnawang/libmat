@@ -991,7 +991,7 @@ void export_ma(const std::string& maname, const MedialMesh& mat) {
   std::string folder_name = "../out/" + maname + "/mat/";
   create_dir(folder_name);
   std::string ma_name_full =
-      folder_name + "mat_" + maname + "_" + get_timestamp() + ".ma";
+      folder_name + "mat_full_" + maname + "_" + get_timestamp() + ".ma";
 
   std::ofstream fout(ma_name_full);
   fout << mat.vertices->size() << " " << mat.numEdges_no_dup << " "

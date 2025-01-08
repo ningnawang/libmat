@@ -31,6 +31,8 @@ class MedialStruct {
   std::set<int> m_sphere_ids;  // MedialSphere::id
 };
 
+enum MedialEdgeType { INTF = 1, EXTF = 2, ESHEET = 0, EOTHER = -1 };
+
 class MedialEdge {
  public:
   int eid;
@@ -38,9 +40,12 @@ class MedialEdge {
   aint2 vertices_;
   std::set<int> faces_;  // triangle list
   bool is_deleted = false;
+  ///////////////////
   bool is_intf = false;
   bool is_extf = false;
   bool is_on_same_sheet = false;  // including is_intf
+  // TODO: replace all above
+  MedialEdgeType type = MedialEdgeType::EOTHER;
 
   // for medial structure
   int mstruct_id = -1;  // MedialStruct::id
