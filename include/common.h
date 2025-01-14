@@ -31,6 +31,7 @@ typedef std::array<int, 4> aint4;
 typedef std::array<int, 5> aint5;
 typedef std::array<double, 3> adouble2;
 typedef std::array<double, 3> adouble3;  // for gui
+typedef std::array<float, 3> afloat3;
 
 // === Math utilities
 constexpr double PI = 3.14159265358979323846;

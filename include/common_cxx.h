@@ -485,8 +485,9 @@ inline void print_set(const std::set<T>& to_print,
 }
 
 template <typename T>
-inline void print_vec(const std::vector<T>& to_print) {
-  printf("[");
+inline void print_vec(const std::vector<T>& to_print,
+                      const std::string name = "") {
+  printf("%s: [", name.c_str());
   for (const auto& v : to_print) {
     std::cout << v << ", ";
   }

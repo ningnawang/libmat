@@ -7,7 +7,9 @@
   if (x != cudaSuccess) exit(1);
 
 // NOT built-in type
-struct __align__(16) float5 { float x, y, z, w, h; };
+struct __align__(16) float5 {
+  float x, y, z, w, h;
+};
 inline __host__ __device__ float5 make_float5(float x, float y, float z,
                                               float w, float h) {
   float5 t;
@@ -27,7 +29,9 @@ inline __host__ __device__ float5 make_float5(float4 orig, float h) {
   t.h = h;
   return t;
 }
-struct __align__(16) float7 { float x, y, z, w, h, g, k; };
+struct __align__(16) float7 {
+  float x, y, z, w, h, g, k;
+};
 inline __host__ __device__ float7 make_float7(float x, float y, float z,
                                               float w, float h, float g,
                                               float k) {
