@@ -413,6 +413,15 @@ std::set<T> to_set(const std::vector<T>& in) {
   return out;
 }
 
+template <typename T>
+std::vector<T> to_vec(const std::set<T>& in) {
+  std::vector<T> out;
+  for (int x : in) {
+    out.push_back(x);
+  }
+  return out;
+}
+
 inline int mod3(int j) { return j % 3; }
 inline int mod4(int j) { return j % 4; }
 inline int modk(int j, int k) { return j % k; }

@@ -26,8 +26,8 @@ Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans);
 void get_one_convex_cell_faces_const(
     const ConvexCellHost& cc_trans, std::vector<cfloat3>& voro_points,
     std::vector<std::vector<unsigned>>& one_voro_cell_faces,
-    std::vector<int>& voro_faces_sites, bool is_triangle, int max_sf_fid,
-    bool is_boundary_only);
+    std::vector<int>& voro_faces_sites, std::vector<int>& voro_faces_adj_sites,
+    bool is_triangle, int max_sf_fid, bool is_boundary_only);
 
 bool save_convex_cells_houdini(
     const Parameter params, const std::vector<MedialSphere>& all_medial_spheres,

@@ -21,10 +21,11 @@ Vector3 compute_cell_barycenter(const ConvexCellHost& cc_trans) {
 void get_one_convex_cell_faces_const(
     const ConvexCellHost& cc_trans, std::vector<cfloat3>& voro_points,
     std::vector<std::vector<unsigned>>& one_voro_cell_faces,
-    std::vector<int>& voro_faces_sites, bool is_triangle, int max_sf_fid,
-    bool is_boundary_only) {
+    std::vector<int>& voro_faces_sites, std::vector<int>& voro_faces_adj_sites,
+    bool is_triangle, int max_sf_fid, bool is_boundary_only) {
   int row = voro_points.size();  // index from 0
   assert(one_voro_cell_faces.size() == voro_faces_sites.size());  // not clean!!
+  assert(one_voro_cell_faces.size() == voro_faces_adj_sites.size());
 
   // save all vertices
   FOR(i, cc_trans.nb_v) {
@@ -123,6 +124,7 @@ void get_one_convex_cell_faces_const(
         one_face.push_back(row + voro_local_faces[lf][(p + 1) % nb_pts]);
         one_voro_cell_faces.push_back(one_face);
         voro_faces_sites.push_back(cc_trans.voro_id);
+        voro_faces_adj_sites.push_back(hp.x == cc_trans.voro_id ? hp.y : hp.x);
       }
     } else {
       one_face.clear();
@@ -131,6 +133,7 @@ void get_one_convex_cell_faces_const(
       }
       one_voro_cell_faces.push_back(one_face);
       voro_faces_sites.push_back(cc_trans.voro_id);
+      voro_faces_adj_sites.push_back(hp.x == cc_trans.voro_id ? hp.y : hp.x);
     }
 
     lf++;
@@ -151,14 +154,14 @@ bool save_convex_cells_houdini(
 
   std::vector<cfloat3> voro_points;
   std::vector<std::vector<unsigned>> all_voro_faces;
-  std::vector<int> voro_faces_sites;
+  std::vector<int> voro_faces_sites, _;
 
   for (const auto& cc_trans : convex_cells_returned) {
     // filter spheres by slicing plane
     Vector3 last_bary = compute_cell_barycenter(cc_trans);
     if (is_slice_plane && is_slice_by_plane(last_bary, params)) continue;
     get_one_convex_cell_faces_const(cc_trans, voro_points, all_voro_faces,
-                                    voro_faces_sites, false /*is_triangle*/,
+                                    voro_faces_sites, _, false /*is_triangle*/,
                                     max_sf_fid, is_boundary_only);
   }
   std::vector<float3> voro_points_houdini;
