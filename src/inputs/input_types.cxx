@@ -180,6 +180,8 @@ void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
   }
 }
 
+// EdgeType can be either SE or CE
+// here we should only care about CE
 aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
     const std::vector<FeatureEdge>& feature_edges,
     const EdgeType& check_proj_type, Vector3& p, double& sq_dist,
@@ -207,20 +209,20 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
   // loop all possible feature edges
   for (const int fe_id : this->sf_fid_to_fe_ids.at(fid)) {
     auto& one_fe = feature_edges.at(fe_id);
-    if (check_proj_type != one_fe.type) return return_fid_fe_id;
+    // can be either SE or CE
+    if (check_proj_type != one_fe.type) continue;
 
-    // if (is_debug && fe_id == 239)
+    // if (is_debug && fe_id == 240)
     //   is_debug = true;
     // else
     //   is_debug = false;
 
-    // if (is_debug)
-    //   printf(
-    //       "--------- [proj_and_get_FE_if_any] found fid: %d, fe_id %d, fl_id:
-    //       "
-    //       "%d, type %d, lambda: (%f,%f,%f)\n",
-    //       fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
-    //       lambda[2]);
+    if (is_debug)
+      printf(
+          "--------- [proj_and_get_FE_if_any] found fid: %d, fe_id %d, "
+          "fl_id: %d, type %d, lambda: (%f,%f,%f)\n",
+          fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
+          lambda[2]);
 
     /////
     // check if p on the feature edge
@@ -234,10 +236,10 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
     for (int i = 0; i < 3; i++, c++) {
       f_tvids[i] = this->sf2tet_vs_mapping.at(this->facet_corners.vertex(c));
     }
-    // if (is_debug)
-    //   printf("[proj_and_get_FE_if_any] f_tvids: (%d,%d,%d), fe_tvids:
-    //   (%d,%d)\n",
-    //          f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
+    if (is_debug)
+      printf(
+          "[proj_and_get_FE_if_any] f_tvids: (%d,%d,%d), fe_tvids: (%d, %d)\n ",
+          f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
 
     // find one tvid on the face that not matches the FE
     int f_tvid_local_sorted[3] = {-1, -1, -1};
@@ -249,10 +251,10 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
       else  // not match
         f_tvid_local_sorted[2] = i;
     }
-    // if (is_debug)
-    //   printf("[proj_and_get_FE_if_any]  f_tvid_local_sorted: (%d,%d,%d)\n",
-    //          f_tvid_local_sorted[0], f_tvid_local_sorted[1],
-    //          f_tvid_local_sorted[2]);
+    if (is_debug)
+      printf("[proj_and_get_FE_if_any]  f_tvid_local_sorted: (%d,%d,%d)\n",
+             f_tvid_local_sorted[0], f_tvid_local_sorted[1],
+             f_tvid_local_sorted[2]);
     assert(f_tvid_local_sorted[0] != -1 && f_tvid_local_sorted[1] != -1 &&
            f_tvid_local_sorted[2] != -1);
 
@@ -262,9 +264,8 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
       return_fid_fe_id[1] = fe_id;
       if (is_debug) {
         printf(
-            "--------- [proj_and_get_FE_if_any] found fid: %d, fe_id %d, "
-            "fl_id: "
-            "%d, type %d, lambda: (%f,%f,%f)\n",
+            "--------- [proj_and_get_FE_if_any] found on ce, fid: %d, fe_id "
+            "%d, fl_id: %d, type %d, lambda: (%f,%f,%f)\n",
             fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
             lambda[2]);
         // print old_p -> p
