@@ -349,6 +349,7 @@ class MedialSphere {
   bool is_on_sheet() const;
   bool is_on_junction() const;
   bool is_on_seam_endpoint() const;
+  bool is_on_inf() const;
 
   // for medial struct
   bool is_on_mstruct_junction() const;
@@ -371,7 +372,8 @@ class MedialSphere {
 
  public:
   int id;
-  int site_id;  // for computing parital RPD, -1 as default
+  int prev_id = -1;  // previous id if updated all_medial_spheres
+  int site_id;       // for computing parital RPD, -1 as default
   int itr_cnt;  // count the number of iteration when this sphere is created
   bool is_deleted = false;
   int dup_cnt = 0;  // duplicated count, one matching a connected pcell

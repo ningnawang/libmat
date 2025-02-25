@@ -380,7 +380,7 @@ class SurfaceMesh : public GEO::Mesh {
   void cache_sf_fid_neighs();
   void cache_sf_fid_neighs_no_cross();
   void cache_sf_fid_krings_no_cross_se_only(const int k);
-  void cache_sf_fid_to_fe_id(const std::vector<FeatureEdge> &feature_edges);
+  void cache_sf_fid_to_fe_ids(const std::vector<FeatureEdge> &feature_edges);
   void cache_fe_sf_fs_map();
   bool get_sf_fid_krings_no_cross_se_only(const int fid_given);
   bool get_sf_fid_krings_no_cross_se_only(const int fid_given,
@@ -439,10 +439,10 @@ class SurfaceMesh : public GEO::Mesh {
   // surface samples
   std::vector<v2int> samples_fids;
 
-  // fid -> FeatureEdge::id
-  // updated by function SurfaceMesh::cache_sf_fid_to_fe_id()
+  // fid -> {FeatureEdge::id}
+  // updated by function SurfaceMesh::cache_sf_fid_to_fe_ids()
   // used by function SurfaceMesh::project_to_sf_and_get_FE_if_any()
-  std::map<int, int> sf_fid_to_fe_id;
+  std::map<int, std::set<int>> sf_fid_to_fe_ids;
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,

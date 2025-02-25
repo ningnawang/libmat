@@ -113,12 +113,12 @@ void SurfaceMesh::cache_sf_fid_krings_no_cross_se_only(const int k) {
   }
 }
 
-void SurfaceMesh::cache_sf_fid_to_fe_id(
+void SurfaceMesh::cache_sf_fid_to_fe_ids(
     const std::vector<FeatureEdge>& feature_edges) {
-  this->sf_fid_to_fe_id.clear();
+  this->sf_fid_to_fe_ids.clear();
   for (const auto& fe : feature_edges) {
-    this->sf_fid_to_fe_id[fe.adj_sf_fs_pair[0]] = fe.id;
-    this->sf_fid_to_fe_id[fe.adj_sf_fs_pair[1]] = fe.id;
+    this->sf_fid_to_fe_ids[fe.adj_sf_fs_pair[0]].insert(fe.id);
+    this->sf_fid_to_fe_ids[fe.adj_sf_fs_pair[1]].insert(fe.id);
   }
 }
 
@@ -185,11 +185,11 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
     const EdgeType& check_proj_type, Vector3& p, double& sq_dist,
     bool is_debug) const {
   // if not cache, this loop will be slow
-  if (!feature_edges.empty() && this->sf_fid_to_fe_id.empty()) {
-    // this->cache_sf_fid_to_fe_id(feature_edges);
+  if (!feature_edges.empty() && this->sf_fid_to_fe_ids.empty()) {
+    // this->cache_sf_fid_to_fe_ids(feature_edges);
     printf(
-        "[proj_and_get_FE_if_any] ERROR: sf_fid_to_fe_id is empty, call "
-        "cache_sf_fid_to_fe_id() first\n");
+        "[proj_and_get_FE_if_any] ERROR: sf_fid_to_fe_ids is empty, call "
+        "cache_sf_fid_to_fe_ids() first\n");
     assert(false);
   }
 
@@ -201,81 +201,88 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
   int fid = this->aabb_wrapper.project_to_sf_get_nearest_face_with_lambdas(
       p, sq_dist, lambda[0], lambda[1], lambda[2]);
   return_fid_fe_id[0] = fid;
-  if (this->sf_fid_to_fe_id.find(fid) == this->sf_fid_to_fe_id.end())
+  if (this->sf_fid_to_fe_ids.find(fid) == this->sf_fid_to_fe_ids.end())
     return return_fid_fe_id;
-  int fe_id = this->sf_fid_to_fe_id.at(fid);
-  auto& one_fe = feature_edges.at(fe_id);
-  if (check_proj_type != one_fe.type) return return_fid_fe_id;
 
-  // if (is_debug && fe_id == 238)
-  //   is_debug = true;
-  // else
-  //   is_debug = false;
+  // loop all possible feature edges
+  for (const int fe_id : this->sf_fid_to_fe_ids.at(fid)) {
+    auto& one_fe = feature_edges.at(fe_id);
+    if (check_proj_type != one_fe.type) return return_fid_fe_id;
 
-  // if (is_debug)
-  //   printf(
-  //       "--------- [proj_and_get_FE_if_any] found fid: %d, fe_id %d, fl_id: "
-  //       "%d, type %d, lambda: (%f,%f,%f)\n",
-  //       fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
-  //       lambda[2]);
+    // if (is_debug && fe_id == 239)
+    //   is_debug = true;
+    // else
+    //   is_debug = false;
 
-  /////
-  // check if p on the feature edge
-  //
-  // get FE tvids
-  int fe_tvid0 = one_fe.t2vs_group[0];
-  int fe_tvid1 = one_fe.t2vs_group[1];
-  // get face tvids
-  int f_tvids[3] = {-1, -1, -1};
-  GEO::index_t c = this->facets.corners_begin(fid);
-  for (int i = 0; i < 3; i++, c++) {
-    f_tvids[i] = this->sf2tet_vs_mapping.at(this->facet_corners.vertex(c));
-  }
-  // if (is_debug)
-  //   printf("[proj_and_get_FE_if_any] f_tvids: (%d,%d,%d), fe_tvids:
-  //   (%d,%d)\n",
-  //          f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
+    // if (is_debug)
+    //   printf(
+    //       "--------- [proj_and_get_FE_if_any] found fid: %d, fe_id %d, fl_id:
+    //       "
+    //       "%d, type %d, lambda: (%f,%f,%f)\n",
+    //       fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
+    //       lambda[2]);
 
-  // find one tvid on the face that not matches the FE
-  int f_tvid_local_sorted[3] = {-1, -1, -1};
-  for (int i = 0; i < 3; i++) {
-    if (f_tvids[i] == fe_tvid0)
-      f_tvid_local_sorted[0] = i;
-    else if (f_tvids[i] == fe_tvid1)
-      f_tvid_local_sorted[1] = i;
-    else  // not match
-      f_tvid_local_sorted[2] = i;
-  }
-  // if (is_debug)
-  //   printf("[proj_and_get_FE_if_any]  f_tvid_local_sorted: (%d,%d,%d)\n",
-  //          f_tvid_local_sorted[0], f_tvid_local_sorted[1],
-  //          f_tvid_local_sorted[2]);
-  assert(f_tvid_local_sorted[0] != -1 && f_tvid_local_sorted[1] != -1 &&
-         f_tvid_local_sorted[2] != -1);
-
-  // check if lambda of third f_tvid_local_sorted is 0
-  // then p is on the feature edge
-  if (lambda[f_tvid_local_sorted[2]] <= SCALAR_ZERO_6) {
-    return_fid_fe_id[1] = fe_id;
-    if (is_debug) {
-      printf(
-          "--------- [proj_and_get_FE_if_any] found fid: %d, fe_id %d, fl_id: "
-          "%d, type %d, lambda: (%f,%f,%f)\n",
-          fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
-          lambda[2]);
-      // print old_p -> p
-      printf("old_p: (%f,%f,%f), p: (%f,%f,%f)\n", old_p[0], old_p[1], old_p[2],
-             p[0], p[1], p[2]);
-      printf(
-          "[proj_and_get_FE_if_any] f_tvids: (%d,%d,%d), fe_tvids: (%d,%d)\n",
-          f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
-      printf("[proj_and_get_FE_if_any]  f_tvid_local_sorted: (%d,%d,%d)\n",
-             f_tvid_local_sorted[0], f_tvid_local_sorted[1],
-             f_tvid_local_sorted[2]);
-      printf("[proj_and_get_FE_if_any] found point on fe_id %d, fl_id: %d\n",
-             fe_id, one_fe.get_fl_id(), one_fe.type);
+    /////
+    // check if p on the feature edge
+    //
+    // get FE tvids
+    int fe_tvid0 = one_fe.t2vs_group[0];
+    int fe_tvid1 = one_fe.t2vs_group[1];
+    // get face tvids
+    int f_tvids[3] = {-1, -1, -1};
+    GEO::index_t c = this->facets.corners_begin(fid);
+    for (int i = 0; i < 3; i++, c++) {
+      f_tvids[i] = this->sf2tet_vs_mapping.at(this->facet_corners.vertex(c));
     }
-  }
+    // if (is_debug)
+    //   printf("[proj_and_get_FE_if_any] f_tvids: (%d,%d,%d), fe_tvids:
+    //   (%d,%d)\n",
+    //          f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
+
+    // find one tvid on the face that not matches the FE
+    int f_tvid_local_sorted[3] = {-1, -1, -1};
+    for (int i = 0; i < 3; i++) {
+      if (f_tvids[i] == fe_tvid0)
+        f_tvid_local_sorted[0] = i;
+      else if (f_tvids[i] == fe_tvid1)
+        f_tvid_local_sorted[1] = i;
+      else  // not match
+        f_tvid_local_sorted[2] = i;
+    }
+    // if (is_debug)
+    //   printf("[proj_and_get_FE_if_any]  f_tvid_local_sorted: (%d,%d,%d)\n",
+    //          f_tvid_local_sorted[0], f_tvid_local_sorted[1],
+    //          f_tvid_local_sorted[2]);
+    assert(f_tvid_local_sorted[0] != -1 && f_tvid_local_sorted[1] != -1 &&
+           f_tvid_local_sorted[2] != -1);
+
+    // check if lambda of third f_tvid_local_sorted is 0,
+    // then p is on the feature edge
+    if (lambda[f_tvid_local_sorted[2]] <= SCALAR_ZERO_6) {
+      return_fid_fe_id[1] = fe_id;
+      if (is_debug) {
+        printf(
+            "--------- [proj_and_get_FE_if_any] found fid: %d, fe_id %d, "
+            "fl_id: "
+            "%d, type %d, lambda: (%f,%f,%f)\n",
+            fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
+            lambda[2]);
+        // print old_p -> p
+        printf("old_p: (%f,%f,%f), p: (%f,%f,%f)\n", old_p[0], old_p[1],
+               old_p[2], p[0], p[1], p[2]);
+        printf(
+            "[proj_and_get_FE_if_any] f_tvids: (%d,%d,%d), fe_tvids: (%d,%d)\n",
+            f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
+        printf("[proj_and_get_FE_if_any]  f_tvid_local_sorted: (%d,%d,%d)\n",
+               f_tvid_local_sorted[0], f_tvid_local_sorted[1],
+               f_tvid_local_sorted[2]);
+        printf("[proj_and_get_FE_if_any] found point on fe_id %d, fl_id: %d\n",
+               fe_id, one_fe.get_fl_id(), one_fe.type);
+      }
+      // directly return if found a closed feature edge
+      return return_fid_fe_id;
+    }
+  }  // for fe_id
   return return_fid_fe_id;
 }
 

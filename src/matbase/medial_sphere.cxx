@@ -306,10 +306,11 @@ void MedialSphere::print_ss_info() const {
 void MedialSphere::print_info() const {
   printf("------ MedialSphere Info ------\n");
   printf(
-      "id: %d, is_deleted: %d, dup_cnt: %d, is_on_se: %d, is_on_corner: %d, "
+      "id: %d, is_deleted: %d, prev_id: %d, dup_cnt: %d, is_on_se: %d, "
+      "is_on_corner: %d, "
       "is_on_ce_pre: %d, is_on_ce_pre_or_fix: %d, se_line_id: %d\n",
-      id, is_deleted, dup_cnt, is_on_se(), is_on_corner(), is_on_ce_pre(),
-      is_on_ce_pre_or_fix(), se_line_id);
+      id, is_deleted, prev_id, dup_cnt, is_on_se(), is_on_corner(),
+      is_on_ce_pre(), is_on_ce_pre_or_fix(), se_line_id);
   if (is_on_se()) printf("se_line_id: %d\n", se_line_id);
   if (is_on_corner()) print_set<int>(corner_fls, "corner_fls");
   printf(
@@ -933,8 +934,7 @@ bool MedialSphere::is_on_ce() const {
 }
 bool MedialSphere::is_on_intf() const {
   if (type == SphereType::T_3_MORE || type == SphereType::T_N_c ||
-      type == SphereType::T_4_MORE || type == SphereType::T_1_INF ||
-      type == SphereType::T_2_INF)
+      type == SphereType::T_4_MORE || type == SphereType::T_2_INF)
     return true;
   return false;
 }
@@ -961,6 +961,10 @@ bool MedialSphere::is_on_seam_endpoint() const {
 
 bool MedialSphere::is_on_mstruct_junction() const {
   if (mstruct_jun_id != -1) return true;
+  return false;
+}
+bool MedialSphere::is_on_inf() const {
+  if (type == SphereType::T_1_INF || type == SphereType::T_2_INF) return true;
   return false;
 }
 
