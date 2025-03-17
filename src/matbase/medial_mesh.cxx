@@ -295,7 +295,8 @@ int MedialMesh::create_edge(const int vid0, const int vid1, int dcnt,
                             int eid  // if not given then auto-increase
 ) {
   // edge already exists
-  // if (Edge(vid0, vid1, eid)) return eid;
+  if (Edge(vid0, vid1, eid))
+    printf("[MAT] edge (%d,%d) already exists\n", vid0, vid1);
   assert(!Edge(vid0, vid1, eid));  // do not handle case when edge exists
   if (eid == -1) eid = edges.size();
   MedialEdge bep;

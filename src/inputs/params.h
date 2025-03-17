@@ -56,9 +56,11 @@ struct Parameter {
   double cc_len_eps_rel = 1. / 70.;
   double cc_normal_eps = 20;  // [no use]
 
-  // Threshold for detecting sharp/concave edges and corners
-  double thres_concave = 0.2;  // smaller more sensative
-  double thres_convex = 40.;   // smaller more sensative
+  // Threshold for detecting sharp/concave edges and corners [0,180]
+  // convex, bigger angle more convex, so smaller threshold more sensative
+  double thres_convex = 55.;
+  // concave, bigger angle more concave, so smaller threshold more sensative
+  double thres_concave = 80.;
 };
 
 //----------------------------------------------------------------------------

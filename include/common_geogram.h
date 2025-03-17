@@ -53,6 +53,68 @@ inline Vector3 get_direction(const Vector3& a, const Vector3& b) {
   return GEO::normalize(b - a);
 }
 
+// Function to sort three vertices based on the right-hand rule
+inline std::array<int, 3> sort_triangle_vertices_right_hand_rule(
+    const std::array<Vector3, 3>& vertices, const Vector3& normal) {
+  // Compute edge vectors
+  Vector3 e1 = vertices[1] - vertices[0];
+  Vector3 e2 = vertices[2] - vertices[0];
+
+  // Compute cross product
+  Vector3 crossProduct = GEO::cross(e1, e2);
+
+  // Check if the cross product aligns with the given normal
+  if (GEO::dot(crossProduct, normal) < 0) {
+    // Reverse order to maintain the right-hand rule
+    return {0, 2, 1};  // Swap v1 and v2
+  }
+  return {0, 1, 2};  // Already correct
+}
+
+// Function to sort two vertices based on their order in the sorted face
+// the fs_vertices and fs_vs_indices are matching
+//
+// face vs indices are already sorted
+inline void sort_edge_vertices(const std::array<int, 3>& fs_vs_indices,
+                               std::array<int, 2>& edge_vs, bool is_debug) {
+  if (is_debug)
+    printf("fs_vs_indices: (%d,%d,%d)\n", fs_vs_indices[0], fs_vs_indices[1],
+           fs_vs_indices[2]);
+
+  // Find positions of edge_vs[0] and edge_vs[1] in the sorted global indices
+  int indexA = -1, indexB = -1;
+  for (int i = 0; i < 3; i++) {
+    if (fs_vs_indices[i] == edge_vs[0]) indexA = i;
+    if (fs_vs_indices[i] == edge_vs[1]) indexB = i;
+  }
+
+  // Ensure both vertices are part of the face
+  if (indexA == -1 || indexB == -1) {
+    throw std::invalid_argument(
+        "Edge vertices not found in the sorted face. "
+        "Given edge: (" +
+        std::to_string(edge_vs[0]) + ", " + std::to_string(edge_vs[1]) + ")");
+  }
+
+  if (is_debug) printf("indexA %d, indexB %d\n", indexA, indexB);
+
+  if (indexA == 0) {
+    // swap
+    if (indexB == 2) edge_vs = {edge_vs[1], edge_vs[0]};
+    return;
+  }
+  if (indexA == 1) {
+    // swap
+    if (indexB == 0) edge_vs = {edge_vs[1], edge_vs[0]};
+    return;
+  }
+  if (indexA == 2) {
+    // swap
+    if (indexB == 1) edge_vs = {edge_vs[1], edge_vs[0]};
+    return;
+  }
+}
+
 inline void get_random_vector_between_two_vectors(const Vector3& nA,
                                                   const Vector3& nB,
                                                   Vector3& nX) {
