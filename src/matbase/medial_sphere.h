@@ -18,16 +18,25 @@ class ss_params {
   int p_fid = UNK_FACE;
 
  public:
-  inline bool is_p_on_ce() { return p_fid <= -2; }
-  inline bool is_q_on_ce() { return q_fid <= -2; }
+  inline bool is_p_on_ce() { return is_point_on_ce(p_fid); }
+  inline bool is_q_on_ce() { return is_point_on_ce(q_fid); }
   inline void set_p_fid(int _pfid, bool is_on_ce = false) {
-    p_fid = is_on_ce ? -(_pfid + 2) : _pfid;
+    p_fid = encode_fid(_pfid, is_on_ce);
   }
   inline void set_q_fid(int _qfid, bool is_on_ce = false) {
-    q_fid = is_on_ce ? -(_qfid + 2) : _qfid;
+    q_fid = encode_fid(_qfid, is_on_ce);
   }
-  inline int get_p_fid() { return is_p_on_ce() ? -(p_fid + 2) : p_fid; }
-  inline int get_q_fid() { return is_q_on_ce() ? -(q_fid + 2) : q_fid; }
+  inline int get_p_fid() { return decode_fid(p_fid, is_p_on_ce()); }
+  inline int get_q_fid() { return decode_fid(q_fid, is_q_on_ce()); }
+
+ public:
+  inline static int encode_fid(int _fid, bool is_on_ce = false) {
+    return is_on_ce ? -(_fid + 2) : _fid;
+  }
+  inline static int decode_fid(int _fid, bool is_on_ce = false) {
+    return is_on_ce ? -(_fid + 2) : _fid;
+  }
+  inline static bool is_point_on_ce(const int _fid) { return _fid <= -2; }
 };
 
 class TangentPlane {

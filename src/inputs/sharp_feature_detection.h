@@ -14,4 +14,4 @@ int get_grouped_feature_edges(const std::set<aint2>& fe_to_visit,
                               std::vector<std::vector<aint2>>& fe_groups);
 
 void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
-                                TetMesh& tet_mesh);
+                                TetMesh& tet_mesh, bool is_sf_file_exist);

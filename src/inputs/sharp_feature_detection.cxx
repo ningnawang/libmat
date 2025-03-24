@@ -78,14 +78,36 @@ void load_local_from_mesh(const GEO::Mesh& mesh, std::vector<Vector3>& points,
 
 void mark_feature_attributes(const std::set<aint2>& s_edges,
                              const std::set<aint2>& cc_edges,
-                             const std::set<int>& corners, GEO::Mesh& input) {
-  // Setup corners
-  GEO::Attribute<int> attr_corners(input.vertices.attributes(), "corner");
+                             const std::set<int>& corners_se_sf,
+                             const std::set<int>& corners_ce_sf,
+                             const std::set<int>& corners_fake_sf,
+                             GEO::Mesh& input) {
+  // Setup corners_se_sf
+  GEO::Attribute<int> attr_corners_se(input.vertices.attributes(), "corner_se");
   for (int i = 0; i < input.vertices.nb(); i++) {
-    if (corners.find(i) != corners.end())
-      attr_corners[i] = 1;
+    if (corners_se_sf.find(i) != corners_se_sf.end())
+      attr_corners_se[i] = 1;
     else
-      attr_corners[i] = 0;
+      attr_corners_se[i] = 0;
+  }
+
+  // Setup corners_ce_sf
+  GEO::Attribute<int> attr_corners_ce(input.vertices.attributes(), "corner_ce");
+  for (int i = 0; i < input.vertices.nb(); i++) {
+    if (corners_ce_sf.find(i) != corners_ce_sf.end())
+      attr_corners_ce[i] = 1;
+    else
+      attr_corners_ce[i] = 0;
+  }
+
+  // Setup corners_fake_sf
+  GEO::Attribute<int> attr_corners_fake(input.vertices.attributes(),
+                                        "corner_fake");
+  for (int i = 0; i < input.vertices.nb(); i++) {
+    if (corners_fake_sf.find(i) != corners_fake_sf.end())
+      attr_corners_fake[i] = 1;
+    else
+      attr_corners_fake[i] = 0;
   }
 
   // Setup sharp edges and concave edges
@@ -105,6 +127,50 @@ void mark_feature_attributes(const std::set<aint2>& s_edges,
     }
   }
   printf("Marked feature attributes in GEO::Mesh \n");
+}
+
+void load_feature_attributes(const GEO::Mesh& input, std::set<aint2>& s_edges,
+                             std::set<aint2>& cc_edges,
+                             std::set<int>& corners_se_sf,
+                             std::set<int>& corners_ce_sf,
+                             std::set<int>& corners_fake_sf) {
+  s_edges.clear();
+  cc_edges.clear();
+  corners_se_sf.clear();
+  corners_ce_sf.clear();
+  corners_fake_sf.clear();
+
+  // Load corners_se_sf
+  GEO::Attribute<int> attr_corners_se(input.vertices.attributes(), "corner_se");
+  for (int i = 0; i < attr_corners_se.size(); i++) {
+    if (attr_corners_se[i] == 1) corners_se_sf.insert(i);
+  }
+
+  // Load corners_ce_sf
+  GEO::Attribute<int> attr_corners_ce(input.vertices.attributes(), "corner_ce");
+  for (int i = 0; i < attr_corners_ce.size(); i++) {
+    if (attr_corners_ce[i] == 1) corners_ce_sf.insert(i);
+  }
+
+  // Load corners_fake_sf
+  GEO::Attribute<int> attr_corners_fake(input.vertices.attributes(),
+                                        "corner_fake");
+  for (int i = 0; i < attr_corners_fake.size(); i++) {
+    if (attr_corners_fake[i] == 1) corners_fake_sf.insert(i);
+  }
+
+  // Load sharp edges and concave edges
+  GEO::Attribute<int> attr_se(input.edges.attributes(), "se");
+  GEO::Attribute<int> attr_cce(input.edges.attributes(), "cce");
+  for (int e = 0; e < input.edges.nb(); e++) {
+    if (attr_se[e] == 0 && attr_cce[e] == 0) continue;
+    aint2 edge = {
+        {(int)input.edges.vertex(e, 0), (int)input.edges.vertex(e, 1)}};
+    std::sort(edge.begin(), edge.end());
+    if (attr_se[e] == 1) s_edges.insert(edge);
+    if (attr_cce[e] == 1) cc_edges.insert(edge);
+  }
+  printf("Load feature attributes from GEO::Mesh \n");
 }
 
 // Function to check if the edge is concave or convex, or not
@@ -731,21 +797,28 @@ void store_concave_corners(const std::set<int>& corners_ce_tet,
 // mark feature attributes of GEO::Mesh
 // NOTE: here we store edges as 2 neighboring tet vertices instead of surface
 void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
-                                TetMesh& tet_mesh) {
+                                TetMesh& tet_mesh, bool is_find_feature) {
   const auto& sf2tet_vs_mapping = sf_mesh.sf2tet_vs_mapping;
   assert(!sf2tet_vs_mapping.empty());
   std::vector<Vector3> points;
   std::vector<Vector3i> faces;
   load_local_from_mesh(sf_mesh, points, faces);
 
-  // find feature edges and corners on GEO::Mesh
   std::set<aint2> s_edges_sf, cc_edges_sf;
   std::set<int> corners_se_sf, corners_ce_sf, corners_fake_sf;
-  find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
-                     corners_se_sf, corners_ce_sf, corners_fake_sf,
-                     sf_mesh.fe_sf_fs_pairs, sf_mesh.fe_sf_fs_pairs_se_only,
-                     sf_mesh.fe_sf_fs_pairs_ce_only);
-  mark_feature_attributes(s_edges_sf, cc_edges_sf, corners_se_sf, sf_mesh);
+  if (is_find_feature) {
+    // find feature edges and corners on GEO::Mesh
+    find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
+                       corners_se_sf, corners_ce_sf, corners_fake_sf,
+                       sf_mesh.fe_sf_fs_pairs, sf_mesh.fe_sf_fs_pairs_se_only,
+                       sf_mesh.fe_sf_fs_pairs_ce_only);
+    mark_feature_attributes(s_edges_sf, cc_edges_sf, corners_se_sf,
+                            corners_ce_sf, corners_fake_sf, sf_mesh);
+  } else {
+    // load feature edges and corners from file
+    load_feature_attributes(sf_mesh, s_edges_sf, cc_edges_sf, corners_se_sf,
+                            corners_ce_sf, corners_fake_sf);
+  }
 
   // map back to tet mesh
   std::set<aint2> s_edges_tet_tmp, cc_edges_tet_tmp;

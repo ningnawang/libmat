@@ -19,7 +19,8 @@
 #include "medial_sphere.h"
 #include "params.h"
 
-void pre_and_init_aabb(GEO::Mesh &sf_mesh, AABBWrapper &aabb_wrapper);
+void pre_and_init_aabb(GEO::Mesh &sf_mesh, AABBWrapper &aabb_wrapper,
+                       bool is_reorder);
 void pre_and_init_feature_aabb(const TetMesh &tet_mesh,
                                AABBWrapper &aabb_wrapper);
 

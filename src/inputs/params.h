@@ -26,7 +26,7 @@ struct Parameter {
   float sf_face_len = 1. / 20.;
 
   // For remove_close_medial_spheres()
-  float clean_sphere_thres_rel = 1. / 250.f;
+  float clean_sphere_thres_rel = 1. / 300.f;
 
   // For ideal mface len = mface_rel_len * bbox_diag_l
   float mface_rel_len = 1. / 30.;

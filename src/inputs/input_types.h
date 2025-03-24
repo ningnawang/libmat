@@ -168,7 +168,7 @@ class TetMesh {
   // updated by function update_allow_to_merge_ce_line_ids()
   //
   // used for clustering fids for msphere type
-  // RPD3D_Wrapper::cluster_sphere_type_using_samples_fids()
+  // RPD3D_Wrapper::cluster_msphere_type_and_tangents_using_pcell_samples()
   // [deprecated]
   std::map<int, std::set<int>> allow_to_merge_ce_line_ids;
 

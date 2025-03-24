@@ -392,9 +392,10 @@ void shrink_spheres(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
            all_medial_spheres.size());
 }
 
-void pre_and_init_aabb(GEO::Mesh& sf_mesh, AABBWrapper& aabb_wrapper) {
+void pre_and_init_aabb(GEO::Mesh& sf_mesh, AABBWrapper& aabb_wrapper,
+                       bool is_reorder) {
   GEO::compute_normals(sf_mesh);
-  aabb_wrapper.init_sf_mesh_and_tree(sf_mesh, true /*is_reorder*/);
+  aabb_wrapper.init_sf_mesh_and_tree(sf_mesh, is_reorder);
 }
 
 void pre_and_init_feature_aabb(const TetMesh& tet_mesh,
@@ -772,9 +773,9 @@ void insert_spheres_for_concave_lines_new(
                                           is_debug);
     }
   }
-  if (is_debug)
-    printf("[CC Sphere] created %ld new spheres for concave lines\n",
-           all_medial_spheres.size() - num_sphere);
+  // if (is_debug)
+  printf("[CC Sphere] created %ld new spheres for concave lines\n",
+         all_medial_spheres.size() - num_sphere);
 
   // // step 2: for concave corners
   // for (const auto& cc_corner : cc_corners) {
