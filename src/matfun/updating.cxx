@@ -99,36 +99,27 @@ bool is_break_iteration(const int iteration_limit, const int num_itr,
   if (is_check_new_tan_plane) {
     // fetch the nearest point q and qnormal
     bool is_q_on_ce = false;
-    Vector3 q;
-    double sq_dist = -1., sq_dist_ce = -1.;
-    int q_fid = aabb_wrapper.get_nearest_point_on_sf(mat_p.center, q, sq_dist);
+    Vector3 q = mat_p.center;
+    double sq_dist = -1.;
+    aint2 fid_fe_id = sf_mesh.project_to_sf_and_get_FE_if_any(
+        feature_edges, EdgeType::CE, q, sq_dist, false /*is_debug*/);
+    int q_fid = fid_fe_id[0];
+    int q_ce_id = fid_fe_id[1];
     Vector3 qnormal = get_mesh_facet_normal(sf_mesh, q_fid);
     if (is_debug) {
       printf(
-          "[Iterate Break] mat_p %d num_itr %d has q_fid: %d with q: "
-          "(%f,%f,%f), qnormal: (%f,%f,%f) \n",
-          mat_p.id, num_itr, q_fid, q[0], q[1], q[2], qnormal[0], qnormal[1],
-          qnormal[2]);
+          "[Iterate Break] mat_p %d num_itr %d has q_fid: %d, q_ce_id: %d, "
+          "sq_dist: %f, q: (%f,%f,%f)\n",
+          mat_p.id, num_itr, q_fid, q_ce_id, sq_dist, q[0], q[1], q[2]);
     }
-
-    // check if q closer to any concave edge
-    Vector3 q_copy = q;
-    int feid =
-        aabb_wrapper.get_nearest_point_on_ce(mat_p.center, q_copy, sq_dist_ce);
-    if (is_debug)
-      printf("[Iterate Break] sq_dist_ce %f, sq_dist %f\n", sq_dist_ce,
-             sq_dist);
-    if (feid != UNK_FACE && sq_dist_ce <= sq_dist + SCALAR_ZERO_6) {
+    // on tangent concave line
+    if (q_ce_id != -1) {
       is_q_on_ce = true;
-      sq_dist = sq_dist_ce;
-      q = q_copy;
-      q_fid = feid;  // let it be positive
+      q_fid = q_ce_id;  // let it be positive
       qnormal = GEO::normalize(q - mat_p.center);
       if (is_debug)
-        printf(
-            "[Iterate Break] msphere %d found is_q_on_ce: %d, q_feid: %d, "
-            "sq_dist_ce: %f <= sq_dist: %f\n",
-            mat_p.id, is_q_on_ce, q_fid, sq_dist_ce, sq_dist);
+        printf("[Iterate Break] msphere %d found is_q_on_ce: %d, q_ce_id: %d\n",
+               mat_p.id, is_q_on_ce, q_fid);
     }
 
     // add new tangent info
