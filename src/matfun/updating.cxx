@@ -666,6 +666,49 @@ void update_tangent_points_on_cc_lines(MedialSphere& mat_p, const double alpha3,
   }
 }
 
+// check two adjacent fids of the concave line
+// if the energy is smaller than the current one
+// then delete the concave line, store a new tangent plane
+void remove_tangent_cc_lines_by_adj_tangent_planes(const SurfaceMesh& sf_mesh,
+                                                   MedialSphere& mat_p,
+                                                   const double alpha3,
+                                                   bool is_debug) {
+  Vector3 p_proj;
+  double sq_dist = DBL_MAX;
+  for (auto& one_cc_line : mat_p.tan_cc_lines) {
+    double min_energy = one_cc_line.energy;
+    for (const auto& fid : one_cc_line.adj_sf_fs_pair) {
+      // get the closest point on the triangle fid
+      project_point_onto_triangle(sf_mesh, fid, mat_p.center, p_proj, sq_dist);
+      Vector3 f_normal = get_mesh_facet_normal(sf_mesh, fid);
+      double energy = TangentConcaveLine::get_energy_value(
+          mat_p.center, mat_p.radius, alpha3, p_proj, f_normal);
+      if (energy >= min_energy - SCALAR_ZERO_5) continue;
+      one_cc_line.is_deleted = true;  // for adding new tangent plane
+      TangentPlane tan_pl_q(sf_mesh, f_normal, p_proj, fid);
+      bool is_add =
+          try_add_tangent_plane(0, mat_p, tan_pl_q, false /*is_debug*/);
+      if (is_debug)
+        printf(
+            "[Update_CC_LINE] mat_p %d id_fe %d found lower energy %f with "
+            "adjacent fid %d, try to remove tan_cc_line, is_add: %d\n",
+            mat_p.id, one_cc_line.id_fe, energy, fid, is_add);
+      // only remove when adding tangent plane is successful
+      if (!is_add) one_cc_line.is_deleted = false;  // revert
+      break;
+    }
+  }
+
+  // remove deleted tangent concave lines
+  std::vector<TangentConcaveLine> new_tan_cc_lines;
+  for (const auto& one_cc_line : mat_p.tan_cc_lines) {
+    if (!one_cc_line.is_deleted) {
+      new_tan_cc_lines.push_back(one_cc_line);
+    }
+  }
+  mat_p.tan_cc_lines = new_tan_cc_lines;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Main Functions
 /////////////////////////////////////////////////////////////////////////////////////
@@ -735,6 +778,9 @@ bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
                                      iter_param.alpha1, iter_param.alpha2,
                                      is_debug /*is_debug*/);
     update_tangent_points_on_cc_lines(mat_p, iter_param.alpha3, is_debug);
+    // remove tangent concave lines by two adjacent tangent planes if possible
+    remove_tangent_cc_lines_by_adj_tangent_planes(sf_mesh, mat_p,
+                                                  iter_param.alpha3, is_debug);
     if (is_debug) {
       printf("[Iterate] mat_p %d has tangent elements after update: \n",
              mat_p.id);
