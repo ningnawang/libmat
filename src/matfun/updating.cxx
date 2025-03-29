@@ -8,6 +8,7 @@ bool try_add_tangent_plane(const int num_itr, MedialSphere& mat_p,
   // 1. check if covered by existing concave lines
   //    if so then do not add
   for (const auto& one_cc_line : mat_p.tan_cc_lines) {
+    if (one_cc_line.is_deleted) continue;
     one_cc_line.purge_one_tan_plane(tan_pl_q);
     if (tan_pl_q.is_deleted) {
       if (is_debug)
@@ -24,6 +25,7 @@ bool try_add_tangent_plane(const int num_itr, MedialSphere& mat_p,
     std::vector<TangentPlane> new_tan_planes;
     new_tan_planes.push_back(tan_pl_q);
     for (auto& tan_pl : mat_p.tan_planes) {
+      if (tan_pl.is_deleted) continue;
       if (tan_pl.is_same_normal(tan_pl_q.normal)) {
         tan_pl.is_deleted = true;
         if (is_debug) {
@@ -525,6 +527,7 @@ void update_tangent_points_on_tan_pls(const SurfaceMesh& sf_mesh,
   mat_p.tan_planes = tan_planes_new;
 }
 
+// [no use]
 // Given sphere (theta, r), find the closest tangent point pN
 // and normal nN on concave segement (m1, m2) with adjacent normals (n1, n2)
 // by solving an equation
@@ -555,10 +558,9 @@ double get_closest_concave_point(const double alpha3, const Vector3& m1,
   // find the best combination with smallest energy
   // (pN, nN) pairs
   bool is_replaced = false;
-  E = DBL_MAX;
+  E = DBL_MAX;  // yes, E is reset here, pN is considered
   int pair_idx = -1;
   std::vector<std::array<Vector3, 2>> pN_nN_pairs{
-      /*{{m1, nN}}, {{m2, nN}},*/
       {{pN, n1}}, {{pN, n2}}, {{m1, n1}}, {{m1, n2}}, {{m2, n1}}, {{m2, n2}}};
   for (int i = 0; i < pN_nN_pairs.size(); i++) {
     const auto& pair = pN_nN_pairs[i];
@@ -592,6 +594,64 @@ double get_closest_concave_point(const double alpha3, const Vector3& m1,
   return E;
 }
 
+// Given sphere (theta, r), find the closest tangent point pN
+// and normal nN on concave segement (m1, m2)
+double get_closest_concave_point_V2(const double alpha3, const Vector3& m1,
+                                    const Vector3& m2, const Vector3& n1,
+                                    const Vector3& n2, const Vector3& theta,
+                                    const double& radius, Vector3& pN,
+                                    Vector3& nN, bool is_debug) {
+  // step 1: find the closest point on segment (m1, m2) to theta
+  //
+  // pN is the projection of theta on line (m1, m2)
+  double sq_dist = DBL_MAX;
+  project_point_onto_line(theta, m1, m2, pN, sq_dist);
+  nN = GEO::normalize(pN - theta);
+  double E =
+      TangentConcaveLine::get_energy_value(theta, radius, alpha3, pN, nN);
+
+  // step 2: check nN, must in range of (n1, n2)
+  if (is_vector_within_range_of_two_vectors(n1, n2, nN)) {
+    if (is_debug)
+      printf(
+          "[CONCAVE_PNT] return pN (%f,%f,%f) with energy E %f, nN: "
+          "(%f,%f,%f)\n",
+          pN[0], pN[1], pN[2], E, nN[0], nN[1], nN[2]);
+    return E;
+  }
+
+  // step 3: nN not in range of (n1, n2)
+  //         check boundary points/normals on segment, find the best combination
+  //         with smallest energy (pN, nN) pairs
+  bool is_replaced = false;
+  E = DBL_MAX;  // yes, E is reset here, pN is considered
+  int pair_idx = -1;
+  std::vector<std::array<Vector3, 2>> pN_nN_pairs{
+      {{pN, n1}}, {{pN, n2}}, {{m1, n1}}, {{m1, n2}}, {{m2, n1}}, {{m2, n2}}};
+  for (int i = 0; i < pN_nN_pairs.size(); i++) {
+    const auto& pair = pN_nN_pairs[i];
+    double E_tmp = TangentConcaveLine::get_energy_value(theta, radius, alpha3,
+                                                        pair[0], pair[1]);
+    if (E_tmp < E) {
+      pair_idx = i;
+      E = E_tmp;
+      pN = pair[0];
+      nN = pair[1];
+      // nN = (pN - theta).normalized();
+      is_replaced = true;
+    }
+  }
+  assert(is_replaced);  // since we reset E to DBL_MAX
+
+  if (is_debug)
+    printf(
+        "[CONCAVE_PNT] return pair_idx: %d, pN (%f,%f,%f) nN: (%f,%f,%f) with "
+        "energy E %f, is_replaced: %d\n",
+        pair_idx, pN[0], pN[1], pN[2], nN[0], nN[1], nN[2], E, is_replaced);
+
+  return E;
+}
+
 void update_tangent_points_on_cc_lines(MedialSphere& mat_p, const double alpha3,
                                        bool is_debug) {
   if (is_debug && mat_p.tan_cc_lines.size() > 0)
@@ -599,7 +659,7 @@ void update_tangent_points_on_cc_lines(MedialSphere& mat_p, const double alpha3,
            mat_p.id);
 
   for (auto& one_cc_line : mat_p.tan_cc_lines) {
-    get_closest_concave_point(
+    one_cc_line.energy = get_closest_concave_point_V2(
         alpha3, one_cc_line.t2vs_pos[0], one_cc_line.t2vs_pos[1],
         one_cc_line.adj_normals[0], one_cc_line.adj_normals[1], mat_p.center,
         mat_p.radius, one_cc_line.tan_point, one_cc_line.normal, is_debug);

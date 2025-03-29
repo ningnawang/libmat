@@ -245,15 +245,28 @@ inline void sample_new_points_given_len(const Vector3& start_pos,
 inline void project_point_onto_line(const Vector3& p, const Vector3& v0,
                                     const Vector3& v1, Vector3& p_proj,
                                     double& dist) {
-  Vector3 v0p(p - v0), v0v1(v1 - v0);
-  p_proj = GEO::dot(v0 + v0p, v0v1) / GEO::dot(v0v1, v0v1) * v0v1;
-  dist = (p - p_proj).length();
+  Vector3 v0v1 = v1 - v0;  // Direction vector of the line
+  Vector3 v0p = p - v0;    // Vector from v0 to p
 
-  // TODO: using GEO::Geom::point_segment_squared_distance()
-  // double lambda1, lambda2;
-  // double sq_dist = GEO::Geom::point_segment_squared_distance(p, v0, v1,
-  // p_proj, lambda1, lambda2);
-  // dist = std::sqrt(sq_dist);
+  double dotProduct = GEO::dot(v0p, v0v1);
+  double lineMagnitudeSquared = GEO::dot(v0v1, v0v1);
+
+  // Scalar multiplier for the projection
+  double scalar = dotProduct / lineMagnitudeSquared;
+
+  // If scalar is less than 0, clamp to v0
+  if (scalar < 0.0f) {
+    p_proj = v0;
+    return;
+  }
+  // If scalar is greater than 1, clamp to v1
+  else if (scalar > 1.0f) {
+    p_proj = v1;
+    return;
+  }
+
+  // Project the point onto the line
+  p_proj = v0 + v0v1 * scalar;
 }
 
 // Project p onto triangle defined by [v1, v2, v3]
