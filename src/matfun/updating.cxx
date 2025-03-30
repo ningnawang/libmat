@@ -98,6 +98,10 @@ bool is_break_iteration(const int iteration_limit, const int num_itr,
   //////////////////////////
   // Break conditions: 2 parts
   // check breaking condition
+  //
+  // Note: here we do not use SurfaceMesh::project_to_sf_and_get_FE_if_any()
+  //       because tan_point q is just one point, it may be on a face that
+  //       close to CE but not part of adj_faces pair
   if (is_check_new_tan_plane) {
     // fetch the nearest point q and qnormal
     bool is_q_on_ce = false;
@@ -137,8 +141,7 @@ bool is_break_iteration(const int iteration_limit, const int num_itr,
     if (is_q_on_ce) {
       assert(q_fid > -1 && q_fid < feature_edges.size());
       // create a tangent cc_line
-      TangentConcaveLine tan_cc_line(sf_mesh, mat_p.tan_cc_lines.size(),
-                                     feature_edges.at(q_fid));
+      TangentConcaveLine tan_cc_line(sf_mesh, feature_edges.at(q_fid));
       bool is_add = try_add_tangent_cc_line(num_itr, mat_p, tan_cc_line,
                                             is_debug /*is_debug*/);
       if (is_debug) {
@@ -464,7 +467,7 @@ void update_tangent_points_on_tan_pls(const SurfaceMesh& sf_mesh,
 
   for (auto& tan_pl : mat_p.tan_planes) {
     if (is_debug) {
-      printf("[Update TAN_POINT] before update: \n");
+      printf("[Update_TAN_POINT] before update: \n");
       tan_pl.print_info();
     }
     get_k_ring_neighbors_no_cross(sf_mesh, fe_sf_fs_pairs, tan_pl.fid, k,
@@ -488,14 +491,14 @@ void update_tangent_points_on_tan_pls(const SurfaceMesh& sf_mesh,
         tan_pl.normal = f_param[3];
         if (is_debug)
           printf(
-              "[Update TAN_POINT] mat_p %d found lower energy %f with fid %d "
+              "[Update_TAN_POINT] mat_p %d found lower energy %f with fid %d "
               "\n",
               mat_p.id, e_tmp, fid_tmp);
       }
     }  // for faces_params
 
     if (is_debug) {
-      printf("[Update TAN_POINT] after update: \n");
+      printf("[Update_TAN_POINT] after update: \n");
     }
 
     ////////////////
@@ -504,7 +507,7 @@ void update_tangent_points_on_tan_pls(const SurfaceMesh& sf_mesh,
     if (tangent_fids_now.find(tan_pl.fid) != tangent_fids_now.end()) {
       if (is_debug) {
         printf(
-            "[Update TAN_POINT] mat_p {} with fid {} is stored, delete tan_pl",
+            "[Update_TAN_POINT] mat_p {} with fid {} is stored, delete tan_pl",
             mat_p.id, tan_pl.fid);
       }
       tan_pl.is_deleted = true;
@@ -515,7 +518,7 @@ void update_tangent_points_on_tan_pls(const SurfaceMesh& sf_mesh,
       if (tan_pl_new.is_same_tan_pl(tan_pl)) {
         if (is_debug) {
           printf(
-              "[Update TAN_POINT] mat_p {} whose tangent plane already stored "
+              "[Update_TAN_POINT] mat_p {} whose tangent plane already stored "
               "similar planes, skip storing",
               mat_p.id);
         }
@@ -675,47 +678,98 @@ void update_tangent_points_on_cc_lines(MedialSphere& mat_p, const double alpha3,
   }
 }
 
-// check two adjacent fids of the concave line
-// if the energy is smaller than the current one
-// then delete the concave line, store a new tangent plane
-void remove_tangent_cc_lines_by_adj_tangent_planes(const SurfaceMesh& sf_mesh,
-                                                   MedialSphere& mat_p,
-                                                   const double alpha3,
-                                                   bool is_debug) {
+// 1. remove tangent planes by adjacent tangent concave lines
+// 2. remove tangent concave lines by adjacent tangent planes
+void remove_tangents_by_adj_tangents(
+    const std::vector<FeatureEdge>& feature_edges, const SurfaceMesh& sf_mesh,
+    MedialSphere& mat_p, const double alpha3, bool is_debug) {
   Vector3 p_proj;
   double sq_dist = DBL_MAX;
-  for (auto& one_cc_line : mat_p.tan_cc_lines) {
-    double min_energy = one_cc_line.energy;
-    for (const auto& fid : one_cc_line.adj_sf_fs_pair) {
-      // get the closest point on the triangle fid
-      project_point_onto_triangle(sf_mesh, fid, mat_p.center, p_proj, sq_dist);
-      Vector3 f_normal = get_mesh_facet_normal(sf_mesh, fid);
-      double energy = TangentConcaveLine::get_energy_value(
-          mat_p.center, mat_p.radius, alpha3, p_proj, f_normal);
-      if (energy >= min_energy - SCALAR_ZERO_5) continue;
-      one_cc_line.is_deleted = true;  // for adding new tangent plane
-      TangentPlane tan_pl_q(sf_mesh, f_normal, p_proj, fid);
-      bool is_add =
-          try_add_tangent_plane(0, mat_p, tan_pl_q, false /*is_debug*/);
+
+  std::set<int> newly_added_tan_ce_ids;
+  // check adjacent concave lines of the tangent planes, if any.
+  // if the projection is on an adj CE, then delete the tangent plane, store a
+  // new tangent concave line.
+  //
+  // NOTE: we do NOT use sf_mesh.get_triangle_proj_FE_given_lambdas() here
+  //       because tan_point is just one point, it may be on a face that
+  //       close to CE but not part of adj_faces pair
+  auto remove_tangent_planes_by_adj_tangent_cc_lines = [&] {
+    for (auto& one_tan_pl : mat_p.tan_planes) {
+      int ce_id = sf_mesh.aabb_wrapper.get_nearest_point_on_ce(mat_p.center,
+                                                               p_proj, sq_dist);
+      assert(ce_id < feature_edges.size());
+      double old_sq_dist = GEO::length2(mat_p.center - one_tan_pl.tan_point);
+      if (sq_dist > old_sq_dist + SCALAR_ZERO_6) continue;
       if (is_debug)
         printf(
-            "[Update_CC_LINE] mat_p %d id_fe %d found lower energy %f with "
-            "adjacent fid %d, try to remove tan_cc_line, is_add: %d\n",
-            mat_p.id, one_cc_line.id_fe, energy, fid, is_add);
-      // only remove when adding tangent plane is successful
-      if (!is_add) one_cc_line.is_deleted = false;  // revert
-      break;
+            "[Remove_TanPlanes] mat_p %d fid: %d, found ce_id %d sq_dist: "
+            "%f <= old_sq_dist %f\n",
+            mat_p.id, one_tan_pl.fid, ce_id, sq_dist, old_sq_dist);
+      one_tan_pl.is_deleted = true;  // for adding new tangent concave line
+      TangentConcaveLine tan_cc_line(sf_mesh, feature_edges.at(ce_id));
+      bool is_add =
+          try_add_tangent_cc_line(0, mat_p, tan_cc_line, false /*is_debug*/);
+      if (is_debug) {
+        printf(
+            "[Remove_TanPlanes] mat_p %d fid %d found lower energy %f with "
+            "adjacent ce_id %d, try to remove tan_pl, is_add: %d\n",
+            mat_p.id, one_tan_pl.fid, one_tan_pl.energy, ce_id, is_add);
+      }
+      if (is_add) {
+        newly_added_tan_ce_ids.insert(ce_id);
+        if (is_debug)
+          printf("[Remove_TanPlanes] mat_p %d id_fe %d is newly added\n",
+                 mat_p.id, ce_id);
+      } else
+        // only remove when adding tangent concave line is successful
+        one_tan_pl.is_deleted = false;  // revert
     }
-  }
+  };
 
-  // remove deleted tangent concave lines
-  std::vector<TangentConcaveLine> new_tan_cc_lines;
-  for (const auto& one_cc_line : mat_p.tan_cc_lines) {
-    if (!one_cc_line.is_deleted) {
-      new_tan_cc_lines.push_back(one_cc_line);
+  // check two adjacent fids of the concave line
+  // if the energy is smaller than the current one
+  // then delete the concave line, store a new tangent plane
+  auto remove_tangent_cc_lines_by_adj_tangent_planes = [&] {
+    for (auto& one_cc_line : mat_p.tan_cc_lines) {
+      if (newly_added_tan_ce_ids.find(one_cc_line.id_fe) !=
+          newly_added_tan_ce_ids.end()) {
+        if (is_debug)
+          printf(
+              "[Remove_CC_LINE] mat_p %d id_fe %d is newly added, skip "
+              "removing\n",
+              mat_p.id, one_cc_line.id_fe);
+        continue;
+      }
+      double min_energy = one_cc_line.energy;
+      for (const auto& fid : one_cc_line.adj_sf_fs_pair) {
+        // get the closest point on the triangle fid
+        project_point_onto_triangle(sf_mesh, fid, mat_p.center, p_proj,
+                                    sq_dist);
+        Vector3 f_normal = get_mesh_facet_normal(sf_mesh, fid);
+        double energy = TangentConcaveLine::get_energy_value(
+            mat_p.center, mat_p.radius, alpha3, p_proj, f_normal);
+        if (energy >= min_energy - SCALAR_ZERO_5) continue;
+        one_cc_line.is_deleted = true;  // for adding new tangent plane
+        TangentPlane tan_pl_q(sf_mesh, f_normal, p_proj, fid);
+        bool is_add =
+            try_add_tangent_plane(0, mat_p, tan_pl_q, false /*is_debug*/);
+        if (is_debug)
+          printf(
+              "[Remove_CC_LINE] mat_p %d id_fe %d found lower energy %f "
+              "with adjacent fid %d, try to remove tan_cc_line, is_add: %d\n",
+              mat_p.id, one_cc_line.id_fe, energy, fid, is_add);
+        // only remove when adding tangent plane is successful
+        if (!is_add) one_cc_line.is_deleted = false;  // revert
+        break;
+      }
     }
-  }
-  mat_p.tan_cc_lines = new_tan_cc_lines;
+  };
+
+  remove_tangent_planes_by_adj_tangent_cc_lines();
+  remove_tangent_cc_lines_by_adj_tangent_planes();
+  // remove deleted tangents
+  mat_p.remove_deleted_tangents(false /*is_run_cc*/);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -787,9 +841,10 @@ bool iterate_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
                                      iter_param.alpha1, iter_param.alpha2,
                                      is_debug /*is_debug*/);
     update_tangent_points_on_cc_lines(mat_p, iter_param.alpha3, is_debug);
-    // remove tangent concave lines by two adjacent tangent planes if possible
-    remove_tangent_cc_lines_by_adj_tangent_planes(sf_mesh, mat_p,
-                                                  iter_param.alpha3, is_debug);
+    // 1. remove tangent planes by adjacent tangent concave lines
+    // 2. remove tangent concave lines by adjacent tangent planes
+    remove_tangents_by_adj_tangents(feature_edges, sf_mesh, mat_p,
+                                    iter_param.alpha3, is_debug);
     if (is_debug) {
       printf("[Iterate] mat_p %d has tangent elements after update: \n",
              mat_p.id);

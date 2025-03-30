@@ -290,6 +290,16 @@ inline void project_point_onto_triangle(const GEO::Mesh& sf_mesh, const int fid,
       p, v0, v1, v2, p_proj, lambda1, lambda2, lambda3);
 }
 
+inline void project_point_onto_triangle_with_lambdas(
+    const GEO::Mesh& sf_mesh, const int fid, const Vector3& p, Vector3& p_proj,
+    double& sq_dist, double& lambda1, double& lambda2, double& lambda3) {
+  const Vector3 v0 = sf_mesh.vertices.point(sf_mesh.facets.vertex(fid, 0));
+  const Vector3 v1 = sf_mesh.vertices.point(sf_mesh.facets.vertex(fid, 1));
+  const Vector3 v2 = sf_mesh.vertices.point(sf_mesh.facets.vertex(fid, 2));
+  sq_dist = GEO::Geom::point_triangle_squared_distance(
+      p, v0, v1, v2, p_proj, lambda1, lambda2, lambda3);
+}
+
 // Project p onto a set of triangles of sf_mesh
 // return the fid that projected on
 inline int project_point_onto_triangles(const GEO::Mesh& sf_mesh,

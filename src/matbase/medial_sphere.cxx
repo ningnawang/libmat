@@ -106,9 +106,8 @@ bool TangentPlane::update_covered_sf_fids(const SurfaceMesh& sf_mesh, int k) {
 /////////////////////////////////////////////////////////////////////////////////////
 // TangentConcaveLine
 /////////////////////////////////////////////////////////////////////////////////////
-TangentConcaveLine::TangentConcaveLine(const SurfaceMesh& sf_mesh, int _id,
+TangentConcaveLine::TangentConcaveLine(const SurfaceMesh& sf_mesh,
                                        const FeatureEdge& fe) {
-  id = _id;
   id_fe = fe.id;
   id_fl = fe.t2vs_group[2];
   t2vs_ids = {{fe.t2vs_group[0], fe.t2vs_group[1]}};
@@ -127,10 +126,9 @@ TangentConcaveLine::TangentConcaveLine(const SurfaceMesh& sf_mesh, int _id,
 
 void TangentConcaveLine::print_info() const {
   printf(
-      "---- TangentConcaveLine: id: %d, id_fe: %d, id_fl: %d, is_deleted, "
-      "energy: %f, energy_over_sq_radius: %f, tan_point (%f,%f,%f), normal: "
-      "(%f,%f,%f) ",
-      id, id_fe, id_fl, is_deleted, energy == DBL_MAX ? 1e10 : energy,
+      "---- TangentConcaveLine: id_fe: %d, id_fl: %d, is_deleted, energy: %f, "
+      "energy_over_sq_radius: %f, tan_point (%f,%f,%f), normal: (%f,%f,%f) ",
+      id_fe, id_fl, is_deleted, energy == DBL_MAX ? 1e10 : energy,
       energy_over_sq_radius == DBL_MAX ? 1e10 : energy_over_sq_radius,
       tan_point[0], tan_point[1], tan_point[2], normal[0], normal[1],
       normal[2]);
@@ -427,8 +425,7 @@ void MedialSphere::update_tan_cc_lines_from_ss_params(
     bool is_update_p, bool is_update_q) {
   assert(is_update_p || is_update_q);
   if (is_update_p) {
-    TangentConcaveLine new_cc_line(sf_mesh, tan_cc_lines.size(),
-                                   fe.at(ss.get_p_fid()));
+    TangentConcaveLine new_cc_line(sf_mesh, fe.at(ss.get_p_fid()));
     new_cc_line.tan_point = ss.p;
     new_cc_line.normal = ss.p_normal;
     new_cc_line.energy = 0.0;
@@ -437,8 +434,7 @@ void MedialSphere::update_tan_cc_lines_from_ss_params(
   }
 
   if (is_update_q) {
-    TangentConcaveLine new_cc_line(sf_mesh, tan_cc_lines.size(),
-                                   fe.at(ss.get_q_fid()));
+    TangentConcaveLine new_cc_line(sf_mesh, fe.at(ss.get_q_fid()));
     new_cc_line.tan_point = ss.q;
     new_cc_line.normal = ss.q_normal;
     new_cc_line.energy = 0.0;
@@ -494,7 +490,6 @@ bool MedialSphere::new_cc_line_no_dup(const TangentConcaveLine& one_cc_line) {
   }
   if (is_added) {
     tan_cc_lines.push_back(one_cc_line);
-    tan_cc_lines.back().id = tan_cc_lines.size() - 1;
     // !!!! prepare for new iterations
     tan_cc_lines.back().energy = DBL_MAX;
     tan_cc_lines.back().energy_over_sq_radius = DBL_MAX;

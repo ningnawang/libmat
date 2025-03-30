@@ -203,8 +203,18 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
   int fid = this->aabb_wrapper.project_to_sf_get_nearest_face_with_lambdas(
       p, sq_dist, lambda[0], lambda[1], lambda[2]);
   return_fid_fe_id[0] = fid;
+  return_fid_fe_id[1] = get_triangle_proj_FE_given_lambdas(
+      feature_edges, check_proj_type, fid, lambda, is_debug);
+  return return_fid_fe_id;
+}
+
+// return fe_id, or -1 if not found
+int SurfaceMesh::get_triangle_proj_FE_given_lambdas(
+    const std::vector<FeatureEdge>& feature_edges,
+    const EdgeType& check_proj_type, const int fid, const double* lambda,
+    bool is_debug) const {
   if (this->sf_fid_to_fe_ids.find(fid) == this->sf_fid_to_fe_ids.end())
-    return return_fid_fe_id;
+    return -1;
 
   // loop all possible feature edges
   for (const int fe_id : this->sf_fid_to_fe_ids.at(fid)) {
@@ -219,7 +229,7 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
 
     if (is_debug)
       printf(
-          "--------- [proj_and_get_FE_if_any] found fid: %d, fe_id %d, "
+          "--------- [get_tri_FE] found fid: %d, fe_id %d, "
           "fl_id: %d, type %d, lambda: (%f,%f,%f)\n",
           fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
           lambda[2]);
@@ -237,9 +247,8 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
       f_tvids[i] = this->sf2tet_vs_mapping.at(this->facet_corners.vertex(c));
     }
     if (is_debug)
-      printf(
-          "[proj_and_get_FE_if_any] f_tvids: (%d,%d,%d), fe_tvids: (%d, %d)\n ",
-          f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
+      printf("[get_tri_FE] f_tvids: (%d,%d,%d), fe_tvids: (%d, %d)\n ",
+             f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
 
     // find one tvid on the face that not matches the FE
     int f_tvid_local_sorted[3] = {-1, -1, -1};
@@ -252,7 +261,7 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
         f_tvid_local_sorted[2] = i;
     }
     if (is_debug)
-      printf("[proj_and_get_FE_if_any]  f_tvid_local_sorted: (%d,%d,%d)\n",
+      printf("[get_tri_FE] f_tvid_local_sorted: (%d,%d,%d)\n",
              f_tvid_local_sorted[0], f_tvid_local_sorted[1],
              f_tvid_local_sorted[2]);
     assert(f_tvid_local_sorted[0] != -1 && f_tvid_local_sorted[1] != -1 &&
@@ -261,30 +270,25 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
     // check if lambda of third f_tvid_local_sorted is 0,
     // then p is on the feature edge
     if (lambda[f_tvid_local_sorted[2]] <= SCALAR_ZERO_6) {
-      return_fid_fe_id[1] = fe_id;
       if (is_debug) {
         printf(
-            "--------- [proj_and_get_FE_if_any] found on ce, fid: %d, fe_id "
+            "--------- [get_tri_FE] found on ce, fid: %d, fe_id "
             "%d, fl_id: %d, type %d, lambda: (%f,%f,%f)\n",
             fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
             lambda[2]);
-        // print old_p -> p
-        printf("old_p: (%f,%f,%f), p: (%f,%f,%f)\n", old_p[0], old_p[1],
-               old_p[2], p[0], p[1], p[2]);
-        printf(
-            "[proj_and_get_FE_if_any] f_tvids: (%d,%d,%d), fe_tvids: (%d,%d)\n",
-            f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
-        printf("[proj_and_get_FE_if_any]  f_tvid_local_sorted: (%d,%d,%d)\n",
+        printf("[get_tri_FE] f_tvids: (%d,%d,%d), fe_tvids: (%d,%d)\n",
+               f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
+        printf("[get_tri_FE]  f_tvid_local_sorted: (%d,%d,%d)\n",
                f_tvid_local_sorted[0], f_tvid_local_sorted[1],
                f_tvid_local_sorted[2]);
-        printf("[proj_and_get_FE_if_any] found point on fe_id %d, fl_id: %d\n",
-               fe_id, one_fe.get_fl_id(), one_fe.type);
+        printf("[get_tri_FE] found point on fe_id %d, fl_id: %d\n", fe_id,
+               one_fe.get_fl_id(), one_fe.type);
       }
       // directly return if found a closed feature edge
-      return return_fid_fe_id;
+      return fe_id;
     }
   }  // for fe_id
-  return return_fid_fe_id;
+  return -1;
 }
 
 bool AABBWrapper::init_mesh_from_edges(const std::vector<float>& input_vertices,

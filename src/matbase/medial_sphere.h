@@ -83,8 +83,7 @@ class TangentPlane {
 // 2. remove id_fl, id_fe, t2vs_ids, t2vs_pos, adj_sf_fs_pair, adj_normals
 class TangentConcaveLine {
  public:
-  TangentConcaveLine(const SurfaceMesh& sf_mesh, const int _id,
-                     const FeatureEdge& fe);
+  TangentConcaveLine(const SurfaceMesh& sf_mesh, const FeatureEdge& fe);
   ~TangentConcaveLine() {};
 
  public:
@@ -110,7 +109,6 @@ class TangentConcaveLine {
   bool operator==(TangentConcaveLine const& b) const;
 
  public:
-  int id;
   bool is_deleted;  // [no use] for now
   int id_fe;        // matching to TetMesh::feature_edges::id
   int id_fl;        // matching to FeatureLine::id
