@@ -60,7 +60,7 @@ struct Parameter {
   // convex, bigger angle more convex, so smaller threshold more sensative
   double thres_convex = 55.;
   // concave, bigger angle more concave, so smaller threshold more sensative
-  double thres_concave = 80.;
+  double thres_concave = 60.;
 };
 
 //----------------------------------------------------------------------------

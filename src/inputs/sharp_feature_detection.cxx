@@ -190,7 +190,13 @@ EdgeConvexConcave is_convex_concave_or_not(const double se_threshold,
 
   // Compute the cross product to determine the orientation
   Vector3 crossN = GEO::cross(normal1, normal2);
-  if (is_debug) printf("crossN: (%f,%f,%f)\n", crossN[0], crossN[1], crossN[2]);
+  if (is_debug) {
+    printf("normal1: (%f,%f,%f)\n", normal1[0], normal1[1], normal1[2]);
+    printf("normal2: (%f,%f,%f)\n", normal2[0], normal2[1], normal2[2]);
+    printf("crossN: (%f,%f,%f)\n", crossN[0], crossN[1], crossN[2]);
+    printf("sharedEdgeDir: (%f,%f,%f)\n", sharedEdgeDir[0], sharedEdgeDir[1],
+           sharedEdgeDir[2]);
+  }
 
   // Check sign using the shared edge direction
   double sign = GEO::dot(crossN, sharedEdgeDir);
@@ -290,16 +296,12 @@ void find_feature_edges(const Parameter& args,
       std::sort(ref_fs_pair.begin(), ref_fs_pair.end());
       // std::array<Vector3, 2> ref_fs_normals = {{n, n1}};
       bool is_debug = false;
-      // if (f_id == 631 && n12_f_ids[k] == 655 ||
-      //     f_id == 655 && n12_f_ids[k] == 631) {
-      //   is_debug = true;
-      //   printf(
-      //       "processing edge (%d,%d) two faces %d (%d,%d,%d) and %d "
-      //       "(%d,%d,%d)\n",
-      //       e[0], e[1], f_id, f_vs_indices[0], f_vs_indices[1],
-      //       f_vs_indices[2], n12_f_ids[k], f1_vs_indices[0],
-      //       f1_vs_indices[1], f1_vs_indices[2]);
-      // }
+      if (is_debug)
+        printf(
+            "processing edge (%d,%d) two faces %d (%d,%d,%d) and %d "
+            "(%d,%d,%d)\n",
+            e[0], e[1], f_id, f_vs_indices[0], f_vs_indices[1], f_vs_indices[2],
+            n12_f_ids[k], f1_vs_indices[0], f1_vs_indices[1], f1_vs_indices[2]);
 
       // get edge direction based on f
       std::array<int, 2> sorted_edge_vs = e;  // copy
