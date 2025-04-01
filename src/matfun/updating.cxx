@@ -696,16 +696,22 @@ void remove_tangents_by_adj_tangents(
   //       close to CE but not part of adj_faces pair
   auto remove_tangent_planes_by_adj_tangent_cc_lines = [&] {
     for (auto& one_tan_pl : mat_p.tan_planes) {
-      int ce_id = sf_mesh.aabb_wrapper.get_nearest_point_on_ce(mat_p.center,
-                                                               p_proj, sq_dist);
+      // not sphere center
+      int ce_id = sf_mesh.aabb_wrapper.get_nearest_point_on_ce(
+          one_tan_pl.tan_point, p_proj, sq_dist);
+      // tan_point too far from CE
+      if (sq_dist >= SCALAR_1) continue;
       assert(ce_id < feature_edges.size());
-      double old_sq_dist = GEO::length2(mat_p.center - one_tan_pl.tan_point);
-      if (sq_dist > old_sq_dist + SCALAR_ZERO_6) continue;
+      double old_center_sq_dist =
+          GEO::length2(mat_p.center - one_tan_pl.tan_point);
+      double new_center_sq_dist = GEO::length2(mat_p.center - p_proj);
+      if (new_center_sq_dist > old_center_sq_dist + SCALAR_ZERO_6) continue;
       if (is_debug)
         printf(
             "[Remove_TanPlanes] mat_p %d fid: %d, found ce_id %d sq_dist: "
-            "%f <= old_sq_dist %f\n",
-            mat_p.id, one_tan_pl.fid, ce_id, sq_dist, old_sq_dist);
+            "%f < 0.1, new_center_sq_dist <= old_center_sq_dist %f\n",
+            mat_p.id, one_tan_pl.fid, ce_id, sq_dist, new_center_sq_dist,
+            old_center_sq_dist);
       one_tan_pl.is_deleted = true;  // for adding new tangent concave line
       TangentConcaveLine tan_cc_line(sf_mesh, feature_edges.at(ce_id));
       bool is_add =
