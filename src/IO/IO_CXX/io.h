@@ -53,7 +53,8 @@ void load_spheres_from_file(const char* filename,
 
 void save_spheres_file(const std::vector<MedialSphere>& all_medial_spheres,
                        const std::string filename, bool is_save_type,
-                       bool is_load_deleted, int num_rpd_itr = -1);
+                       bool is_load_deleted, int num_rpd_itr = -1,
+                       std::string sub_folder_name = "sph");
 
 void load_v2tets(const std::vector<float>& vertices,
                  const std::vector<int>& indices,

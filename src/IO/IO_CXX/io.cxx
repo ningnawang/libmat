@@ -434,8 +434,10 @@ void load_spheres_from_file(const char* filename,
 
 void save_spheres_file(const std::vector<MedialSphere>& all_medial_spheres,
                        const std::string filename, bool is_save_type,
-                       bool is_load_deleted, int num_rpd_itr) {
-  std::string folder_name = "../out/" + filename + "/sph/";
+                       bool is_load_deleted, int num_rpd_itr,
+                       std::string sub_folder_name) {
+  // std::string folder_name = "../out/" + filename + "/sph/";
+  std::string folder_name = "../out/" + filename + "/" + sub_folder_name + "/";
   create_dir(folder_name);
   std::string sphere_path =
       folder_name + "sph_" + filename + "itr" +
