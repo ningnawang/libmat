@@ -799,7 +799,7 @@ void store_concave_corners(const std::set<int>& corners_ce_tet,
 // mark feature attributes of GEO::Mesh
 // NOTE: here we store edges as 2 neighboring tet vertices instead of surface
 void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
-                                TetMesh& tet_mesh, bool is_find_feature) {
+                                TetMesh& tet_mesh, bool is_sf_file_exist) {
   const auto& sf2tet_vs_mapping = sf_mesh.sf2tet_vs_mapping;
   assert(!sf2tet_vs_mapping.empty());
   std::vector<Vector3> points;
@@ -808,7 +808,7 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
 
   std::set<aint2> s_edges_sf, cc_edges_sf;
   std::set<int> corners_se_sf, corners_ce_sf, corners_fake_sf;
-  if (is_find_feature) {
+  if (!is_sf_file_exist) {
     // find feature edges and corners on GEO::Mesh
     find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
                        corners_se_sf, corners_ce_sf, corners_fake_sf,
