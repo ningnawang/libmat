@@ -640,6 +640,7 @@ bool update_new_concave_sphere(const SurfaceMesh& sf_mesh,
                                const Vector3& pin_point, const int fe_id,
                                const int sphere_type, MedialSphere& new_sphere,
                                bool is_debug) {
+  assert(fe_id >= 0 && fe_id < feature_edges.size());
   // apply perturbation
   const FeatureEdge& one_fe = feature_edges.at(fe_id);
   const std::array<Vector3, 2>& adj_normals = one_fe.adj_normals;

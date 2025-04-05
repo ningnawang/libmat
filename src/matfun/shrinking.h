@@ -54,6 +54,12 @@ void insert_spheres_for_concave_lines_new(
     const double cc_len_eps /*=length, scaled in [0, Parameter::scale_max]*/,
     bool is_debug);
 
+bool update_new_concave_sphere(const SurfaceMesh &sf_mesh,
+                               const std::vector<FeatureEdge> &feature_edges,
+                               const Vector3 &pin_point, const int fe_id,
+                               const int sphere_type, MedialSphere &new_sphere,
+                               bool is_debug);
+
 bool update_msphere_given_v2fid(const SurfaceMesh &sf_mesh,
                                 const TetMesh &tet_mesh,
                                 const v2int v2fid_chosen,
