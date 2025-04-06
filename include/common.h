@@ -20,7 +20,6 @@
 #define RANDOM_INT(l, h) \
   (l + std::rand() % (h - l))  // random int in [l, h)
                                // (https://stackoverflow.com/a/7560146)
-#define FOR(I, UPPERBND) for (int I = 0; I < int(UPPERBND); ++I)
 
 typedef double Scalar;        // use for calculating Euler
 typedef unsigned char uchar;  // local indices with special values

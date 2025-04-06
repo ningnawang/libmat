@@ -291,7 +291,7 @@ void load_tet_adj_info(const std::map<int, std::set<int>>& v2tets,
   std::map<std::array<int, 2>, int> f_2tids_visited;
   int fid = n_sf_facets;
   for (uint t = 0; t < nb_v; t++) {
-    FOR(i, 4) {
+    for (int i = 0; i < 4; i++) {
       // matching halplanes inited in ConvexCell::ConvexCell()
       f_vids = {tet_indices[t * 4 + tet_faces_lvid_host[i][0]],
                 tet_indices[t * 4 + tet_faces_lvid_host[i][1]],

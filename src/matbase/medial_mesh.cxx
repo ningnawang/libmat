@@ -189,14 +189,14 @@ void MedialMesh::compute_faces_meta_data(int fid) {
   MedialFace& mface = faces.at(fid);
   std::array<Vector3, 3> mface_vs_pos;
   int extf_cnt = 0;
-  FOR(i, 3) {
+  for (int i = 0; i < 3; i++) {
     const auto& ms = vertices->at(mface.vertices_[i]);
     mface_vs_pos[i] = ms.center;
     if (ms.is_on_extf()) extf_cnt++;
   }
   // update boundary
   if (extf_cnt > 1) mface.is_on_boundary = true;
-  FOR(i, 3) {
+  for (int i = 0; i < 3; i++) {
     const auto& me = edges.at(mface.edges_[i]);
     if (me.faces_.size() == 1) mface.is_on_boundary = true;
   }
@@ -271,7 +271,7 @@ bool MedialMesh::Face(const aint3& vset, int& fid) {
 
 void MedialMesh::get_face_neighs(const int fid, std::set<int>& f_neighs) const {
   f_neighs.clear();
-  FOR(leid, 3) {
+  for (int leid = 0; leid < 3; leid++) {
     int eid = faces.at(fid).edges_.at(leid);
     for (int nfid : edges.at(eid).faces_) {
       if (nfid == fid) continue;
@@ -282,7 +282,7 @@ void MedialMesh::get_face_neighs(const int fid, std::set<int>& f_neighs) const {
 
 void MedialMesh::get_edge_neighs(const int eid, std::set<int>& e_neighs) const {
   e_neighs.clear();
-  FOR(lvid, 2) {
+  for (int lvid = 0; lvid < 2; lvid++) {
     int vid = edges.at(eid).vertices_.at(lvid);
     for (int neid : vertices->at(vid).edges_) {
       if (neid == eid) continue;
@@ -724,7 +724,7 @@ void MedialMesh::check_and_store_unthin_tets_in_mat() {
     for (const auto& v_inter : intersections) {
       tet_vids.clear();
       tet_vids.push_back(v_inter);
-      FOR(i, 3) tet_vids.push_back(face.vertices_[i]);
+      for (int i = 0; i < 3; i++) tet_vids.push_back(face.vertices_[i]);
       std::sort(tet_vids.begin(), tet_vids.end());
       assert(tet_vids.size() == 4);
       possible_tets.insert(
@@ -887,7 +887,7 @@ bool is_add_neigh_fid(const MedialMesh& mmesh, int cur_fid, int nxt_fid) {
   auto get_mface_join_covered_fid_groups =
       [&](const int fid, std::vector<std::vector<v2int>>& cur_merged_fid_groups,
           bool is_skip_intf) {
-        FOR(lv, 3) {
+        for (int lv = 0; lv < 3; lv++) {
           const auto& msphere =
               mmesh.vertices->at(mmesh.faces.at(fid).vertices_[lv]);
           if (is_skip_intf && msphere.is_on_intf()) continue;

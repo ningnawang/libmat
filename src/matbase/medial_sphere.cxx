@@ -249,7 +249,7 @@ bool TangentConcaveLine::update_covered_sf_fids(const SurfaceMesh& sf_mesh,
                                                 int k) {
   this->sf_fids_covered_two.clear();
   this->sf_fids_covered_two.resize(2);
-  FOR(i, 2) {  // two adjacent fids
+  for (int i = 0; i < 2; i++) {  // two adjacent fids
     int adj_fid = this->adj_sf_fs_pair[i];
     assert(adj_fid >= 0);
     sf_mesh.collect_kring_neighbors_given_fid(k, adj_fid,
@@ -712,7 +712,7 @@ void MedialSphere::update_sphere_covered_sf_fids(const SurfaceMesh& sf_mesh,
                               this->covered_sf_fids_in_group, all_saved_fids);
   }
   for (const auto& tan_cc_line : this->tan_cc_lines) {
-    FOR(i, 2) {  // two adjacent fids
+    for (int i = 0; i < 2; i++) {  // two adjacent fids
       int adj_fid = tan_cc_line.adj_sf_fs_pair[i];
       const auto& covered_fids = tan_cc_line.sf_fids_covered_two[i];
       // should already updated
@@ -1172,7 +1172,7 @@ void update_se_tangent_planes(const SurfaceMesh& sf_mesh,
         continue;
       }
       const auto fe = feature_edges.at(msphere.se_edge_id);
-      FOR(i, 2) {
+      for (int i = 0; i < 2; i++) {
         // also update TangentPlane::sf_fids_covered
         msphere.new_tan_plane_no_dup(sf_mesh, fe.adj_normals[i], msphere.center,
                                      fe.adj_sf_fs_pair[i],
@@ -1186,7 +1186,7 @@ void update_se_tangent_planes(const SurfaceMesh& sf_mesh,
       for (const auto& fe_id : msphere.corner_fes) {
         assert(fe_id > -1 && fe_id < feature_edges.size());
         const auto fe = feature_edges.at(fe_id);
-        FOR(i, 2) {
+        for (int i = 0; i < 2; i++) {
           // also update TangentPlane::sf_fids_covered
           msphere.new_tan_plane_no_dup(sf_mesh, fe.adj_normals[i],
                                        msphere.center, fe.adj_sf_fs_pair[i],

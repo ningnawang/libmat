@@ -204,16 +204,16 @@ inline void sample_k_vectors_given_N_vectors(const std::vector<Vector3>& n_vec,
   if (k < 1) return;
   std::vector<double> n_t(n_vec.size() - 1, -1);
   double t_sum = 0.f;
-  FOR(i, k) {
+  for (int i = 0; i < k; i++) {
     do {
       t_sum = 0.f;
-      FOR(j, n_t.size()) {
+      for (int j = 0; j < n_t.size(); j++) {
         n_t[j] = RANDOM_01();
         t_sum += n_t[j];
       }
     } while (t_sum <= 0. || t_sum >= 0.9999999999);  // t_sum = 1 is fine
     Vector3 nX(0.f, 0.f, 0.f);
-    FOR(j, n_t.size()) nX += n_t[j] * n_vec[j];
+    for (int j = 0; j < n_t.size(); j++) nX += n_t[j] * n_vec[j];
     nX += (1 - t_sum) * n_vec[n_vec.size() - 1];
     nXs.push_back(GEO::normalize(nX));
   }

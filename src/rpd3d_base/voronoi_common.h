@@ -2,6 +2,8 @@
 
 #include "common.h"
 
+#define FOR(I, UPPERBND) for (int I = 0; I < int(UPPERBND); ++I)
+
 // must be uint, matching site_flag
 enum SiteFlag { no_flag = 0, is_selected = 1 };
 

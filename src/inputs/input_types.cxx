@@ -78,7 +78,7 @@ void SurfaceMesh::cache_sf_fid_neighs() {
   // std::map<int, std::set<int>> conn_tris;
   for (int i = 0; i < this->facets.nb(); i++) {
     // printf("Input mesh facet %d has neighbors: [", i);
-    FOR(le, 3) {
+    for (int le = 0; le < 3; le++) {
       int nfid = this->facets.adjacent(i, le);
       sf_fid_neighs[i].insert(nfid);
       // printf("%d, ", nfid);
@@ -92,7 +92,7 @@ void SurfaceMesh::cache_sf_fid_neighs_no_cross() {
   sf_fid_neighs_no_cross.clear();
   // load input_mesh adjacent info, not cross sharp features
   for (int i = 0; i < this->facets.nb(); i++) {
-    FOR(le, 3) {
+    for (int le = 0; le < 3; le++) {
       int nfid = this->facets.adjacent(i, le);
       aint2 fpair = {{i, nfid}};
       std::sort(fpair.begin(), fpair.end());
@@ -502,7 +502,7 @@ void print_one_fe(const int i, const std::vector<aint2>& one_fe_group) {
 
 void print_fe_group(const std::vector<std::vector<aint2>>& fe_groups) {
   printf("[DetectFeatures] fe_groups: \n");
-  FOR(i, fe_groups.size()) {
+  for (int i = 0; i < fe_groups.size(); i++) {
     const auto& one_fe_group = fe_groups.at(i);
     print_one_fe(i, one_fe_group);
   }
@@ -520,7 +520,7 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
                         std::map<int, std::set<int>>& corner2fe,
                         bool is_debug) {
   auto get_common_vs = [](const aint2& e1, const aint2& e2) {
-    FOR(j, 2) {
+    for (int j = 0; j < 2; j++) {
       if (e1[j] == e2[0] || e1[j] == e2[1]) return e1[j];
     }
     return -1;
@@ -569,7 +569,7 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
       fe_tet_info.insert({{t2vs[0], t2vs[1], fe_id, fl_id}});
 
       // update FeatureLine::tvs_neighbors (part1)
-      FOR(j, 2) {
+      for (int j = 0; j < 2; j++) {
         int evid = one_fe[j];
         int evid_another = one_fe[(j + 1) % 2];
         if (new_fl.tvs_neighbors.find(evid) == new_fl.tvs_neighbors.end()) {
@@ -607,7 +607,7 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
       // fl is not a loop
       bool is_swap = false;
       // swap 'first' with neighbors[1] == -1
-      FOR(j, 2) {
+      for (int j = 0; j < 2; j++) {
         int evid = fe_first.at(j);
         if (new_fl.tvs_neighbors.find(evid) == new_fl.tvs_neighbors.end())
           assert(false);
