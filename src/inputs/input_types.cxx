@@ -181,11 +181,29 @@ void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
 }
 
 // EdgeType can be either SE or CE
-// here we should only care about CE
 aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
     const std::vector<FeatureEdge>& feature_edges,
     const EdgeType& check_proj_type, Vector3& p, double& sq_dist,
     bool is_debug) const {
+  // get projection fid and lambdas
+  adouble3 lambda;
+  Vector3 old_p = p;  // for debug
+  int fid = this->aabb_wrapper.project_to_sf_get_nearest_face_with_lambdas(
+      p, sq_dist, lambda[0], lambda[1], lambda[2]);
+  int FE_id = get_FE_given_fid_and_lambdas_if_any(
+      feature_edges, check_proj_type, fid, lambda, is_debug);
+
+  // return format: <SurfaceMesh::fid, FeatureEdge::id>
+  aint2 return_fid_fe_id = {{fid, FE_id}};
+  return return_fid_fe_id;
+}
+
+// EdgeType can be either SE or CE
+// Return fe_id, or -1 if not found
+int SurfaceMesh::get_FE_given_fid_and_lambdas_if_any(
+    const std::vector<FeatureEdge>& feature_edges,
+    const EdgeType& check_proj_type, const int fid,
+    const adouble3& given_lambdas, bool is_debug) const {
   // if not cache, this loop will be slow
   if (!feature_edges.empty() && this->sf_fid_to_fe_ids.empty()) {
     // this->cache_sf_fid_to_fe_ids(feature_edges);
@@ -195,17 +213,13 @@ aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
     assert(false);
   }
 
-  // return format: <SurfaceMesh::fid, FeatureEdge::id>
-  aint2 return_fid_fe_id = {{-1, -1}};
   // get projection fid and lambdas
   double lambda[3];
-  Vector3 old_p = p;  // for debug
-  int fid = this->aabb_wrapper.project_to_sf_get_nearest_face_with_lambdas(
-      p, sq_dist, lambda[0], lambda[1], lambda[2]);
-  return_fid_fe_id[0] = fid;
-  return_fid_fe_id[1] = get_triangle_proj_FE_given_lambdas(
-      feature_edges, check_proj_type, fid, lambda, is_debug);
-  return return_fid_fe_id;
+  lambda[0] = given_lambdas[0];
+  lambda[1] = given_lambdas[1];
+  lambda[2] = given_lambdas[2];
+  return get_triangle_proj_FE_given_lambdas(feature_edges, check_proj_type, fid,
+                                            lambda, is_debug);
 }
 
 // return fe_id, or -1 if not found

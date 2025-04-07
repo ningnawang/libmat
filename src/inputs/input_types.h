@@ -402,6 +402,10 @@ class SurfaceMesh : public GEO::Mesh {
       const std::vector<FeatureEdge> &feature_edges,
       const EdgeType &check_proj_type, Vector3 &p, double &sq_dist,
       bool is_debug) const;
+  int get_FE_given_fid_and_lambdas_if_any(
+      const std::vector<FeatureEdge> &feature_edges,
+      const EdgeType &check_proj_type, const int fid,
+      const adouble3 &given_lambdas, bool is_debug) const;
   int get_triangle_proj_FE_given_lambdas(
       const std::vector<FeatureEdge> &feature_edges,
       const EdgeType &check_proj_type, const int fid, const double *lambda,

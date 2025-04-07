@@ -494,6 +494,10 @@ inline Vector3 convert_std2geo(const adouble3& p) {
   return Vector3(p[0], p[1], p[2]);
 }
 
+inline Vector3 convert_std2geo(const afloat3& p) {
+  return Vector3(p[0], p[1], p[2]);
+}
+
 // Function to compute variance of 3D normals
 //
 // eg. If the normals are distributed within 60 degree (pi/3) of each other,
