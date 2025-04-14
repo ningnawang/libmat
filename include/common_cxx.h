@@ -267,35 +267,36 @@ inline std::string get_only_file_name(std::string filePath, bool withExtension,
 // (NO) matching ftetwild output (https://github.com/wildmeshing/fTetWild)
 //
 // type:
-// 0 -> .geogram
-// 1 -> _sf.obj
-// 2 -> _pts.xyz
-// 3 -> _sf_01_scaled.obj // matching matfp?
-// 4 -> _extf.ma
-// 5 -> _poisson_xx.xyz
-// 6 -> .normal
+// 0 -> _scaled_sf.geogram
+// 1 -> _scaled_sf.obj
+// 2 -> _scaled_pts.xyz
+// 3 -> _scaled_sf_01_scaled.obj // matching matfp?
+// 4 -> _scaled_extf.ma
+// 5 -> _scaled_poisson_xx.xyz
+// 6 -> _scaled.normal
 inline std::string get_other_file_path(std::string filePath, int type,
                                        int poisson_diag = -1) {
   std::string file_path = get_file_no_ext(filePath);
   switch (type) {
     case 0:
-      return file_path + "_sf.geogram";
+      return file_path + "_scaled_sf.geogram";
       break;
     case 1:
-      return file_path + "_sf.obj";
+      return file_path + "_scaled_sf.obj";
     case 2:
-      return file_path + "_pts.xyz";
+      return file_path + "_scaled_pts.xyz";
     case 3:  // no use
-      return file_path + "_sf_01_scaled.obj";
+      return file_path + "_scaled_sf_01_scaled.obj";
     case 4:
-      return file_path + "_extf.ma";
+      return file_path + "_scaled_extf.ma";
     case 5:
       if (poisson_diag > 0)
-        return file_path + "_poisson_" + std::to_string(poisson_diag) + ".xyz";
+        return file_path + "_scaled_poisson_" + std::to_string(poisson_diag) +
+               ".xyz";
       else
-        return file_path + "_poisson" + ".xyz";
+        return file_path + "_scaled_poisson_p" + ".xyz";
     case 6:
-      return file_path + ".normal";
+      return file_path + "_scaled.normal";
     default:
       break;
   }
