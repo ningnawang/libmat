@@ -217,23 +217,56 @@ EdgeConvexConcave is_convex_concave_or_not(const double se_threshold,
   return EdgeConvexConcave::FLAT;
 }
 
+void update_sf_fe_pairs_attributes(const std::vector<Vector3i>& input_faces,
+                                   const std::set<aint2>& s_edges,
+                                   const std::set<aint2>& cc_edges,
+                                   std::set<aint2>& fe_sf_fs_pairs,
+                                   std::set<aint2>& fe_sf_fs_pairs_se_only,
+                                   std::set<aint2>& fe_sf_fs_pairs_ce_only) {
+  fe_sf_fs_pairs.clear();
+  fe_sf_fs_pairs_se_only.clear();
+  fe_sf_fs_pairs_ce_only.clear();
+
+  std::map<int, std::unordered_set<int>> conn_tris;
+  for (int i = 0; i < input_faces.size(); i++) {
+    const auto& f = input_faces[i];
+    for (int j = 0; j < 3; j++) {
+      aint2 e = {{f[j], f[(j + 1) % 3]}};
+      if (e[0] > e[1]) std::swap(e[0], e[1]);
+      conn_tris[input_faces[i][j]].insert(i);
+    }
+  }
+
+  std::vector<int> n12_f_ids;
+  aint2 adj_fids_pair;
+  for (const auto& se : s_edges) {
+    set_intersection(conn_tris[se[0]], conn_tris[se[1]], n12_f_ids);
+    assert(n12_f_ids.size() == 2);
+    adj_fids_pair = {{n12_f_ids[0], n12_f_ids[1]}};
+    std::sort(adj_fids_pair.begin(), adj_fids_pair.end());
+    fe_sf_fs_pairs.insert(adj_fids_pair);
+    fe_sf_fs_pairs_se_only.insert(adj_fids_pair);
+  }
+  for (const auto& ce : cc_edges) {
+    set_intersection(conn_tris[ce[0]], conn_tris[ce[1]], n12_f_ids);
+    assert(n12_f_ids.size() == 2);
+    adj_fids_pair = {{n12_f_ids[0], n12_f_ids[1]}};
+    fe_sf_fs_pairs.insert(adj_fids_pair);
+    fe_sf_fs_pairs_ce_only.insert(adj_fids_pair);
+  }
+}
+
 // here input_faces are sorted counter-clockwise, from SurfaceMesh
 void find_feature_edges(const Parameter& args,
                         const std::vector<Vector3>& input_vertices,
                         const std::vector<Vector3i>& input_faces,
                         std::set<aint2>& s_edges, std::set<aint2>& cc_edges,
                         std::set<int>& corners_se, std::set<int>& corners_ce,
-                        std::set<int>& corners_fake,
-                        std::set<aint2>& fe_sf_fs_pairs,
-                        std::set<aint2>& fe_sf_fs_pairs_se_only,
-                        std::set<aint2>& fe_sf_fs_pairs_ce_only) {
+                        std::set<int>& corners_fake) {
   s_edges.clear();
   cc_edges.clear();
   corners_se.clear();
   corners_ce.clear();
-  fe_sf_fs_pairs.clear();
-  fe_sf_fs_pairs_se_only.clear();
-  fe_sf_fs_pairs_ce_only.clear();
 
   std::vector<aint2> edges;
   std::map<int, std::unordered_set<int>> conn_tris;
@@ -317,12 +350,8 @@ void find_feature_edges(const Parameter& args,
           args.thres_convex, args.thres_concave, n, n1, edge_dir, is_debug);
       if (edge_type == EdgeConvexConcave::CONVEX) {
         s_edges.insert(e);
-        fe_sf_fs_pairs.insert(ref_fs_pair);
-        fe_sf_fs_pairs_se_only.insert(ref_fs_pair);
       } else if (edge_type == EdgeConvexConcave::CONCAVE) {
         cc_edges.insert(e);  // once concave, never sharp
-        fe_sf_fs_pairs.insert(ref_fs_pair);
-        fe_sf_fs_pairs_ce_only.insert(ref_fs_pair);
       }
     }  // for n12_f_ids
   }  // for edges
@@ -811,15 +840,19 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   if (!is_sf_file_exist) {
     // find feature edges and corners on GEO::Mesh
     find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
-                       corners_se_sf, corners_ce_sf, corners_fake_sf,
-                       sf_mesh.fe_sf_fs_pairs, sf_mesh.fe_sf_fs_pairs_se_only,
-                       sf_mesh.fe_sf_fs_pairs_ce_only);
+                       corners_se_sf, corners_ce_sf, corners_fake_sf);
+    update_sf_fe_pairs_attributes(
+        faces, s_edges_sf, cc_edges_sf, sf_mesh.fe_sf_fs_pairs,
+        sf_mesh.fe_sf_fs_pairs_se_only, sf_mesh.fe_sf_fs_pairs_ce_only);
     mark_feature_attributes(s_edges_sf, cc_edges_sf, corners_se_sf,
                             corners_ce_sf, corners_fake_sf, sf_mesh);
   } else {
     // load feature edges and corners from file
     load_feature_attributes(sf_mesh, s_edges_sf, cc_edges_sf, corners_se_sf,
                             corners_ce_sf, corners_fake_sf);
+    update_sf_fe_pairs_attributes(
+        faces, s_edges_sf, cc_edges_sf, sf_mesh.fe_sf_fs_pairs,
+        sf_mesh.fe_sf_fs_pairs_se_only, sf_mesh.fe_sf_fs_pairs_ce_only);
   }
 
   // map back to tet mesh

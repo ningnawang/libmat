@@ -45,6 +45,9 @@ bool shrink_sphere(const SurfaceMesh &sf_mesh, const AABBWrapper &aabb_wrapper,
 // will update TetMesh::fl2corner_sphere
 int init_corner_spheres(const int num_itr_global, TetMesh &tet_mesh,
                         std::vector<MedialSphere> &all_medial_spheres);
+// will update TetMesh::fl2corner_sphere
+void update_corner_fl2corner(TetMesh &tet_mesh,
+                             std::vector<MedialSphere> &all_medial_spheres);
 
 void insert_spheres_for_concave_lines_new(
     const SurfaceMesh &sf_mesh, const std::vector<ConcaveCorner> &cc_corners,

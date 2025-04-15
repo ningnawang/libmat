@@ -182,6 +182,7 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
   if (is_debug) {
     printf("-------p's p_fid %d, k_ring_fids:\n", p_fid);
     print_set<int>(k_ring_fids);
+    printf("fe_sf_fs_pairs size %d\n", fe_sf_fs_pairs.size());
   }
 
   if (!all_finite(c_next)) return false;
@@ -526,6 +527,20 @@ int init_corner_spheres(const int num_itr_global, TetMesh& tet_mesh,
   }
   printf("[init_corner] init %ld corner spheres \n", corners_se_tet.size());
   return corners_se_tet.size();
+}
+
+// will update TetMesh::fl2corner_sphere
+void update_corner_fl2corner(TetMesh& tet_mesh,
+                             std::vector<MedialSphere>& all_medial_spheres) {
+  auto& fl2corner_sphere = tet_mesh.fl2corner_sphere;
+  fl2corner_sphere.clear();
+  for (int i = 0; i < all_medial_spheres.size(); i++) {
+    const MedialSphere& msphere = all_medial_spheres[i];
+    if (!msphere.is_on_corner()) continue;
+    assert(msphere.corner_fls.size() > 0);
+    for (const auto& fl_id : msphere.corner_fls)
+      fl2corner_sphere[fl_id].insert(msphere.id);
+  }
 }
 
 // [no use]

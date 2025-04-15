@@ -192,8 +192,8 @@ class TetMesh {
   std::map<int, std::set<int>> corner2fl;
   // corner_tvs -> set of FeatureEdge::id
   std::map<int, std::set<int>> corner2fe;
-  // FeatureLine::id -> set of corner MedialSphere::isd
-  // updated in init_corner_spheres()
+  // FeatureLine::id -> set of corner MedialSphere::id
+  // updated in init_corner_spheres() or update_corner_fl2corner()
   std::map<int, std::set<int>> fl2corner_sphere;
   // for concave corners (#adjacent_ce > 2 only)
   // convert to TetMesh::cc_corners using function store_concave_corners()
@@ -429,7 +429,7 @@ class SurfaceMesh : public GEO::Mesh {
 
   // for feature edges, both SE and CE
   // store <sf_fid_min, sf_fid_max> if on feature edge
-  // updated in detect_mark_sharp_features()
+  // updated in update_sf_fe_pairs_attributes()
   std::set<aint2> fe_sf_fs_pairs;
   // same as fe_sf_fs_pairs, but only for SE
   std::set<aint2> fe_sf_fs_pairs_se_only;
