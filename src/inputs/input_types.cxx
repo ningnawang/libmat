@@ -167,6 +167,73 @@ bool SurfaceMesh::collect_kring_neighbors_given_fid_se_only(
   return kring_neighbors.empty() ? false : true;
 }
 
+bool is_skip_se_neighbor(const std::set<aint2>& fe_sf_pairs_not_cross,
+                         const int f, const int nf, bool is_debug) {
+  aint2 ref_fs_pair = {{f, nf}};
+  std::sort(ref_fs_pair.begin(), ref_fs_pair.end());
+  if (fe_sf_pairs_not_cross.find(ref_fs_pair) != fe_sf_pairs_not_cross.end()) {
+    if (is_debug) printf("skip SE fid neighbor pair (%d,%d)\n", f, nf);
+    return true;  // skip checking its neighbor
+  }
+  return false;
+}
+
+// update:
+// 1. SurfaceMesh::regions
+// 2. SurfaceMesh::fid2region_id
+void SurfaceMesh::collect_sf_regions_no_cross(bool is_debug) {
+  // expand from one fid to all neighbors
+  // once touch fe_sf_fs_pairs_se_only, then skip
+  this->regions.clear();
+  this->fid2region_id.clear();
+  this->fid2region_id.resize(this->facets.nb(), -1);
+  if (is_debug) printf("collecting sf_regions no cross SE\n");
+
+  int region_id = 0;
+  std::vector<int> one_stack;
+  std::set<int> visited_fids;
+  for (int i = 0; i < this->facets.nb(); i++) {
+    if (visited_fids.find(i) != visited_fids.end()) continue;
+    one_stack.clear();
+    one_stack.push_back(i);
+    // create new region
+    RegionData new_region;
+    new_region.region_id = region_id++;
+    if (is_debug)
+      printf("new region %d start from fid %d\n", new_region.region_id, i);
+
+    while (!one_stack.empty()) {
+      int fid = one_stack.back();
+      one_stack.pop_back();
+      visited_fids.insert(fid);
+      new_region.fids.insert(fid);
+      this->fid2region_id[fid] = new_region.region_id;
+      if (is_debug) printf("expanding fid %d\n", fid);
+
+      // get neighbors, add to stack
+      for (GEO::index_t le = 0; le < this->facets.nb_vertices(fid); le++) {
+        GEO::index_t nfid = this->facets.adjacent(fid, le);
+        if (nfid == GEO::NO_FACET) continue;
+        if (visited_fids.find(nfid) != visited_fids.end()) continue;
+        if (is_skip_se_neighbor(this->fe_sf_fs_pairs_se_only, fid, nfid,
+                                is_debug))
+          continue;
+        if (is_debug)
+          printf("fid %d has neighbor face nfid %d in same region\n", fid,
+                 nfid);
+        one_stack.push_back(nfid);
+      }
+    }  // while stack
+    // save new region
+    this->regions.push_back(new_region);
+    if (is_debug) {
+      printf("region %d has %ld fids: ", new_region.region_id,
+             new_region.fids.size());
+      print_set<int>(new_region.fids, "new_region.fids");
+    }
+  }  // for fids
+}
+
 // called by detect_mark_sharp_features()
 void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
     const std::vector<FeatureEdge>& feature_edges) {
@@ -430,18 +497,6 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh& sf_mesh,
                                    const int fid_given, const int k,
                                    std::set<int>& k_ring_fids,
                                    bool is_clear_cur, bool is_debug) {
-  auto is_skip_se_neighbor = [&](const int f, const int nf) {
-    aint2 ref_fs_pair = {{f, nf}};
-    std::sort(ref_fs_pair.begin(), ref_fs_pair.end());
-    if (fe_sf_pairs_not_cross.find(ref_fs_pair) !=
-        fe_sf_pairs_not_cross.end()) {
-      if (is_debug)
-        printf("[K_RING] face %d skip nf %d since sharing a sharp edge \n", f,
-               nf);
-      return true;  // skip checking its neighbor
-    }
-    return false;
-  };
   if (is_debug)
     printf("calling get_k_ring_neighbor_no_se for fid_given: %d \n", fid_given);
   assert(fid_given >= 0);
@@ -459,7 +514,8 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh& sf_mesh,
       for (GEO::index_t le = 0; le < sf_mesh.facets.nb_vertices(fid); le++) {
         GEO::index_t nfid = sf_mesh.facets.adjacent(fid, le);
         if (nfid == GEO::NO_FACET) continue;
-        if (is_skip_se_neighbor(fid, nfid)) continue;
+        if (is_skip_se_neighbor(fe_sf_pairs_not_cross, fid, nfid, is_debug))
+          continue;
         if (is_debug) printf("fid %d has neighbor face nfid %d\n", fid, nfid);
         k_ring_fids.insert(nfid);
         new_added_fids.insert(nfid);

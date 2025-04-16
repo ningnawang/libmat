@@ -391,6 +391,10 @@ class SurfaceMesh : public GEO::Mesh {
       const int k, int tan_fid, std::set<int> &kring_neighbors) const;
   void update_fe_sf_fs_pairs_to_ce_id(
       const std::vector<FeatureEdge> &feature_edges);
+  // update:
+  // 1. SurfaceMesh::regions
+  // 2. SurfaceMesh::fid2region_id
+  void collect_sf_regions_no_cross(bool is_debug);
 
   // check if the projection point is on FE if any,
   // either CE or SE as requested in check_proj_type
@@ -451,6 +455,15 @@ class SurfaceMesh : public GEO::Mesh {
   // updated by function SurfaceMesh::cache_sf_fid_to_fe_ids()
   // used by function SurfaceMesh::project_to_sf_and_get_FE_if_any()
   std::map<int, std::set<int>> sf_fid_to_fe_ids;
+
+  // group surface fids into regions, not pass fe_sf_fs_pairs_se_only
+  // updated by collect_sf_regions_no_cross()
+  struct RegionData {
+    int region_id = -1;
+    std::set<int> fids;
+  };
+  std::vector<RegionData> regions;  // region id -> fids
+  std::vector<int> fid2region_id;   // fid -> region id
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,
