@@ -220,6 +220,9 @@ class MedialMesh {
                              bool is_update_tan_pls);
   void generate_medial_tets();
 
+  // to subdivide medial faces by adding new center points
+  void subdivide(int num_iterations);
+
   // void sort_dual_edges_all(const GEO::Mesh& sf_mesh);
   // void sort_dual_edges(const GEO::Mesh& sf_mesh, MedialFace& mface);
 

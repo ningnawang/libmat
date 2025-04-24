@@ -1280,3 +1280,80 @@ int compute_Euler(const MedialMesh& mat) {
   //        euler3);
   return euler;
 }
+
+void MedialMesh::subdivide(int num_iterations) {
+  printf("[MedialMesh] subdividing medial mesh with %d iterations ...\n",
+         num_iterations);
+  std::set<int> deleting_fids;
+  std::map<int, aint3> new_fid_map;
+  for (int iter = 0; iter < num_iterations; ++iter) {
+    deleting_fids.clear();
+    new_fid_map.clear();
+    // step 1: find faces to be deleted
+    for (const auto& face : this->faces) deleting_fids.insert(face.fid);
+
+    // step 2: create new faces
+    for (const auto& fid : deleting_fids) {
+      const auto& face = this->faces.at(fid);
+      int v0 = face.vertices_[0];
+      int v1 = face.vertices_[1];
+      int v2 = face.vertices_[2];
+
+      const auto& msphere0 = vertices->at(v0);
+      const auto& msphere1 = vertices->at(v1);
+      const auto& msphere2 = vertices->at(v2);
+
+      // Compute barycenter
+      Vector3 center =
+          (msphere0.center + msphere1.center + msphere2.center) / 3.0;
+      double avg_radius =
+          (msphere0.radius + msphere1.radius + msphere2.radius) / 3.0;
+
+      MedialSphere new_msphere(this->vertices->size(), center, avg_radius,
+                               SphereType::T_UNK);
+      this->vertices->push_back(new_msphere);
+
+      // new edges
+      this->create_edge(v0, new_msphere.id, 1 /*dcnt*/);
+      this->create_edge(v1, new_msphere.id, 1 /*dcnt*/);
+      this->create_edge(v2, new_msphere.id, 1 /*dcnt*/);
+
+      // new triangle faces
+      int f1 = this->create_face({{v0, v1, new_msphere.id}}, 1 /*dcnt*/);
+      int f2 = this->create_face({{v1, v2, new_msphere.id}}, 1 /*dcnt*/);
+      int f3 = this->create_face({{v2, v0, new_msphere.id}}, 1 /*dcnt*/);
+      new_fid_map[fid] = {{f1, f2, f3}};
+    }
+    // step 3: delete old faces
+    for (const auto& del_fid : deleting_fids) this->delete_face(del_fid);
+    assert(new_fid_map.size() == deleting_fids.size());
+    printf(
+        "[MedialMesh] iter %d, new_mmesh has %zu vertices, %zu edges, "
+        "%zu faces\n",
+        iter, this->vertices->size(), this->edges.size(), this->faces.size());
+
+    // step 4: udpate mstructures
+    for (int i = 0; i < this->mstructure.size(); ++i) {
+      assert(this->mstructure[i].id == i);
+      auto& mstruct = this->mstructure[i];
+      if (mstruct.type != MedialType::SHEET) continue;
+      const auto old_mstruct_fids = mstruct.m_face_ids;  // copy
+      for (const auto& old_fid : old_mstruct_fids) {
+        // assert(new_fid_map.find(fid) != new_fid_map.end());
+        if (new_fid_map.find(old_fid) == new_fid_map.end()) {
+          printf(
+              "[MedialMesh] old_fid %d in mstruct %d not found in "
+              "new_fid_map\n",
+              old_fid, mstruct.id);
+          continue;
+        }
+        mstruct.m_face_ids.erase(old_fid);
+        const auto& new_fids = new_fid_map.at(old_fid);
+        for (const auto& new_fid : new_fids) {
+          mstruct.m_face_ids.insert(new_fid);
+          this->faces.at(new_fid).mstruct_id = mstruct.id;
+        }
+      }
+    }  // for mstructure
+  }  // for iterations
+}
