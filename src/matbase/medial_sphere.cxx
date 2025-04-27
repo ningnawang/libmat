@@ -944,13 +944,16 @@ bool MedialSphere::is_on_sheet() const {
   return true;
 }
 bool MedialSphere::is_on_junction() const {
-  if (type == SphereType::T_4_MORE || type == SphereType::T_2_INF) return true;
+  if (type == SphereType::T_4_MORE) return true;
+  // SphereType::T_2_INF is an endpoint, not junction
+  // if (type == SphereType::T_2_INF) return true;
   return false;
 }
 
 bool MedialSphere::is_on_seam_endpoint() const {
   if (is_on_corner()) return true;
   if (is_on_junction()) return true;
+  if (type == SphereType::T_2_INF) return true;
   return false;
 }
 
