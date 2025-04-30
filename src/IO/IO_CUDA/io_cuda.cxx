@@ -59,7 +59,7 @@ void get_one_convex_cell_faces_const(
     cint2 hp = cc_trans.clip_id2_const(plane);
 
     // check if only shown boundary or not
-    // 1. halfplane; 2. on sf_mesh fid
+    // 1. halfplane; 2. on SurfacMesh fid
     bool is_shown = true;
     if (is_boundary_only) {
       is_shown = false;
@@ -124,7 +124,11 @@ void get_one_convex_cell_faces_const(
         one_face.push_back(row + voro_local_faces[lf][(p + 1) % nb_pts]);
         one_voro_cell_faces.push_back(one_face);
         voro_faces_sites.push_back(cc_trans.voro_id);
-        voro_faces_adj_sites.push_back(hp.x == cc_trans.voro_id ? hp.y : hp.x);
+        if (hp.y != -1)
+          voro_faces_adj_sites.push_back(hp.x == cc_trans.voro_id ? hp.y
+                                                                  : hp.x);
+        else
+          voro_faces_adj_sites.push_back(-1);
       }
     } else {
       one_face.clear();
@@ -133,7 +137,10 @@ void get_one_convex_cell_faces_const(
       }
       one_voro_cell_faces.push_back(one_face);
       voro_faces_sites.push_back(cc_trans.voro_id);
-      voro_faces_adj_sites.push_back(hp.x == cc_trans.voro_id ? hp.y : hp.x);
+      if (hp.y != -1)
+        voro_faces_adj_sites.push_back(hp.x == cc_trans.voro_id ? hp.y : hp.x);
+      else
+        voro_faces_adj_sites.push_back(-1);
     }
 
     lf++;

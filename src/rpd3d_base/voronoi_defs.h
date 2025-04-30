@@ -17,7 +17,7 @@
 
 //----------------------------------Host
 struct ConvexCellHost {
-  ConvexCellHost(){};
+  ConvexCellHost() {};
   cfloat4 compute_vertex_coordinates(cuchar3 t, bool persp_divide = true) const;
   void print_info() const;
 
@@ -85,8 +85,8 @@ struct ConvexCellHost {
   cfloat5 clip_data_trans[_MAX_P_];
   // format: [fid1, fid2]
   // we store a unique id for clipping plane
-  // fid matches sf_mesh::fid for faces on sf_mesh
-  // 1. plane inherit from tets, we store [fid, -1]
+  // 1. plane inherit from tets, we store [fid, -1].
+  //    Here, fid matches SurfacMesh::fid if fid < SurfacMesh::facets.nb()
   // 2. halfplane of two seeds, we store [seed_id_min, seed_id_max]
   cint2 clip_id2_data_trans[_MAX_P_];
   // format: [clip1, clip2, #adjacent_cells]
