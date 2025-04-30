@@ -321,6 +321,14 @@ class AABBWrapper {
     return sq_dist;
   }
 
+  inline int get_nearest_point_on_se(const Vector3 &p, Vector3 &nearest_p,
+                                     double &sq_dist) const {
+    if (!is_se_mesh_exist) return UNK_FACE;
+    int eid = se_tree->nearest_facet(p, nearest_p, sq_dist);
+    GEO::Attribute<int> attr_fe_ids(se_mesh.facets.attributes(), "fe_id");
+    return attr_fe_ids[eid];
+  }
+
   inline int project_to_se(Vector3 &p) const {
     if (!is_se_mesh_exist) return UNK_FACE;
     Vector3 nearest_p;
