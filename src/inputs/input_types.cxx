@@ -61,6 +61,29 @@ int FeatureLine::get_next_fe_given_dir(int fe_cur, int dir) {
   return fe_ids.at(id_found);
 }
 
+void SurfaceMesh::load_cgal_poly_from_file(
+    const std::string& sf_mesh_file_path) {
+  std::ifstream input(sf_mesh_file_path);
+  if (!input || !(input >> this->cgal_poly)) {
+    std::cerr << "Not a valid input file: " << sf_mesh_file_path << std::endl;
+    assert(false);
+  }
+  this->cgal_poly_side =
+      std::make_shared<CGAL::Side_of_triangle_mesh<CGAL_Mesh, CGAL_K>>(
+          this->cgal_poly);
+}
+
+bool SurfaceMesh::is_point_inside_CGAL(const Vector3& p) const {
+  assert(this->cgal_poly_side);
+  CGAL_Point point(p[0], p[1], p[2]);
+  CGAL::Side_of_triangle_mesh<CGAL_Mesh, CGAL_K> inside(this->cgal_poly);
+  CGAL::Bounded_side res = this->cgal_poly_side->operator()(point);
+  if (res == CGAL::ON_BOUNDED_SIDE) {
+    return true;
+  }
+  return false;
+}
+
 void SurfaceMesh::reload_sf2tet_vs_mapping() {
   // load sf2tet_vs_mapping
   const GEO::Attribute<int> tet_vid_attr(this->vertices.attributes(),

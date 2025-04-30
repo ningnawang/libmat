@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "CGAL_poly.h"
 #include "common_geogram.h"
 #include "mesh_AABB.h"
 #include "params.h"
@@ -382,6 +383,8 @@ class AABBWrapper {
 
 class SurfaceMesh : public GEO::Mesh {
  public:
+  void load_cgal_poly_from_file(const std::string &sf_mesh_file_path);
+  bool is_point_inside_CGAL(const Vector3 &p) const;
   void reload_sf2tet_vs_mapping();
   void collect_fid_centroids(const std::set<int> &given_fids,
                              std::vector<v2int> &one_group_fids) const;
@@ -472,6 +475,11 @@ class SurfaceMesh : public GEO::Mesh {
   };
   std::vector<RegionData> regions;  // region id -> fids
   std::vector<int> fid2region_id;   // fid -> region id
+
+  // CGAL Polyhedron
+  CGAL_Mesh cgal_poly;
+  std::shared_ptr<CGAL::Side_of_triangle_mesh<CGAL_Mesh, CGAL_K>>
+      cgal_poly_side;
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,
