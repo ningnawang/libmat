@@ -274,7 +274,6 @@ inline std::string get_only_file_name(std::string filePath, bool withExtension,
 // 4 -> _scaled_extf.ma
 // 5 -> _scaled_poisson_xx.xyz
 // 6 -> _scaled.normal
-// 7 -> _scaled_sf.off
 inline std::string get_other_file_path(std::string filePath, int type,
                                        int poisson_diag = -1) {
   std::string file_path = get_file_no_ext(filePath);
@@ -298,8 +297,6 @@ inline std::string get_other_file_path(std::string filePath, int type,
         return file_path + "_scaled_poisson_p" + ".xyz";
     case 6:
       return file_path + "_scaled.normal";
-    case 7:
-      return file_path + "_scaled_sf.off";
     default:
       break;
   }

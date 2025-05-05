@@ -5,13 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 if(NOT TARGET geogram)
     message(FATAL_ERROR "geogram not found in inputs")
 endif()
-#CGAL
-if(NOT TARGET CGAL)
-    message(FATAL_ERROR "CGAL not found in inputs")
-endif()
-find_package(CGAL REQUIRED)
-message("CGAL Version: ${CGAL_VERSION}")
-
 
 add_library(inputs STATIC 
     input_types.cxx
@@ -21,7 +14,6 @@ add_library(inputs STATIC
     sharp_feature_detection.cxx
     mesh_AABB.h
     mesh_AABB.cxx
-    CGAL_poly.h
 )
 
 
@@ -33,5 +25,4 @@ target_include_directories(inputs PUBLIC
 
 target_link_libraries(inputs
     optimized geogram
-    optimized CGAL::CGAL
 )
