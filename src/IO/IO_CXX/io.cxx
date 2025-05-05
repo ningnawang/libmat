@@ -398,8 +398,8 @@ void load_spheres_from_file(const char* filename,
   int dim, n_site;
   int type, is_deleted;
   file >> dim >> n_site;
-  assert(dim == 3 || dim == 4);
   std::cout << "n_site: " << n_site << ", dim: " << dim << std::endl;
+  assert(dim == 3 || dim == 4);
 
   all_medial_spheres.clear();
   for (int i = 0; i < n_site; i++) {
@@ -414,8 +414,8 @@ void load_spheres_from_file(const char* filename,
     if (is_load_type) {
       file >> type;
       msphere.type = SphereType(type);
-      // do not load
-      if (msphere.type == SphereType::T_UNK) is_store_msphere = false;
+      // // do not load
+      // if (msphere.type == SphereType::T_UNK) is_store_msphere = false;
     }
     if (is_load_deleted) {
       file >> is_deleted;
@@ -424,9 +424,6 @@ void load_spheres_from_file(const char* filename,
     }
     if (is_store_msphere) {
       all_medial_spheres.push_back(msphere);
-      // printf("site %d has sphere: (%lf %lf %lf %lf), type: %d\n", i,
-      //        msphere.center[0], msphere.center[1], msphere.center[2],
-      //        msphere.radius, msphere.type);
     }
   }
   file.close();
