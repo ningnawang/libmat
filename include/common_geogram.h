@@ -147,6 +147,12 @@ inline double angle_between_two_vectors_in_degrees(const Vector3& a,
   return diff_angle;
 }
 
+// Compute angular difference (in radians) between two normals
+inline double normal_angle_diff(const Vector3& n1, const Vector3& n2) {
+  double dot = std::clamp(GEO::dot(n1, n2), -1.0, 1.0);
+  return std::acos(dot);
+}
+
 inline Vector3 sample_random_vector_given_two_vectors(const Vector3& nA,
                                                       const Vector3& nB) {
   double t_rand = RANDOM_01();
