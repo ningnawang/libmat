@@ -867,7 +867,7 @@ void renormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp) {
 /* # .ma format
  * numVertices numEdges numFaces
  * v x y z r flag_type flag_delete
- * e v1 v2 flag_delete
+ * e v1 v2 flag_type flag_delete
  * f v1 v2 v3
  */
 void load_matfp(const std::string& ma_path,
@@ -906,15 +906,17 @@ void load_matfp(const std::string& ma_path,
   mat.vertices = &all_medial_spheres;
   int e1, e2;
   for (int e = 0; e < num_es; e++) {
-    ma_file >> ch >> e1 >> e2 >> is_deleted;
+    ma_file >> ch >> e1 >> e2 >> type >> is_deleted;
     if (is_deleted) continue;
     // printf("ma e %d has (%d,%d)\n", e, e1, e2);
-    mat.create_edge(e1, e2);
+    int eid = mat.create_edge(e1, e2);
+    if (type == 1) mat.edges.at(eid).is_intf = true;
+    if (type == 2) mat.edges.at(eid).is_extf = true;
   }
 
   int f1, f2, f3;
   for (int f = 0; f < num_fs; f++) {
-    ma_file >> ch >> f1 >> f2 >> f3;
+    ma_file >> ch >> f1 >> f2 >> f3 >> is_deleted;
     // printf("ma f %d has (%d,%d,%d)\n", f, f1, f2, f3);
     aint3 fvs = {{f1, f2, f3}};
     mat.create_face(fvs);
@@ -1028,6 +1030,7 @@ void export_ma(const std::string& maname, const MedialMesh& mat) {
     } else {
       fout << " " << 0;
     }
+    fout << " " << 0;  // never delete
     fout << std::endl;
   }
 
@@ -1037,6 +1040,7 @@ void export_ma(const std::string& maname, const MedialMesh& mat) {
     if (mat_f.is_deleted) continue;
     fout << "f";
     for (uint v = 0; v < 3; v++) fout << " " << mat_f.vertices_[v];
+    fout << " " << 0;  // never delete
     fout << std::endl;
   }
   fout.close();
