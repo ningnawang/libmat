@@ -61,6 +61,15 @@ struct Parameter {
   double thres_convex = 55.;
   // concave, bigger angle more concave, so smaller threshold more sensative
   double thres_concave = 60.;
+
+  // for checking INTF spheres
+  double SphereType_T1_INF_VARIANCE = 0.25;
+  double SphereType_T2_INF_VARIANCE = 0.5;
+
+  bool is_run_cad = true;
+  bool is_run_organic = false;
+  bool is_run_weak = false;
+  bool is_sample_rpd = true;
 };
 
 //----------------------------------------------------------------------------
