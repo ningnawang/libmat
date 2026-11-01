@@ -1,7 +1,8 @@
 # LibMAT examples
 
 Python scripts showing how to use `libmat`. Run them from the repository root
-after installing the package (`pip install .`):
+after installing the package (`pip install libmat`, or `pip install .` from a
+clone):
 
 ```bash
 python examples/03_shrink_spheres.py

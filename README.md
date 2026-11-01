@@ -26,9 +26,15 @@ print("one-sided Hausdorff distance:", np.abs(D).max())
 
 ## Installation
 
-Requires a C++17 compiler, CMake ≥ 3.18 and CGAL (`brew install cgal` /
-`apt install libcgal-dev`). geogram, Eigen and pybind11 are downloaded if
-missing.
+```bash
+python -m pip install libmat
+```
+
+installs a prebuilt CPU version (Linux x86_64, macOS Intel / Apple silicon,
+Python ≥ 3.10).
+
+To build from source you need a C++17 compiler, CMake ≥ 3.18 and the Boost
+headers; CGAL, geogram, Eigen and pybind11 are downloaded if missing.
 
 ```bash
 pip install .                         # CPU version
@@ -85,16 +91,61 @@ legacy/              unused code kept for reference (not built)
 Run the tests with `pip install ".[test]" && python -m pytest tests`, and
 the documentation locally with `pip install ".[docs]" && mkdocs serve`.
 
-## Attribution
+## Credit
 
-If you use our library in your research paper, please cite us! You can use
-the bibtex block below:
+If you use LibMAT in your research, please cite:
 
 ```bibtex
 @misc{libmat,
   title = {{LibMAT}: A C++ Library for Medial Axis Transform},
-  author = {Ningna Wang},
-  note = {https://github.com/ningnawang/libmat},
+  author = {Ningna Wang and others},
+  howpublished = "\url{https://github.com/ningnawang/libmat}",
   year = {2024}
 }
 ```
+
+and the papers whose methods you use:
+
+- **MATFP**: Ningna Wang, Bin Wang, Wenping Wang, Xiaohu Guo.
+  *Computing Medial Axis Transform with Feature Preservation via Restricted
+  Power Diagram*. ACM Transactions on Graphics (SIGGRAPH Asia 2022).
+  [Project](https://ningnawang.github.io/projects/2022_matfp/) ·
+  [arXiv](https://arxiv.org/abs/2210.13676) ·
+  [Code](https://github.com/ningnawang/MATFP)
+- **MATTopo**: Ningna Wang, Hui Huang, Shibo Song, Bin Wang, Wenping Wang,
+  Xiaohu Guo. *MATTopo: Topology-preserving Medial Axis Transform with
+  Restricted Power Diagram*. ACM Transactions on Graphics (SIGGRAPH Asia 2024).
+  [Paper](https://doi.org/10.1145/3687763) ·
+  [Project](https://ningnawang.github.io/projects/2024_mattopo/) ·
+  [arXiv](https://arxiv.org/abs/2403.18761) ·
+  [Code](https://github.com/ningnawang/mattopo)
+- **Shrinking ball**
+  ([`shrink_spheres`](https://ningnawang.github.io/libmat/python/shrink_spheres/)):
+  Jaehwan Ma, Sang Won Bae, Sunghee Choi. *3D medial axis point approximation
+  using nearest neighbors and the normal field*. The Visual Computer, 2012.
+  [Paper](https://doi.org/10.1007/s00371-011-0594-7)
+
+LibMAT is released under the GPL-3.0 license.
+
+## Contribute
+
+We hope LibMAT is useful for your work, and we would love your help to make it
+better.
+
+LibMAT is a young library, and we want contributing to it to be as easy as
+possible. You can add a new function, improve an existing one, or fix a bug,
+and open a pull request. A new function usually consists of a header and a
+source file (`include/libmat/<name>.h`, `src/api/<name>.cpp`), a binding
+(`python/bindings/`), a Python wrapper with its docstring
+(`python/libmat/<name>.py`) and a test (`tests/`).
+
+Please don't let that list stop you: we will gladly review your code with you
+and adapt it to the conventions of the library, and the tests will tell us if
+anything breaks. If you have code from a past project that is related to the
+medial axis or to geometry processing and is not in LibMAT yet, we encourage
+you to submit it as it is. Contributors are credited in the documentation of
+the functions they write and on the documentation home page.
+
+## Contributors
+
+None yet: be the first!

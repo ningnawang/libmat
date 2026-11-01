@@ -4,20 +4,22 @@ title: Installation
 
 # Installation
 
-## Dependencies
-
-| dependency | how it is obtained |
-| --- | --- |
-| C++17 compiler, CMake ≥ 3.18 | system |
-| [CGAL](https://www.cgal.org) ≥ 5 (with Boost, GMP, MPFR) | system: `brew install cgal` / `apt install libcgal-dev` |
-| [Eigen](https://eigen.tuxfamily.org) 3.4 | system, downloaded if missing |
-| [geogram](https://github.com/BrunoLevy/geogram) 1.7.9 | downloaded and built statically |
-| [pybind11](https://github.com/pybind/pybind11) | pip build dependency / downloaded |
-| CUDA toolkit ≥ 11 | only for the CUDA build |
-
 ## Python package
 
-### CPU version
+### From PyPI
+
+```bash
+python -m pip install libmat
+```
+
+Prebuilt wheels (CPU version) are available for Linux x86_64 and macOS (Intel,
+Apple silicon), Python ≥ 3.10. They have no dependencies besides numpy.
+Linux on ARM is not supported yet (geogram 1.7 uses x86 assembly there).
+
+### From source
+
+Needed on other platforms and for the CUDA version; see the
+[dependencies](#dependencies) below.
 
 ```bash
 git clone https://github.com/ningnawang/libmat.git
@@ -27,10 +29,11 @@ pip install .
 
 ### CUDA version
 
-On a machine with an NVIDIA GPU and the CUDA toolkit:
+On a machine with an NVIDIA GPU and the CUDA toolkit, build from source:
 
 ```bash
-LIBMAT_WITH_CUDA=ON pip install .
+LIBMAT_WITH_CUDA=ON pip install .                          # from a clone
+LIBMAT_WITH_CUDA=ON pip install libmat --no-binary libmat  # from the PyPI sdist
 ```
 
 ```python
@@ -62,6 +65,21 @@ cmake --build build -j
 export PYTHONPATH=$PWD/python
 python -m pytest tests
 ```
+
+## Dependencies
+
+Only needed to build from source.
+
+| dependency | how it is obtained |
+| --- | --- |
+| C++17 compiler, CMake ≥ 3.18 | system |
+| [Boost](https://www.boost.org) headers | system: `brew install boost` / `apt install libboost-dev` |
+| [CGAL](https://www.cgal.org) ≥ 5.6 | system (`brew install cgal` / `apt install libcgal-dev`), downloaded if missing |
+| [GMP / MPFR](https://gmplib.org) | optional, used by CGAL if found (`-DCGAL_DISABLE_GMP=ON` to skip) |
+| [Eigen](https://eigen.tuxfamily.org) 3.4 | system, downloaded if missing |
+| [geogram](https://github.com/BrunoLevy/geogram) 1.7.9 | downloaded and built statically |
+| [pybind11](https://github.com/pybind/pybind11) | pip build dependency / downloaded |
+| CUDA toolkit ≥ 11 | only for the CUDA build |
 
 ## C++ library
 

@@ -79,6 +79,7 @@ int MedialMesh::clear_all_tets() {
   for (int fid = 0; fid < faces.size(); fid++) {
     faces[fid].tets_.clear();
   }
+  return 0;
 }
 
 bool MedialMesh::delete_vertex(const int vid) {

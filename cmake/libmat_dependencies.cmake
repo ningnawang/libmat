@@ -2,7 +2,8 @@
 # Third-party dependencies of libmat
 #   - geogram  (v1.7.9 downloaded, built statically; set LIBMAT_GEOGRAM_DIR
 #               to use an existing checkout)
-#   - CGAL     (system, header-only; needs Boost + GMP/MPFR)
+#   - CGAL     (system, header-only, downloaded if missing; needs Boost
+#               headers, and uses GMP/MPFR unless CGAL_DISABLE_GMP=ON)
 #   - Eigen3   (system, downloaded if missing)
 #   - nlohmann_json (downloaded, CUDA build only)
 # ###############################################################################
@@ -34,7 +35,21 @@ endif()
 # ###############################################################################
 # CGAL (header-only since 5.0)
 if(NOT TARGET CGAL::CGAL)
-    find_package(CGAL REQUIRED)
+    find_package(CGAL QUIET)
+    if(NOT CGAL_FOUND)
+        if(NOT LIBMAT_AUTO_DOWNLOAD)
+            message(FATAL_ERROR "CGAL not found")
+        endif()
+        # 5.6 is the last release that accepts Boost 1.66 (manylinux_2_28)
+        FetchContent_Declare(cgal
+            URL https://github.com/CGAL/cgal/releases/download/v5.6.2/CGAL-5.6.2-library.tar.xz
+            URL_HASH SHA256=2d93d96c8c73c73c9999556d512775648d26e1e04035ceb958208d25e6e2d10f
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            SOURCE_SUBDIR do-not-add-subdirectory
+        )
+        FetchContent_MakeAvailable(cgal)
+        find_package(CGAL REQUIRED PATHS ${cgal_SOURCE_DIR} NO_DEFAULT_PATH)
+    endif()
 endif()
 
 # ###############################################################################

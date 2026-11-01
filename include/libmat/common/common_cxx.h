@@ -277,6 +277,7 @@ inline std::string get_other_file_path(std::string filePath, int type) {
       break;
   }
   assert(false);
+  return file_path;  // unknown type
 }
 
 template <typename T>

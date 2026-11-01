@@ -4,10 +4,11 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "libmat"
+# keep in sync with project(libmat VERSION ...) in CMakeLists.txt
 version = "0.1.0"
 description = "A C++/CUDA library for the 3D medial axis transform, with python bindings"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "Ningna Wang" }]
 keywords = ["medial axis", "medial axis transform", "geometry processing", "power diagram"]
@@ -15,6 +16,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: C++",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
     "Topic :: Scientific/Engineering",
 ]
 dependencies = ["numpy"]
@@ -40,6 +43,26 @@ sdist.exclude = ["data/*/", "legacy/", "build*/", "out/"]
 LIBMAT_BUILD_PYTHON = "ON"
 # LIBMAT_WITH_CUDA=ON pip install .   builds the CUDA modules
 LIBMAT_WITH_CUDA = { env = "LIBMAT_WITH_CUDA", default = "OFF" }
+
+# wheels for PyPI (CPU only), built by .github/workflows/wheels.yml:
+#   pipx run cibuildwheel --platform linux     # needs docker
+[tool.cibuildwheel]
+skip = ["cp3??t-*", "*-musllinux_*"]   # no free-threaded / musl wheels yet
+build-verbosity = 1
+# CGAL falls back to Boost.Multiprecision: no GMP/MPFR to bundle in the wheel
+config-settings = { "cmake.define.CGAL_DISABLE_GMP" = "ON" }
+test-sources = ["tests", "data"]
+test-requires = ["pytest"]
+test-command = "pytest -q tests"
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64"]   # geogram 1.7 does not build on linux ARM
+# Boost headers for CGAL (CGAL itself is downloaded by CMake)
+before-all = "dnf install -y boost-devel"
+
+[tool.cibuildwheel.macos]
+before-all = "brew install cgal"
+environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

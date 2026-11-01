@@ -46,6 +46,7 @@ v2int FeatureLine::get_fe_endpoint_given_dir(const FeatureEdge& fe,
   if (dir == 0) return std::pair<Vector3, int>(pos_left, tvid_left);
   if (dir == 1) return std::pair<Vector3, int>(pos_right, tvid_right);
   assert(false);
+  return std::pair<Vector3, int>(pos_right, tvid_right);  // invalid dir
 }
 
 int FeatureLine::get_next_fe_given_dir(int fe_cur, int dir) {

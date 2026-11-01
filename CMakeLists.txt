@@ -126,8 +126,10 @@ target_link_libraries(libmat_core
 if(MSVC)
     target_compile_options(libmat_core PRIVATE /bigobj)
 else()
-    # the legacy code base is not warning-clean, keep the build log readable
-    target_compile_options(libmat_core PRIVATE -Wno-narrowing -w)
+    # the legacy code base is not warning-clean, keep the build log readable,
+    # but never let a missing return through: gcc turns it into a crash
+    target_compile_options(libmat_core PRIVATE
+        -Wno-narrowing -Wno-format -Wno-format-extra-args -Werror=return-type)
 endif()
 
 # ###############################################################################

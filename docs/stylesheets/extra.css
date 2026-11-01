@@ -1,0 +1,31 @@
+/* Brand color #dd7e01 (same as the author's homepage), used for the header
+   bar, links and highlights in both the light and the dark scheme. */
+:root > * {
+  --md-primary-fg-color:        #dd7e01;
+  --md-primary-fg-color--light: #f0a53f;
+  --md-primary-fg-color--dark:  #a85f00;
+  --md-accent-fg-color:         #a85f00;
+  --md-accent-fg-color--transparent: rgba(221, 126, 1, 0.1);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-accent-fg-color: #f0a53f;
+}
+
+/* Dark / light toggle at the far right of the header, after the repo link. */
+.md-header__option[data-md-component="palette"] {
+  order: 1;
+  margin-left: 0.4rem;
+}
+
+/* Bigger logo (torus + skeleton) in the header. */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 1.8rem;
+}
+
+/* The site name links to the home page (javascripts/home_link.js). */
+a.libmat-home,
+a.libmat-home:hover {
+  color: inherit;
+}

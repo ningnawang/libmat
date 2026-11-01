@@ -15,30 +15,35 @@ exclude_docs: |
 
 theme:
   name: material
-  icon:
-    logo: material/vector-circle
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
   features:
-    - navigation.tabs
     - navigation.sections
     - navigation.top
+    - toc.integrate
     - navigation.indexes
     - search.highlight
     - content.code.copy
+
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - javascripts/home_link.js
 
 plugins:
   - search
@@ -82,6 +87,8 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Examples: examples.md
+  - C++ library: cpp/index.md
   - Python API:
       - python/index.md
       - Input / output:
@@ -101,5 +108,3 @@ nav:
           - distance_to_medial_mesh: python/distance_to_medial_mesh.md
           - thin_medial_mesh: python/thin_medial_mesh.md
           - medial_mesh_from_spheres: python/medial_mesh_from_spheres.md
-  - C++ library: cpp/index.md
-  - Examples: examples.md
