@@ -61,13 +61,14 @@ void medial_mesh_from_spheres(const Eigen::MatrixXd& V,
 
   auto sf_mesh = std::make_unique<SurfaceMesh>();
   internal::build_sf_mesh(SV, SF, sf2tet, *sf_mesh);
-  pre_and_init_aabb(*sf_mesh, sf_mesh->aabb_wrapper);
+  pre_and_init_aabb(*sf_mesh, sf_mesh->aabb_wrapper, true /*is_reorder*/);
   sf_mesh->reload_sf2tet_vs_mapping();
   std::map<int, int> tet2sf_vs;
   std::map<int, std::set<int>> sf_vs2fids;
   load_sf_tet_mapping(*sf_mesh, tet2sf_vs, sf_vs2fids,
                       tet_mesh->tet_vs2sf_fids);
-  detect_mark_sharp_features(*params, *sf_mesh, *tet_mesh);
+  detect_mark_sharp_features(*params, *sf_mesh, *tet_mesh,
+                             false /*is_sf_file_exist*/);
   pre_and_init_feature_aabb(*tet_mesh, sf_mesh->aabb_wrapper);
   load_tet_adj_info(tet_mesh->v2tets, tet_mesh->tet_indices,
                     tet_mesh->tet_vs2sf_fids, sf_mesh->facets.nb(),

@@ -87,6 +87,11 @@ def test_slab_tangent_triangles_tangent(data_path):
     for T in (T0[valid], T1[valid]):
         d = np.linalg.norm(T - V[Fv], axis=2)
         assert np.allclose(d, R[Fv], rtol=1e-6, atol=1e-6)
+        # and its plane is tangent to all three spheres
+        nT = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
+        nT /= np.linalg.norm(nT, axis=1, keepdims=True)
+        h = np.abs(np.einsum("fkd,fd->fk", V[Fv] - T[:, :1], nT))
+        assert np.allclose(h, R[Fv], rtol=1e-5, atol=1e-5)
     # T0 is on the side of the face normal, T1 on the other side
     n = np.cross(V[Fv[:, 1]] - V[Fv[:, 0]], V[Fv[:, 2]] - V[Fv[:, 0]])
     center = V[Fv].mean(1)

@@ -229,7 +229,18 @@ inline std::string get_file_ext(const std::string filePath) {
 
 inline std::string get_file_no_ext(std::string filePath) {
   std::string filename = filePath.substr(0, filePath.find_last_of("."));
+  // ftetwild save format xxx.ply_.msh
+  filename = filePath.substr(0, filename.find_last_of("."));
   return filename;
+}
+
+namespace fs = std::filesystem;  // C++17, <filesystem> is included above
+inline bool create_dir(const std::string& dir) {
+  // if dir not exists, create it
+  if (!fs::is_directory(dir.c_str())) {
+    return fs::create_directories(dir.c_str());
+  }
+  return true;
 }
 
 inline std::string get_only_file_name(std::string filePath, bool withExtension,
@@ -255,24 +266,36 @@ inline std::string get_only_file_name(std::string filePath, bool withExtension,
 // (NO) matching ftetwild output (https://github.com/wildmeshing/fTetWild)
 //
 // type:
-// 0 -> .geogram
-// 1 -> .obj
-// 2 -> .xyz
-// 3 -> .obj
-inline std::string get_other_file_path(std::string filePath, int type) {
+// 0 -> _scaled_sf.geogram
+// 1 -> _scaled_sf.obj
+// 2 -> _scaled_pts.xyz
+// 3 -> _scaled_sf_01_scaled.obj // matching matfp?
+// 4 -> _scaled_extf.ma
+// 5 -> _scaled_poisson_xx.xyz
+// 6 -> _scaled.normal
+inline std::string get_other_file_path(std::string filePath, int type,
+                                       int poisson_diag = -1) {
   std::string file_path = get_file_no_ext(filePath);
   switch (type) {
     case 0:
-      return file_path + "_sf.geogram";
+      return file_path + "_scaled_sf.geogram";
       break;
     case 1:
-      return file_path + "_sf.obj";
+      return file_path + "_scaled_sf.obj";
     case 2:
-      return file_path + "_pts.xyz";
+      return file_path + "_scaled_pts.xyz";
     case 3:  // no use
-      return file_path + "_sf_scaled.obj";
+      return file_path + "_scaled_sf_01_scaled.obj";
     case 4:
-      return file_path + "_extf.ma";
+      return file_path + "_scaled_extf.ma";
+    case 5:
+      if (poisson_diag > 0)
+        return file_path + "_scaled_poisson_" + std::to_string(poisson_diag) +
+               ".xyz";
+      else
+        return file_path + "_scaled_poisson_p" + ".xyz";
+    case 6:
+      return file_path + "_scaled.normal";
     default:
       break;
   }
@@ -379,10 +402,14 @@ void set_intersection(const std::unordered_set<T>& s1,
 }
 
 template <typename T>
-inline bool has_intersection(const std::set<T>& s1, const std::set<T>& s2) {
-  std::vector<int> common;
-  set_intersection(s1, s2, common);
-  return common.empty() ? false : true;
+bool has_intersection(const std::set<T>& s1, const std::set<T>& s2) {
+  if (s1.empty() || s2.empty()) return false;
+  for (uint x : s1) {
+    if (s2.count(x)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 template <typename T>
@@ -390,6 +417,15 @@ std::set<T> to_set(const std::vector<T>& in) {
   std::set<T> out;
   for (int x : in) {
     out.insert(x);
+  }
+  return out;
+}
+
+template <typename T>
+std::vector<T> to_vec(const std::set<T>& in) {
+  std::vector<T> out;
+  for (int x : in) {
+    out.push_back(x);
   }
   return out;
 }
@@ -456,8 +492,9 @@ inline int get_CC_given_neighbors(
 }
 
 template <typename T>
-inline void print_set(const std::set<T>& to_print) {
-  printf("[");
+inline void print_set(const std::set<T>& to_print,
+                      const std::string name = "") {
+  printf("%s: [", name.c_str());
   for (const auto& v : to_print) {
     std::cout << v << ", ";
   }
@@ -465,10 +502,34 @@ inline void print_set(const std::set<T>& to_print) {
 }
 
 template <typename T>
-inline void print_vec(const std::vector<T>& to_print) {
-  printf("[");
+inline void print_vec(const std::vector<T>& to_print,
+                      const std::string name = "") {
+  printf("%s: [", name.c_str());
   for (const auto& v : to_print) {
     std::cout << v << ", ";
   }
   printf("]\n");
+}
+
+// Define a upper triangular matrix with size n.
+// matrix index -> (v1_min, v2_max)
+// n -> #vertices
+// idx = idx(v1_min, v2_max)
+//     = n + (n-1) + ... + (n-vid_min) - (n - vid_max)
+inline int get_upper_tri_matrix_size(const int n) {
+  return n * (1 + n) / 2 + 1;
+}
+inline int get_upper_tri_matrix_idx(int v1, int v2, int n) {
+  int vmin = v1;
+  int vmax = v2;
+  if (v1 > v2) {
+    vmin = v2;
+    vmax = v1;
+  }
+  int idx = 0;
+  for (uint j = 0; j <= vmin; j++) {
+    idx += (n - j);
+  }
+  idx -= (n - vmax);
+  return idx;
 }

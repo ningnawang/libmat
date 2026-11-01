@@ -85,6 +85,7 @@ void fix_corner_sphere(float fe_abs_len, MedialSphere& msphere,
   if (is_debug)
     printf("[FIX_EXTF corner] calling fix_corner for msphere %d\n", msphere.id);
   assert(msphere.is_on_corner());
+  if (msphere.corner_fls.empty()) return;
   assert(!msphere.corner_fls.empty());  // call init_corner_spheres() ahead
   new_centers_fl.clear();
   int num_covered_se_group = se_tvs_grouped.size();

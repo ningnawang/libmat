@@ -6,6 +6,7 @@
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_geometry.h>
 
+#include <algorithm>
 #include <array>
 #include <ctime>
 #include <fstream>
@@ -52,6 +53,68 @@ inline Vector3 get_direction(const Vector3& a, const Vector3& b) {
   return GEO::normalize(b - a);
 }
 
+// Function to sort three vertices based on the right-hand rule
+inline std::array<int, 3> sort_triangle_vertices_right_hand_rule(
+    const std::array<Vector3, 3>& vertices, const Vector3& normal) {
+  // Compute edge vectors
+  Vector3 e1 = vertices[1] - vertices[0];
+  Vector3 e2 = vertices[2] - vertices[0];
+
+  // Compute cross product
+  Vector3 crossProduct = GEO::cross(e1, e2);
+
+  // Check if the cross product aligns with the given normal
+  if (GEO::dot(crossProduct, normal) < 0) {
+    // Reverse order to maintain the right-hand rule
+    return {0, 2, 1};  // Swap v1 and v2
+  }
+  return {0, 1, 2};  // Already correct
+}
+
+// Function to sort two vertices based on their order in the sorted face
+// the fs_vertices and fs_vs_indices are matching
+//
+// face vs indices are already sorted
+inline void sort_edge_vertices(const std::array<int, 3>& fs_vs_indices,
+                               std::array<int, 2>& edge_vs, bool is_debug) {
+  if (is_debug)
+    printf("fs_vs_indices: (%d,%d,%d)\n", fs_vs_indices[0], fs_vs_indices[1],
+           fs_vs_indices[2]);
+
+  // Find positions of edge_vs[0] and edge_vs[1] in the sorted global indices
+  int indexA = -1, indexB = -1;
+  for (int i = 0; i < 3; i++) {
+    if (fs_vs_indices[i] == edge_vs[0]) indexA = i;
+    if (fs_vs_indices[i] == edge_vs[1]) indexB = i;
+  }
+
+  // Ensure both vertices are part of the face
+  if (indexA == -1 || indexB == -1) {
+    throw std::invalid_argument(
+        "Edge vertices not found in the sorted face. "
+        "Given edge: (" +
+        std::to_string(edge_vs[0]) + ", " + std::to_string(edge_vs[1]) + ")");
+  }
+
+  if (is_debug) printf("indexA %d, indexB %d\n", indexA, indexB);
+
+  if (indexA == 0) {
+    // swap
+    if (indexB == 2) edge_vs = {edge_vs[1], edge_vs[0]};
+    return;
+  }
+  if (indexA == 1) {
+    // swap
+    if (indexB == 0) edge_vs = {edge_vs[1], edge_vs[0]};
+    return;
+  }
+  if (indexA == 2) {
+    // swap
+    if (indexB == 1) edge_vs = {edge_vs[1], edge_vs[0]};
+    return;
+  }
+}
+
 inline void get_random_vector_between_two_vectors(const Vector3& nA,
                                                   const Vector3& nB,
                                                   Vector3& nX) {
@@ -82,6 +145,12 @@ inline double angle_between_two_vectors_in_degrees(const Vector3& a,
   // );
   diff_angle *= (180. / PI);
   return diff_angle;
+}
+
+// Compute angular difference (in radians) between two normals
+inline double normal_angle_diff(const Vector3& n1, const Vector3& n2) {
+  double dot = std::clamp(GEO::dot(n1, n2), -1.0, 1.0);
+  return std::acos(dot);
 }
 
 inline Vector3 sample_random_vector_given_two_vectors(const Vector3& nA,
@@ -141,16 +210,16 @@ inline void sample_k_vectors_given_N_vectors(const std::vector<Vector3>& n_vec,
   if (k < 1) return;
   std::vector<double> n_t(n_vec.size() - 1, -1);
   double t_sum = 0.f;
-  FOR(i, k) {
+  for (int i = 0; i < k; i++) {
     do {
       t_sum = 0.f;
-      FOR(j, n_t.size()) {
+      for (int j = 0; j < n_t.size(); j++) {
         n_t[j] = RANDOM_01();
         t_sum += n_t[j];
       }
     } while (t_sum <= 0. || t_sum >= 0.9999999999);  // t_sum = 1 is fine
     Vector3 nX(0.f, 0.f, 0.f);
-    FOR(j, n_t.size()) nX += n_t[j] * n_vec[j];
+    for (int j = 0; j < n_t.size(); j++) nX += n_t[j] * n_vec[j];
     nX += (1 - t_sum) * n_vec[n_vec.size() - 1];
     nXs.push_back(GEO::normalize(nX));
   }
@@ -179,18 +248,41 @@ inline void sample_new_points_given_len(const Vector3& start_pos,
 }
 
 // Project p onto line defined by [v0, v1]
+// Project p onto the (infinite) line through v0 and v1, dist = |p - p_proj|
 inline void project_point_onto_line(const Vector3& p, const Vector3& v0,
                                     const Vector3& v1, Vector3& p_proj,
                                     double& dist) {
-  Vector3 v0p(p - v0), v0v1(v1 - v0);
-  p_proj = GEO::dot(v0 + v0p, v0v1) / GEO::dot(v0v1, v0v1) * v0v1;
+  Vector3 v0v1 = v1 - v0;
+  double scalar = GEO::dot(p - v0, v0v1) / GEO::dot(v0v1, v0v1);
+  p_proj = v0 + v0v1 * scalar;
   dist = (p - p_proj).length();
+}
 
-  // TODO: using GEO::Geom::point_segment_squared_distance()
-  // double lambda1, lambda2;
-  // double sq_dist = GEO::Geom::point_segment_squared_distance(p, v0, v1,
-  // p_proj, lambda1, lambda2);
-  // dist = std::sqrt(sq_dist);
+// Closest point to p on the segment [v0, v1], dist = |p - p_proj|
+inline void project_point_onto_segment(const Vector3& p, const Vector3& v0,
+                                       const Vector3& v1, Vector3& p_proj,
+                                       double& dist) {
+  Vector3 v0v1 = v1 - v0;  // Direction vector of the line
+  Vector3 v0p = p - v0;    // Vector from v0 to p
+
+  double dotProduct = GEO::dot(v0p, v0v1);
+  double lineMagnitudeSquared = GEO::dot(v0v1, v0v1);
+
+  // Scalar multiplier for the projection
+  double scalar = dotProduct / lineMagnitudeSquared;
+
+  // If scalar is less than 0, clamp to v0
+  if (scalar < 0.0f) {
+    p_proj = v0;
+  }
+  // If scalar is greater than 1, clamp to v1
+  else if (scalar > 1.0f) {
+    p_proj = v1;
+  } else {
+    // Project the point onto the line
+    p_proj = v0 + v0v1 * scalar;
+  }
+  dist = (p - p_proj).length();
 }
 
 // Project p onto triangle defined by [v1, v2, v3]
@@ -210,6 +302,16 @@ inline void project_point_onto_triangle(const GEO::Mesh& sf_mesh, const int fid,
   const Vector3 v1 = sf_mesh.vertices.point(sf_mesh.facets.vertex(fid, 1));
   const Vector3 v2 = sf_mesh.vertices.point(sf_mesh.facets.vertex(fid, 2));
   double lambda1, lambda2, lambda3;
+  sq_dist = GEO::Geom::point_triangle_squared_distance(
+      p, v0, v1, v2, p_proj, lambda1, lambda2, lambda3);
+}
+
+inline void project_point_onto_triangle_with_lambdas(
+    const GEO::Mesh& sf_mesh, const int fid, const Vector3& p, Vector3& p_proj,
+    double& sq_dist, double& lambda1, double& lambda2, double& lambda3) {
+  const Vector3 v0 = sf_mesh.vertices.point(sf_mesh.facets.vertex(fid, 0));
+  const Vector3 v1 = sf_mesh.vertices.point(sf_mesh.facets.vertex(fid, 1));
+  const Vector3 v2 = sf_mesh.vertices.point(sf_mesh.facets.vertex(fid, 2));
   sq_dist = GEO::Geom::point_triangle_squared_distance(
       p, v0, v1, v2, p_proj, lambda1, lambda2, lambda3);
 }
@@ -406,4 +508,41 @@ inline Matrix4 vec_vec_trans(Vector4 A, Vector4 B) {
 
 inline Vector3 convert_std2geo(const adouble3& p) {
   return Vector3(p[0], p[1], p[2]);
+}
+
+inline Vector3 convert_std2geo(const afloat3& p) {
+  return Vector3(p[0], p[1], p[2]);
+}
+
+// Function to compute variance of 3D normals
+//
+// eg. If the normals are distributed within 60 degree (pi/3) of each other,
+// the variance should be estimated as 0.366 = 1/3 * (pi/3)^2
+inline double compute_normals_variance(const std::vector<Vector3>& _) {
+  assert(_.size() > 0);
+  int size = _.size();
+
+  // normalize all normals
+  std::vector<Vector3> normals_normalized;
+  for (const auto& normal : _)
+    normals_normalized.push_back(GEO::normalize(normal));
+
+  // Compute mean direction (average vector)
+  Vector3 mean = {0.0, 0.0, 0.0};
+  for (const auto& normal : normals_normalized) mean = mean + normal;
+  mean = mean / static_cast<double>(size);
+  mean = GEO::normalize(mean);
+
+  // Compute variance of angles
+  double variance = 0.0;
+  for (const auto& normal : normals_normalized) {
+    double dot_product = GEO::dot(mean, normal);
+    // Clamp to handle floating-point precision issues
+    if (dot_product > 1.0) dot_product = 1.0;
+    if (dot_product < -1.0) dot_product = -1.0;
+    double angle = std::acos(dot_product);  // Angle in radians
+    variance += angle * angle;
+  }
+
+  return variance / size;
 }

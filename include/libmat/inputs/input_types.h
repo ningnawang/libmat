@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "libmat/common/common_geogram.h"
+#include "libmat/inputs/mesh_AABB.h"
 #include "libmat/inputs/params.h"
 
 enum EdgeType {
@@ -149,24 +150,36 @@ class TetMesh {
   // mapping vertex from <tid, lfid1, lfid2, lfid3> -> tvid
   std::map<aint4, int> tet_vs_lfs2tvs_map;
   // each feature line is grouped by feature edges
-  // index NOT matching FeatureLine::id
+  // 1. index NOT matching FeatureLine::id
+  // 2. index starts from 0
+  // 3. index should have NO intersection with TetMesh::ce_lines
   std::vector<FeatureLine> se_lines;
 
   // for concave edges
   // each feature line is grouped by feature edges
-  // index NOT matching FeatureLine::id
+  // 1. index NOT matching FeatureLine::id
+  // 2. index starts from TetMesh::se_lines.size()
+  // 3. index should have NO intersection with TetMesh::se_lines
   std::vector<FeatureLine> ce_lines;
-  // allow fl to merge with other adjacent feature lines
-  // if the corner is only adjacent to concave lines, no convex lines
+  // allow fl to merge with other adjacent feature lines,
+  // if the corner is only adjacent to concave lines, no convex lines,
   // include the id of itself
+  //
   // updated by function update_allow_to_merge_ce_line_ids()
   //
   // used for clustering fids for msphere type
-  // RPD3D_Wrapper::cluster_sphere_type_using_samples_fids()
+  // RPD3D_Wrapper::cluster_msphere_type_and_tangents_using_pcell_samples()
+  // [deprecated]
   std::map<int, std::set<int>> allow_to_merge_ce_line_ids;
+
+  // not allow fl to merge with other adjacent feature lines,
+  // controlled by TetMesh::corners_se_tet
+  // updated by function update_not_allow_to_merge_ce_line_ids()
+  std::map<int, std::set<int>> not_allow_to_merge_ce_line_ids;
 
   // for concave corners
   // adjacent to > 2 concave edges, no sharp edges
+  // converted from TetMesh::corners_ce_tet
   std::vector<ConcaveCorner> cc_corners;
 
   // 1. regular se corner (connect to > 2 sharp edges)
@@ -174,18 +187,21 @@ class TetMesh {
   //    just to make sure we will add a zero-radius medial sphere
   std::set<int> corners_se_tet;
   // corner_tvs -> set of FeatureLine::id
+  // defined by corners_se_tet
+  // matching both TetMesh::se_lines and TetMesh::ce_lines
   std::map<int, std::set<int>> corner2fl;
   // corner_tvs -> set of FeatureEdge::id
   std::map<int, std::set<int>> corner2fe;
   // FeatureLine::id -> set of corner MedialSphere::id
-  // updated in init_corner_spheres()
+  // updated in init_corner_spheres() or update_corner_fl2corner()
   std::map<int, std::set<int>> fl2corner_sphere;
   // for concave corners (#adjacent_ce > 2 only)
+  // convert to TetMesh::cc_corners using function store_concave_corners()
   std::set<int> corners_ce_tet;
   // not real corners
-  // adjacent to > 2 se and ce
+  // adjacent to > 2 (se or ce)
   // used to separate sharp edge (se) into different groups of regions
-  // including all corners_se_tet
+  // including all corners_se_tet and corners_ce_tet
   std::set<int> corner_fake_tet;
 };
 
@@ -196,9 +212,9 @@ class AABBWrapper {
   GEO::Mesh ce_mesh;  // for concave lines
   bool is_ce_mesh_exist = false;
 
-  std::shared_ptr<GEO::MeshFacetsAABB> sf_tree;
-  std::shared_ptr<GEO::MeshFacetsAABB> se_tree;  // sharp edge tree
-  std::shared_ptr<GEO::MeshFacetsAABB> ce_tree;  // convex edge tree
+  std::shared_ptr<GEO::MeshFacetsAABBLambda> sf_tree;
+  std::shared_ptr<GEO::MeshFacetsAABBLambda> se_tree;  // sharp edge tree
+  std::shared_ptr<GEO::MeshFacetsAABBLambda> ce_tree;  // convex edge tree
 
  public:
   AABBWrapper() {}
@@ -231,11 +247,32 @@ class AABBWrapper {
     return fidx;
   }
 
+  inline int project_to_sf_get_nearest_face_with_lambdas(
+      Vector3 &p, double &sq_dist, double &lambda0, double &lambda1,
+      double &lambda2) const {
+    Vector3 nearest_p;
+    sq_dist = std::numeric_limits<double>::max();  //??
+    int fidx = sf_tree->nearest_facet_lambdas(p, nearest_p, sq_dist, lambda0,
+                                              lambda1, lambda2);
+    // printf("lambda0 %f, lambda1 %f, lambda2 %f\n", lambda0, lambda1,
+    // lambda2); Vector3 p0 = sf_tree->mesh()->vertices.point(
+    //     sf_tree->mesh()->facets.vertex(fidx, 0));
+    // Vector3 p1 = sf_tree->mesh()->vertices.point(
+    //     sf_tree->mesh()->facets.vertex(fidx, 1));
+    // Vector3 p2 = sf_tree->mesh()->vertices.point(
+    //     sf_tree->mesh()->facets.vertex(fidx, 2));
+    // Vector3 tmp = p0 * lambda0 + p1 * lambda1 + p2 * lambda2;
+    // assert(GEO::Geom::distance(nearest_p, tmp) < 1e-6);
+
+    p = nearest_p;
+    return fidx;
+  }
+
   inline bool get_ray_nearest_intersection(const Vector3 &orig,
                                            const Vector3 &dir, Vector3 &p,
                                            int &fid) const {
     GEO::Ray R(orig, dir);
-    GEO::MeshFacetsAABB::Intersection I;
+    GEO::MeshFacetsAABBLambda::Intersection I;
     bool result = sf_tree->ray_nearest_intersection(R, I);
     p = I.p;
     fid = I.f;
@@ -282,6 +319,14 @@ class AABBWrapper {
     double sq_dist = std::numeric_limits<double>::max();  //??
     se_tree->nearest_facet(p, nearest_p, sq_dist);
     return sq_dist;
+  }
+
+  inline int get_nearest_point_on_se(const Vector3 &p, Vector3 &nearest_p,
+                                     double &sq_dist) const {
+    if (!is_se_mesh_exist) return UNK_FACE;
+    int eid = se_tree->nearest_facet(p, nearest_p, sq_dist);
+    GEO::Attribute<int> attr_fe_ids(se_mesh.facets.attributes(), "fe_id");
+    return attr_fe_ids[eid];
   }
 
   inline int project_to_se(Vector3 &p) const {
@@ -343,6 +388,8 @@ class SurfaceMesh : public GEO::Mesh {
   void cache_sf_fid_neighs();
   void cache_sf_fid_neighs_no_cross();
   void cache_sf_fid_krings_no_cross_se_only(const int k);
+  void cache_sf_fid_to_fe_ids(const std::vector<FeatureEdge> &feature_edges);
+  void cache_fe_sf_fs_map();
   bool get_sf_fid_krings_no_cross_se_only(const int fid_given);
   bool get_sf_fid_krings_no_cross_se_only(const int fid_given,
                                           std::set<int> &kring_neighbors) const;
@@ -352,6 +399,29 @@ class SurfaceMesh : public GEO::Mesh {
       const int k, int tan_fid, std::set<int> &kring_neighbors) const;
   void update_fe_sf_fs_pairs_to_ce_id(
       const std::vector<FeatureEdge> &feature_edges);
+  // update:
+  // 1. SurfaceMesh::regions
+  // 2. SurfaceMesh::fid2region_id
+  void collect_sf_regions_no_cross(bool is_debug);
+
+  // check if the projection point is on FE if any,
+  // either CE or SE as requested in check_proj_type
+  //
+  // return: <SurfaceMesh::fid, FeatureEdge::id>
+  // -1: no fid/FE found
+  // >=0: id/FE id
+  aint2 project_to_sf_and_get_FE_if_any(
+      const std::vector<FeatureEdge> &feature_edges,
+      const EdgeType &check_proj_type, Vector3 &p, double &sq_dist,
+      bool is_debug) const;
+  int get_FE_given_fid_and_lambdas_if_any(
+      const std::vector<FeatureEdge> &feature_edges,
+      const EdgeType &check_proj_type, const int fid,
+      const adouble3 &given_lambdas, bool is_debug) const;
+  int get_triangle_proj_FE_given_lambdas(
+      const std::vector<FeatureEdge> &feature_edges,
+      const EdgeType &check_proj_type, const int fid, const double *lambda,
+      bool is_debug) const;
 
  public:
   bool is_non_cad = false;
@@ -371,13 +441,37 @@ class SurfaceMesh : public GEO::Mesh {
 
   // for feature edges, both SE and CE
   // store <sf_fid_min, sf_fid_max> if on feature edge
-  // updated in detect_mark_sharp_features()
+  // updated in update_sf_fe_pairs_attributes()
   std::set<aint2> fe_sf_fs_pairs;
   // same as fe_sf_fs_pairs, but only for SE
   std::set<aint2> fe_sf_fs_pairs_se_only;
+  // updated in cache_fe_sf_fs_map()
+  // same info as fe_sf_fs_pairs_se_only()
+  std::map<int, int> fe_sf_fs_map_se_only;
   // same as fe_sf_fs_pairs, but only for CE
-  std::set<aint2> fe_sf_fs_pairs_ce_only;        // [no use]
+  std::set<aint2> fe_sf_fs_pairs_ce_only;
+  // updated in cache_fe_sf_fs_map()
+  // same info as fe_sf_fs_pairs_ce_only
+  std::map<int, int> fe_sf_fs_map_ce_only;
+  // updated in update_fe_sf_fs_pairs_to_ce_id()
   std::map<aint2, int> fe_sf_fs_pairs_to_ce_id;  // mapping to FeatureEdge::id
+
+  // surface samples
+  std::vector<v2int> samples_fids;
+
+  // fid -> {FeatureEdge::id}
+  // updated by function SurfaceMesh::cache_sf_fid_to_fe_ids()
+  // used by function SurfaceMesh::project_to_sf_and_get_FE_if_any()
+  std::map<int, std::set<int>> sf_fid_to_fe_ids;
+
+  // group surface fids into regions, not pass fe_sf_fs_pairs_se_only
+  // updated by collect_sf_regions_no_cross()
+  struct RegionData {
+    int region_id = -1;
+    std::set<int> fids;
+  };
+  std::vector<RegionData> regions;  // region id -> fids
+  std::vector<int> fid2region_id;   // fid -> region id
 };
 
 void load_sf_tet_mapping(const GEO::Mesh &sf_mesh,
@@ -394,6 +488,7 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh &sf_mesh,
 void store_feature_line(const TetMesh &tet_mesh, const SurfaceMesh &sf_mesh,
                         const EdgeType &fe_type,
                         const std::vector<std::vector<aint2>> fe_tet_groups,
+                        const int fl_starts_id,
                         std::vector<FeatureEdge> &feature_edges,
                         std::vector<FeatureLine> &feature_lines,
                         std::set<aint4> &fe_tet_info,

@@ -19,7 +19,7 @@ SPHERE_TYPES = {
 
 
 def shrink_spheres(V, F, num_spheres=1000, preserve_features=True,
-                   thres_concave=0.2, thres_convex=40.0, max_iter=-1, seed=200):
+                   thres_concave=60.0, thres_convex=55.0, max_iter=-1, seed=200):
     """Sample medial spheres with the ball-shrinking algorithm.
 
     For each random surface sample `p` with inward normal `n`, a large
@@ -41,9 +41,9 @@ def shrink_spheres(V, F, num_spheres=1000, preserve_features=True,
         duplicate an existing sphere are discarded.
     preserve_features : bool, optional (default True)
         Detect sharp/concave features and take them into account.
-    thres_concave : float, optional (default 0.2)
-        Concave edge threshold, see `detect_sharp_features`.
-    thres_convex : float, optional (default 40.0)
+    thres_concave : float, optional (default 60.0)
+        Concave edge threshold in degrees, see `detect_sharp_features`.
+    thres_convex : float, optional (default 55.0)
         Sharp edge threshold in degrees, see `detect_sharp_features`.
     max_iter : int, optional (default -1)
         Maximum number of shrinking iterations per sphere (-1: no limit).

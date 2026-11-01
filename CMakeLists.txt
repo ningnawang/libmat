@@ -78,6 +78,7 @@ set(LIBMAT_CORE_SOURCES
     # legacy modules
     src/common/predicates.cxx
     src/inputs/input_types.cxx
+    src/inputs/mesh_AABB.cxx
     src/inputs/sharp_feature_detection.cxx
     src/matbase/medial_mesh.cxx
     src/matbase/medial_primitives.cxx

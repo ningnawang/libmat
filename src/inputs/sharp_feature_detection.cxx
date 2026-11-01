@@ -78,14 +78,36 @@ void load_local_from_mesh(const GEO::Mesh& mesh, std::vector<Vector3>& points,
 
 void mark_feature_attributes(const std::set<aint2>& s_edges,
                              const std::set<aint2>& cc_edges,
-                             const std::set<int>& corners, GEO::Mesh& input) {
-  // Setup corners
-  GEO::Attribute<int> attr_corners(input.vertices.attributes(), "corner");
+                             const std::set<int>& corners_se_sf,
+                             const std::set<int>& corners_ce_sf,
+                             const std::set<int>& corners_fake_sf,
+                             GEO::Mesh& input) {
+  // Setup corners_se_sf
+  GEO::Attribute<int> attr_corners_se(input.vertices.attributes(), "corner_se");
   for (int i = 0; i < input.vertices.nb(); i++) {
-    if (corners.find(i) != corners.end())
-      attr_corners[i] = 1;
+    if (corners_se_sf.find(i) != corners_se_sf.end())
+      attr_corners_se[i] = 1;
     else
-      attr_corners[i] = 0;
+      attr_corners_se[i] = 0;
+  }
+
+  // Setup corners_ce_sf
+  GEO::Attribute<int> attr_corners_ce(input.vertices.attributes(), "corner_ce");
+  for (int i = 0; i < input.vertices.nb(); i++) {
+    if (corners_ce_sf.find(i) != corners_ce_sf.end())
+      attr_corners_ce[i] = 1;
+    else
+      attr_corners_ce[i] = 0;
+  }
+
+  // Setup corners_fake_sf
+  GEO::Attribute<int> attr_corners_fake(input.vertices.attributes(),
+                                        "corner_fake");
+  for (int i = 0; i < input.vertices.nb(); i++) {
+    if (corners_fake_sf.find(i) != corners_fake_sf.end())
+      attr_corners_fake[i] = 1;
+    else
+      attr_corners_fake[i] = 0;
   }
 
   // Setup sharp edges and concave edges
@@ -107,24 +129,144 @@ void mark_feature_attributes(const std::set<aint2>& s_edges,
   printf("Marked feature attributes in GEO::Mesh \n");
 }
 
+void load_feature_attributes(const GEO::Mesh& input, std::set<aint2>& s_edges,
+                             std::set<aint2>& cc_edges,
+                             std::set<int>& corners_se_sf,
+                             std::set<int>& corners_ce_sf,
+                             std::set<int>& corners_fake_sf) {
+  s_edges.clear();
+  cc_edges.clear();
+  corners_se_sf.clear();
+  corners_ce_sf.clear();
+  corners_fake_sf.clear();
+
+  // Load corners_se_sf
+  GEO::Attribute<int> attr_corners_se(input.vertices.attributes(), "corner_se");
+  for (int i = 0; i < attr_corners_se.size(); i++) {
+    if (attr_corners_se[i] == 1) corners_se_sf.insert(i);
+  }
+
+  // Load corners_ce_sf
+  GEO::Attribute<int> attr_corners_ce(input.vertices.attributes(), "corner_ce");
+  for (int i = 0; i < attr_corners_ce.size(); i++) {
+    if (attr_corners_ce[i] == 1) corners_ce_sf.insert(i);
+  }
+
+  // Load corners_fake_sf
+  GEO::Attribute<int> attr_corners_fake(input.vertices.attributes(),
+                                        "corner_fake");
+  for (int i = 0; i < attr_corners_fake.size(); i++) {
+    if (attr_corners_fake[i] == 1) corners_fake_sf.insert(i);
+  }
+
+  // Load sharp edges and concave edges
+  GEO::Attribute<int> attr_se(input.edges.attributes(), "se");
+  GEO::Attribute<int> attr_cce(input.edges.attributes(), "cce");
+  for (int e = 0; e < input.edges.nb(); e++) {
+    if (attr_se[e] == 0 && attr_cce[e] == 0) continue;
+    aint2 edge = {
+        {(int)input.edges.vertex(e, 0), (int)input.edges.vertex(e, 1)}};
+    std::sort(edge.begin(), edge.end());
+    if (attr_se[e] == 1) s_edges.insert(edge);
+    if (attr_cce[e] == 1) cc_edges.insert(edge);
+  }
+  printf("Load feature attributes from GEO::Mesh \n");
+}
+
+// Function to check if the edge is concave or convex, or not
+//
+// threasholds are given in angles, not radians
+EdgeConvexConcave is_convex_concave_or_not(const double se_threshold,
+                                           const double ce_threshold,
+                                           const Vector3& normal1,
+                                           const Vector3& normal2,
+                                           const Vector3& sharedEdgeDir,
+                                           const bool is_debug) {
+  if (is_vector_same_direction(normal1, normal2, 15))
+    return EdgeConvexConcave::FLAT;
+
+  double dotProduct = GEO::dot(normal1, normal2);
+  double angle = std::acos(dotProduct);  // Angle in radians
+
+  // Compute the cross product to determine the orientation
+  Vector3 crossN = GEO::cross(normal1, normal2);
+  if (is_debug) {
+    printf("normal1: (%f,%f,%f)\n", normal1[0], normal1[1], normal1[2]);
+    printf("normal2: (%f,%f,%f)\n", normal2[0], normal2[1], normal2[2]);
+    printf("crossN: (%f,%f,%f)\n", crossN[0], crossN[1], crossN[2]);
+    printf("sharedEdgeDir: (%f,%f,%f)\n", sharedEdgeDir[0], sharedEdgeDir[1],
+           sharedEdgeDir[2]);
+  }
+
+  // Check sign using the shared edge direction
+  double sign = GEO::dot(crossN, sharedEdgeDir);
+
+  double se_thred_radians = PI * (se_threshold / 180.f);
+  double ce_thred_radians = PI * (ce_threshold / 180.f);
+
+  if (is_debug) {
+    printf("sign %f, angle %f, se_thred_radians: %f, ce_thred_radians: %f\n",
+           sign, angle, se_thred_radians, ce_thred_radians);
+  }
+
+  // convex, bigger angle more convex, so smaller threshold more sensative
+  if (sign >= 0 && angle > se_thred_radians) return EdgeConvexConcave::CONVEX;
+  // concave, bigger angle more concave, so smaller threshold more sensative
+  if (sign < 0 && angle > ce_thred_radians) return EdgeConvexConcave::CONCAVE;
+
+  return EdgeConvexConcave::FLAT;
+}
+
+void update_sf_fe_pairs_attributes(const std::vector<Vector3i>& input_faces,
+                                   const std::set<aint2>& s_edges,
+                                   const std::set<aint2>& cc_edges,
+                                   std::set<aint2>& fe_sf_fs_pairs,
+                                   std::set<aint2>& fe_sf_fs_pairs_se_only,
+                                   std::set<aint2>& fe_sf_fs_pairs_ce_only) {
+  fe_sf_fs_pairs.clear();
+  fe_sf_fs_pairs_se_only.clear();
+  fe_sf_fs_pairs_ce_only.clear();
+
+  std::map<int, std::unordered_set<int>> conn_tris;
+  for (int i = 0; i < input_faces.size(); i++) {
+    const auto& f = input_faces[i];
+    for (int j = 0; j < 3; j++) {
+      aint2 e = {{f[j], f[(j + 1) % 3]}};
+      if (e[0] > e[1]) std::swap(e[0], e[1]);
+      conn_tris[input_faces[i][j]].insert(i);
+    }
+  }
+
+  std::vector<int> n12_f_ids;
+  aint2 adj_fids_pair;
+  for (const auto& se : s_edges) {
+    set_intersection(conn_tris[se[0]], conn_tris[se[1]], n12_f_ids);
+    assert(n12_f_ids.size() == 2);
+    adj_fids_pair = {{n12_f_ids[0], n12_f_ids[1]}};
+    std::sort(adj_fids_pair.begin(), adj_fids_pair.end());
+    fe_sf_fs_pairs.insert(adj_fids_pair);
+    fe_sf_fs_pairs_se_only.insert(adj_fids_pair);
+  }
+  for (const auto& ce : cc_edges) {
+    set_intersection(conn_tris[ce[0]], conn_tris[ce[1]], n12_f_ids);
+    assert(n12_f_ids.size() == 2);
+    adj_fids_pair = {{n12_f_ids[0], n12_f_ids[1]}};
+    fe_sf_fs_pairs.insert(adj_fids_pair);
+    fe_sf_fs_pairs_ce_only.insert(adj_fids_pair);
+  }
+}
+
+// here input_faces are sorted counter-clockwise, from SurfaceMesh
 void find_feature_edges(const Parameter& args,
                         const std::vector<Vector3>& input_vertices,
                         const std::vector<Vector3i>& input_faces,
                         std::set<aint2>& s_edges, std::set<aint2>& cc_edges,
                         std::set<int>& corners_se, std::set<int>& corners_ce,
-                        std::set<int>& corners_fake,
-                        std::set<aint2>& fe_sf_fs_pairs,
-                        std::set<aint2>& fe_sf_fs_pairs_se_only,
-                        std::set<aint2>& fe_sf_fs_pairs_ce_only) {
-  printf("Detecting sharp/concave edges and corners_se using threshold: %f \n",
-         args.thres_concave);
+                        std::set<int>& corners_fake) {
   s_edges.clear();
   cc_edges.clear();
   corners_se.clear();
   corners_ce.clear();
-  fe_sf_fs_pairs.clear();
-  fe_sf_fs_pairs_se_only.clear();
-  fe_sf_fs_pairs_ce_only.clear();
 
   std::vector<aint2> edges;
   std::map<int, std::unordered_set<int>> conn_tris;
@@ -150,6 +292,12 @@ void find_feature_edges(const Parameter& args,
       printf("ERROR: we don't know how to handle open boundary!!\n");
       assert(false);
     }
+    if (n12_f_ids.size() != 2) {  // non-manifold
+      printf("Detect non-manifold edge (%d,%d), has >2 faces: %ld\n", e[0],
+             e[1], n12_f_ids.size());
+      printf("ERROR: we don't know how to handle non-manifold edge!!\n");
+      assert(false);
+    }
     int f_id = n12_f_ids[0];
     int j = 0;
     for (; j < 3; j++) {
@@ -159,69 +307,51 @@ void find_feature_edges(const Parameter& args,
            input_faces[f_id][mod3(j + 1)] == e[0]))
         break;
     }
-    Vector3 n = get_normal(input_vertices[input_faces[f_id][0]],
-                           input_vertices[input_faces[f_id][1]],
-                           input_vertices[input_faces[f_id][2]]);
-    Vector3 c_n = get_triangle_centroid(input_vertices[input_faces[f_id][0]],
-                                        input_vertices[input_faces[f_id][1]],
-                                        input_vertices[input_faces[f_id][2]]);
+    std::array<int, 3> f_vs_indices = {
+        input_faces[f_id][0], input_faces[f_id][1], input_faces[f_id][2]};
+    std::array<Vector3, 3> f_vertices = {input_vertices[f_vs_indices[0]],
+                                         input_vertices[f_vs_indices[1]],
+                                         input_vertices[f_vs_indices[2]]};
+    Vector3 n = get_normal(f_vertices[0], f_vertices[1], f_vertices[2]);
+    // Vector3 c_n =
+    //     get_triangle_centroid(f_vertices[0], f_vertices[1], f_vertices[2]);
 
+    // loop neighbors
     for (int k = 0; k < n12_f_ids.size(); k++) {
       if (n12_f_ids[k] == f_id) continue;
-      Vector3 n1 = get_normal(input_vertices[input_faces[n12_f_ids[k]][0]],
-                              input_vertices[input_faces[n12_f_ids[k]][1]],
-                              input_vertices[input_faces[n12_f_ids[k]][2]]);
-      Vector3 c_n1 =
-          get_triangle_centroid(input_vertices[input_faces[n12_f_ids[k]][0]],
-                                input_vertices[input_faces[n12_f_ids[k]][1]],
-                                input_vertices[input_faces[n12_f_ids[k]][2]]);
-
+      std::array<int, 3> f1_vs_indices = {input_faces[n12_f_ids[k]][0],
+                                          input_faces[n12_f_ids[k]][1],
+                                          input_faces[n12_f_ids[k]][2]};
+      Vector3 n1 = get_normal(input_vertices[f1_vs_indices[0]],
+                              input_vertices[f1_vs_indices[1]],
+                              input_vertices[f1_vs_indices[2]]);
       aint2 ref_fs_pair = {{f_id, n12_f_ids[k]}};
       std::sort(ref_fs_pair.begin(), ref_fs_pair.end());
       // std::array<Vector3, 2> ref_fs_normals = {{n, n1}};
       bool is_debug = false;
+      if (is_debug)
+        printf(
+            "processing edge (%d,%d) two faces %d (%d,%d,%d) and %d "
+            "(%d,%d,%d)\n",
+            e[0], e[1], f_id, f_vs_indices[0], f_vs_indices[1], f_vs_indices[2],
+            n12_f_ids[k], f1_vs_indices[0], f1_vs_indices[1], f1_vs_indices[2]);
 
-      //////////
-      // Since cosine can only measure dihedral angle from (0, 180)
-      // but concave has angle larger than 180
-      // therefore we use different measurement for concave, and sharp edges
-      //////////
-      // Concave edges
-      // c_n is a random vertex on plane A, c_n1 is a random vertex on plane B
-      // n is normal of A
-      //
-      // 2021-09-04 ninwang:
-      // If na and nb are the normals of the both adjacent faces,
-      // and pa and pb vertices of the both faces that are not connected to
-      // the edge, wherein na and pa belongs to the face A, and nb and pb to
-      // the face B, then ( pb - pa ) . na > 0 => concave edge
-      double tmp_concave = GEO::dot(GEO::normalize(c_n1 - c_n), n);     // A, B
-      double tmp_concave_2 = GEO::dot(GEO::normalize(c_n - c_n1), n1);  // B, A
-      if (tmp_concave > args.thres_concave ||
-          tmp_concave_2 > args.thres_concave) {  // SCALAR_ZERO is too small
-        // if (is_debug)
-        //   printf("edge e (%d,%d) is a concave edge, tmp_concave: %f\n", e[0],
-        //          e[1], tmp_concave);
+      // get edge direction based on f
+      std::array<int, 2> sorted_edge_vs = e;  // copy
+      // here we assume f_vs_indices are already sorted counter-clockwise
+      sort_edge_vertices(f_vs_indices, sorted_edge_vs, is_debug);
+      if (is_debug)
+        printf("sorted_edge_vs: (%d,%d)\n", sorted_edge_vs[0],
+               sorted_edge_vs[1]);
+      Vector3 edge_dir = get_direction(input_vertices[sorted_edge_vs[0]],
+                                       input_vertices[sorted_edge_vs[1]]);
+      // check convex or concave
+      EdgeConvexConcave edge_type = is_convex_concave_or_not(
+          args.thres_convex, args.thres_concave, n, n1, edge_dir, is_debug);
+      if (edge_type == EdgeConvexConcave::CONVEX) {
+        s_edges.insert(e);
+      } else if (edge_type == EdgeConvexConcave::CONCAVE) {
         cc_edges.insert(e);  // once concave, never sharp
-        fe_sf_fs_pairs.insert(ref_fs_pair);
-        fe_sf_fs_pairs_ce_only.insert(ref_fs_pair);
-      } else {
-        // Sharp edges (when it's convex)
-        // angle between two normals of convex faces: theta
-        // => cos(theta) = n1.dot(n)
-        // acosine() range in [0, pi]
-        // sharp edges => theta in (angle_sharp, pi)
-        // here angle_sharp = 30
-        // Note that, using theta CANNOT differentiate concave or convex,
-        // so the concave detection must run first
-        double tmp_convex = std::acos(GEO::dot(n1, n));
-        double angle_sharp = PI * (args.thres_convex / 180.);
-        if (angle_sharp < tmp_convex && tmp_convex < PI) {
-          // logger().debug("sharp edge: theta is {}", tmp_convex);
-          s_edges.insert(e);
-          fe_sf_fs_pairs.insert(ref_fs_pair);
-          fe_sf_fs_pairs_se_only.insert(ref_fs_pair);
-        }
       }
     }  // for n12_f_ids
   }  // for edges
@@ -240,8 +370,8 @@ void find_feature_edges(const Parameter& args,
   }
 
   // find all fake corners
-  // connect to >=3 sharp edges or concave edges
-  // including corners_se
+  // connect to > 2 sharp edges or concave edges,
+  // including both corners_se and corners_ce
   for (const auto& pair : neighbor_v_se) {
     int vid = pair.first;
     // 1. regular corner (connect to > 2 sharp edges)
@@ -390,6 +520,7 @@ void convert_vs_tlfs2lvs(const std::vector<int> tet_indices,
   // std::endl;
 }
 
+// [deprecated]
 void update_allow_to_merge_ce_line_ids(
     const std::vector<ConcaveCorner>& cc_corners,
     std::map<int, std::set<int>>& allow_to_merge_ce_line_ids) {
@@ -400,8 +531,46 @@ void update_allow_to_merge_ce_line_ids(
       allow_to_merge_ce_line_ids[fl_id].insert(cc.adj_fl_ids.begin(),
                                                cc.adj_fl_ids.end());
     }
+  }  // for a concave corner
+}
 
-  }  // for a concave  corner
+void update_not_allow_to_merge_ce_line_ids(
+    const std::vector<FeatureLine>& ce_lines,
+    const std::set<int>& corners_se_tet,
+    const std::map<int, std::set<int>>& corner2fl,
+    std::map<int, std::set<int>>& not_allow_to_merge_ce_line_ids) {
+  // get all ce_line_ids
+  std::set<int> all_ce_line_ids;
+  for (const auto& ce : ce_lines) {
+    all_ce_line_ids.insert(ce.id);
+  }
+  // update not_allow_to_merge_ce_line_ids
+  not_allow_to_merge_ce_line_ids.clear();
+  for (const auto& corner_id : corners_se_tet) {
+    // including both se and ce lines
+    assert(corner2fl.find(corner_id) != corner2fl.end());
+    const auto& fls = corner2fl.at(corner_id);
+    for (const auto& fl_id : fls) {
+      if (all_ce_line_ids.find(fl_id) == all_ce_line_ids.end()) continue;
+      for (const auto& fl_id2 : fls) {
+        if (fl_id == fl_id2) continue;
+        if (all_ce_line_ids.find(fl_id2) == all_ce_line_ids.end()) continue;
+        not_allow_to_merge_ce_line_ids[fl_id].insert(fl_id2);
+      }
+    }
+  }  // for corners_se_tet
+
+  // print_set<int>(corners_se_tet);
+  // print_set<int>(all_ce_line_ids);
+  // printf("-------------------------------------------------\n");
+  // // print allow_to_merge_ce_line_ids
+  // for (const auto& pair : not_allow_to_merge_ce_line_ids) {
+  //   printf("concave line %d CANNOT merge with: [", pair.first);
+  //   for (const auto& fl_id : pair.second) {
+  //     printf("%d, ", fl_id);
+  //   }
+  //   printf("]\n");
+  // }
 }
 
 void convert_fe_groups_to_set(std::vector<std::vector<aint3>>& fe_groups,
@@ -659,21 +828,32 @@ void store_concave_corners(const std::set<int>& corners_ce_tet,
 // mark feature attributes of GEO::Mesh
 // NOTE: here we store edges as 2 neighboring tet vertices instead of surface
 void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
-                                TetMesh& tet_mesh) {
+                                TetMesh& tet_mesh, bool is_sf_file_exist) {
   const auto& sf2tet_vs_mapping = sf_mesh.sf2tet_vs_mapping;
   assert(!sf2tet_vs_mapping.empty());
   std::vector<Vector3> points;
   std::vector<Vector3i> faces;
   load_local_from_mesh(sf_mesh, points, faces);
 
-  // find feature edges and corners on GEO::Mesh
   std::set<aint2> s_edges_sf, cc_edges_sf;
   std::set<int> corners_se_sf, corners_ce_sf, corners_fake_sf;
-  find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
-                     corners_se_sf, corners_ce_sf, corners_fake_sf,
-                     sf_mesh.fe_sf_fs_pairs, sf_mesh.fe_sf_fs_pairs_se_only,
-                     sf_mesh.fe_sf_fs_pairs_ce_only);
-  mark_feature_attributes(s_edges_sf, cc_edges_sf, corners_se_sf, sf_mesh);
+  if (!is_sf_file_exist) {
+    // find feature edges and corners on GEO::Mesh
+    find_feature_edges(args, points, faces, s_edges_sf, cc_edges_sf,
+                       corners_se_sf, corners_ce_sf, corners_fake_sf);
+    update_sf_fe_pairs_attributes(
+        faces, s_edges_sf, cc_edges_sf, sf_mesh.fe_sf_fs_pairs,
+        sf_mesh.fe_sf_fs_pairs_se_only, sf_mesh.fe_sf_fs_pairs_ce_only);
+    mark_feature_attributes(s_edges_sf, cc_edges_sf, corners_se_sf,
+                            corners_ce_sf, corners_fake_sf, sf_mesh);
+  } else {
+    // load feature edges and corners from file
+    load_feature_attributes(sf_mesh, s_edges_sf, cc_edges_sf, corners_se_sf,
+                            corners_ce_sf, corners_fake_sf);
+    update_sf_fe_pairs_attributes(
+        faces, s_edges_sf, cc_edges_sf, sf_mesh.fe_sf_fs_pairs,
+        sf_mesh.fe_sf_fs_pairs_se_only, sf_mesh.fe_sf_fs_pairs_ce_only);
+  }
 
   // map back to tet mesh
   std::set<aint2> s_edges_tet_tmp, cc_edges_tet_tmp;
@@ -683,7 +863,7 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   map_corners_sf2tet(sf2tet_vs_mapping, corners_ce_sf, tet_mesh.corners_ce_tet);
   map_corners_sf2tet(sf2tet_vs_mapping, corners_fake_sf,
                      tet_mesh.corner_fake_tet);
-  print_corners(tet_mesh.corner_fake_tet);
+  // print_corners(tet_mesh.corner_fake_tet);
 
   // here we use TetMesh::corner_fake_tet
   // to split SE and CE into different groups
@@ -702,15 +882,22 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   // format <tet_vs_min, tet_vs_max, fe_id, fe_line_id>
   std::set<aint4> se_tet_info, ce_tet_info;
   store_feature_line(tet_mesh, sf_mesh, EdgeType::SE, se_tet_groups,
-                     tet_mesh.feature_edges, tet_mesh.se_lines, se_tet_info,
-                     tet_mesh.corners_se_tet, tet_mesh.corner2fl,
-                     tet_mesh.corner2fe, false /*is_debug*/);
+                     0 /*fl_starts_id*/, tet_mesh.feature_edges,
+                     tet_mesh.se_lines, se_tet_info, tet_mesh.corners_se_tet,
+                     tet_mesh.corner2fl, tet_mesh.corner2fe,
+                     false /*is_debug*/);
   printf("[Feature] stored SphereType::SE line size: %ld \n",
          tet_mesh.se_lines.size());
+  if (!tet_mesh.se_lines.empty())
+    assert(tet_mesh.se_lines.size() == tet_mesh.se_lines.back().id + 1);
   store_feature_line(tet_mesh, sf_mesh, EdgeType::CE, ce_tet_groups,
+                     tet_mesh.se_lines.size() /*fl_starts_id*/,
                      tet_mesh.feature_edges, tet_mesh.ce_lines, ce_tet_info,
                      tet_mesh.corners_se_tet, tet_mesh.corner2fl,
                      tet_mesh.corner2fe, false /*is_debug*/);
+  if (!tet_mesh.ce_lines.empty())
+    assert(tet_mesh.se_lines.size() + tet_mesh.ce_lines.size() ==
+           tet_mesh.ce_lines.back().id + 1);
   sf_mesh.update_fe_sf_fs_pairs_to_ce_id(tet_mesh.feature_edges);
   printf("[Feature] stored SphereType::CE line size: %ld \n",
          tet_mesh.ce_lines.size());
@@ -731,6 +918,9 @@ void detect_mark_sharp_features(const Parameter& args, SurfaceMesh& sf_mesh,
   store_concave_corners(tet_mesh.corners_ce_tet, tet_mesh.feature_edges,
                         tet_mesh.cc_corners, false);
   // update FeatureLine::allow_to_merge_fl_ids
-  update_allow_to_merge_ce_line_ids(tet_mesh.cc_corners,
-                                    tet_mesh.allow_to_merge_ce_line_ids);
+  // update_allow_to_merge_ce_line_ids(tet_mesh.cc_corners,
+  //                                   tet_mesh.allow_to_merge_ce_line_ids);
+  update_not_allow_to_merge_ce_line_ids(
+      tet_mesh.ce_lines, tet_mesh.corners_se_tet, tet_mesh.corner2fl,
+      tet_mesh.not_allow_to_merge_ce_line_ids);
 }

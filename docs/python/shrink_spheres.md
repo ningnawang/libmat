@@ -18,9 +18,9 @@ struct ShrinkSpheresOptions {
   int num_spheres = 1000;
   // detect sharp/concave features first and let spheres stop at them
   bool preserve_features = true;
-  // feature detection thresholds, see detect_sharp_features()
-  double thres_concave = 0.2;
-  double thres_convex = 40.;
+  // feature detection thresholds in degrees, see detect_sharp_features()
+  double thres_concave = 60.;
+  double thres_convex = 55.;
   // maximum number of shrinking iterations per sphere (-1: no limit)
   int max_iter = -1;
   // seed of the random surface sampling

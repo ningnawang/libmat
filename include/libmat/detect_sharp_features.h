@@ -9,9 +9,11 @@ namespace libmat {
 // Inputs:
 //   V  #V by 3 vertex positions
 //   F  #F by 3 triangles (closed, manifold)
-//   thres_concave  threshold for concave edges (smaller = more sensitive)
-//   thres_convex   dihedral angle threshold in degrees for sharp edges
-//                  (smaller = more sensitive)
+//   thres_concave  angle in degrees between the two face normals above which
+//                  an inward edge is concave (smaller = more sensitive)
+//   thres_convex   same for outward (sharp) edges
+//                  Edges whose normals differ by less than 15 degrees are
+//                  always flat.
 // Outputs:
 //   E            #E by 2 feature edges (indices into V)
 //   E_type       #E edge type: 1 = sharp (convex) edge, 2 = concave edge

@@ -18,23 +18,32 @@ class ss_params {
   int p_fid = UNK_FACE;
 
  public:
-  inline bool is_p_on_ce() { return p_fid <= -2; }
-  inline bool is_q_on_ce() { return q_fid <= -2; }
+  inline bool is_p_on_ce() { return is_point_on_ce(p_fid); }
+  inline bool is_q_on_ce() { return is_point_on_ce(q_fid); }
   inline void set_p_fid(int _pfid, bool is_on_ce = false) {
-    p_fid = is_on_ce ? -(_pfid + 2) : _pfid;
+    p_fid = encode_fid(_pfid, is_on_ce);
   }
   inline void set_q_fid(int _qfid, bool is_on_ce = false) {
-    q_fid = is_on_ce ? -(_qfid + 2) : _qfid;
+    q_fid = encode_fid(_qfid, is_on_ce);
   }
-  inline int get_p_fid() { return is_p_on_ce() ? -(p_fid + 2) : p_fid; }
-  inline int get_q_fid() { return is_q_on_ce() ? -(q_fid + 2) : q_fid; }
+  inline int get_p_fid() { return decode_fid(p_fid, is_p_on_ce()); }
+  inline int get_q_fid() { return decode_fid(q_fid, is_q_on_ce()); }
+
+ public:
+  inline static int encode_fid(int _fid, bool is_on_ce = false) {
+    return is_on_ce ? -(_fid + 2) : _fid;
+  }
+  inline static int decode_fid(int _fid, bool is_on_ce = false) {
+    return is_on_ce ? -(_fid + 2) : _fid;
+  }
+  inline static bool is_point_on_ce(const int _fid) { return _fid <= -2; }
 };
 
 class TangentPlane {
  public:
   TangentPlane(const SurfaceMesh& sf_mesh, const Vector3& _normal,
                const Vector3& _point, const int _fid);
-  ~TangentPlane(){};
+  ~TangentPlane() {};
 
  public:
   void print_info() const;
@@ -69,11 +78,13 @@ class TangentPlane {
   std::set<int> sf_fids_covered;  // fid's k-ring sf_mesh neighbors
 };
 
+// TODO:
+// 1. change name to TangentConcaveEdge
+// 2. remove id_fl, id_fe, t2vs_ids, t2vs_pos, adj_sf_fs_pair, adj_normals
 class TangentConcaveLine {
  public:
-  TangentConcaveLine(const SurfaceMesh& sf_mesh, const int _id,
-                     const FeatureEdge& fe);
-  ~TangentConcaveLine(){};
+  TangentConcaveLine(const SurfaceMesh& sf_mesh, const FeatureEdge& fe);
+  ~TangentConcaveLine() {};
 
  public:
   void print_info() const;
@@ -98,7 +109,6 @@ class TangentConcaveLine {
   bool operator==(TangentConcaveLine const& b) const;
 
  public:
-  int id;
   bool is_deleted;  // [no use] for now
   int id_fe;        // matching to TetMesh::feature_edges::id
   int id_fl;        // matching to FeatureLine::id
@@ -133,7 +143,7 @@ enum Topo_Status {
 
 // each PowerCell contains multiple ConvexCellHost
 struct PowerCell {
-  PowerCell(){};
+  PowerCell() {};
   int voro_id = -1;
 
   // sum of all convex cell volumes
@@ -270,9 +280,13 @@ enum SphereType {
   T_1_N = -3,  // external feature, corners
   T_1_2 = -2,  // external feature, sharp edge
   T_UNK = -1,
-  T_2 = 2,
-  T_N = 3,       // including T_3, T_4 ...
-  T_N_JUNC = 4,  // potential junctions T_4, T_5 ...
+  T_2 = 2,       // on the sheet
+  T_3_MORE = 3,  // including T_3, T_4 ...
+  T_4_MORE = 4,  // potential junctions T_4, T_5 ...
+  T_1_INF = 5,   // = A_3 sphere [Giblin et al. 2004],
+                 // should also on the seam
+  T_2_INF = 6,   // = A_1A_3 sphere [Giblin et al. 2004],
+                 // should be on junction
   T_c = 10,      // invisible pin sphere added on concave line to avoid RPD
                  // degeneration [no use?]
   T_2_c = 11,    // added for one concave line using sphere shrinking
@@ -286,12 +300,12 @@ enum RtValidStates { Valid2Invalid = -1, NoChange = 0, Invalid2Valid = 1 };
 
 class MedialSphere {
  public:
-  MedialSphere(){};  // for mult-threads parallization
+  MedialSphere() {};  // for mult-threads parallization
   MedialSphere(int _id, Vector3 _pin, Vector3 _pin_normal, int _pin_fid,
                SphereType _type = SphereType::T_UNK, int _itr = -1);
   MedialSphere(int _id, Vector3 _center, double _radius, SphereType _type,
                int _itr = -1);
-  ~MedialSphere(){};
+  ~MedialSphere() {};
 
  public:
   void print_info() const;
@@ -341,6 +355,11 @@ class MedialSphere {
   bool is_on_extf() const;
   bool is_on_sheet() const;
   bool is_on_junction() const;
+  bool is_on_seam_endpoint() const;
+  bool is_on_inf() const;
+
+  // for medial struct
+  bool is_on_mstruct_junction() const;
 
   void topo_clear();
   void pcell_insert(int cell_id);
@@ -360,10 +379,16 @@ class MedialSphere {
 
  public:
   int id;
-  int site_id;  // for computing parital RPD, -1 as default
+  int prev_id = -1;  // previous id if updated all_medial_spheres
+  int site_id;       // for computing parital RPD, -1 as default
   int itr_cnt;  // count the number of iteration when this sphere is created
   bool is_deleted = false;
   int dup_cnt = 0;  // duplicated count, one matching a connected pcell
+
+  // for medial struct
+  // storing id for junction only
+  // matching MedialStruct::id for MedialType::Junction
+  int mstruct_jun_id = -1;
 
   Vector3 center;
   double radius;
@@ -450,6 +475,8 @@ void purge_deleted_medial_spheres(
 
 bool is_two_mspheres_on_same_se(const MedialSphere& msphere1,
                                 const MedialSphere& msphere2);
+bool is_two_mspheres_on_same_sl_including_corners(const MedialSphere& msphere1,
+                                                  const MedialSphere& msphere2);
 
 // must call after update_power_cells()
 void update_se_tangent_planes(const SurfaceMesh& sf_mesh,

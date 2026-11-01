@@ -79,7 +79,7 @@ void SurfaceMesh::cache_sf_fid_neighs() {
   // std::map<int, std::set<int>> conn_tris;
   for (int i = 0; i < this->facets.nb(); i++) {
     // printf("Input mesh facet %d has neighbors: [", i);
-    FOR(le, 3) {
+    for (int le = 0; le < 3; le++) {
       int nfid = this->facets.adjacent(i, le);
       sf_fid_neighs[i].insert(nfid);
       // printf("%d, ", nfid);
@@ -90,11 +90,10 @@ void SurfaceMesh::cache_sf_fid_neighs() {
 
 // must call after detect_mark_sharp_features()
 void SurfaceMesh::cache_sf_fid_neighs_no_cross() {
-  if (fe_sf_fs_pairs.empty()) return;
-  // load input_mesh adjacent info, not cross sharp features
   sf_fid_neighs_no_cross.clear();
+  // load input_mesh adjacent info, not cross sharp features
   for (int i = 0; i < this->facets.nb(); i++) {
-    FOR(le, 3) {
+    for (int le = 0; le < 3; le++) {
       int nfid = this->facets.adjacent(i, le);
       aint2 fpair = {{i, nfid}};
       std::sort(fpair.begin(), fpair.end());
@@ -106,13 +105,35 @@ void SurfaceMesh::cache_sf_fid_neighs_no_cross() {
 
 // must call after detect_mark_sharp_features()
 void SurfaceMesh::cache_sf_fid_krings_no_cross_se_only(const int k) {
-  if (fe_sf_fs_pairs_se_only.empty()) return;
-  // load input_mesh adjacent info, not cross sharp features
   sf_fid_krings_no_cross_se_only.clear();
+  // load input_mesh adjacent info, not cross sharp features
   std::set<int> kring_neighbors;
   for (int fid = 0; fid < this->facets.nb(); fid++) {
     collect_kring_neighbors_given_fid_se_only(k, fid, kring_neighbors);
     sf_fid_krings_no_cross_se_only[fid] = kring_neighbors;
+  }
+}
+
+void SurfaceMesh::cache_sf_fid_to_fe_ids(
+    const std::vector<FeatureEdge>& feature_edges) {
+  this->sf_fid_to_fe_ids.clear();
+  for (const auto& fe : feature_edges) {
+    this->sf_fid_to_fe_ids[fe.adj_sf_fs_pair[0]].insert(fe.id);
+    this->sf_fid_to_fe_ids[fe.adj_sf_fs_pair[1]].insert(fe.id);
+  }
+}
+
+void SurfaceMesh::cache_fe_sf_fs_map() {
+  this->fe_sf_fs_map_se_only.clear();
+  for (const auto& fe : this->fe_sf_fs_pairs_se_only) {
+    this->fe_sf_fs_map_se_only[fe[0]] = fe[1];
+    this->fe_sf_fs_map_se_only[fe[1]] = fe[0];
+  }
+
+  this->fe_sf_fs_map_ce_only.clear();
+  for (const auto& ce : this->fe_sf_fs_pairs_ce_only) {
+    this->fe_sf_fs_map_ce_only[ce[0]] = ce[1];
+    this->fe_sf_fs_map_ce_only[ce[1]] = ce[0];
   }
 }
 
@@ -147,6 +168,74 @@ bool SurfaceMesh::collect_kring_neighbors_given_fid_se_only(
   return kring_neighbors.empty() ? false : true;
 }
 
+bool is_skip_se_neighbor(const std::set<aint2>& fe_sf_pairs_not_cross,
+                         const int f, const int nf, bool is_debug) {
+  aint2 ref_fs_pair = {{f, nf}};
+  std::sort(ref_fs_pair.begin(), ref_fs_pair.end());
+  if (fe_sf_pairs_not_cross.find(ref_fs_pair) != fe_sf_pairs_not_cross.end()) {
+    if (is_debug) printf("skip SE fid neighbor pair (%d,%d)\n", f, nf);
+    return true;  // skip checking its neighbor
+  }
+  return false;
+}
+
+// update:
+// 1. SurfaceMesh::regions
+// 2. SurfaceMesh::fid2region_id
+void SurfaceMesh::collect_sf_regions_no_cross(bool is_debug) {
+  // expand from one fid to all neighbors
+  // once touch fe_sf_fs_pairs_se_only, then skip
+  this->regions.clear();
+  this->fid2region_id.clear();
+  this->fid2region_id.resize(this->facets.nb(), -1);
+  if (is_debug) printf("collecting sf_regions no cross SE\n");
+
+  int region_id = 0;
+  std::vector<int> one_stack;
+  std::set<int> visited_fids;
+  for (int i = 0; i < this->facets.nb(); i++) {
+    if (visited_fids.find(i) != visited_fids.end()) continue;
+    one_stack.clear();
+    one_stack.push_back(i);
+    // create new region
+    RegionData new_region;
+    new_region.region_id = region_id++;
+    if (is_debug)
+      printf("new region %d start from fid %d\n", new_region.region_id, i);
+
+    while (!one_stack.empty()) {
+      int fid = one_stack.back();
+      one_stack.pop_back();
+      visited_fids.insert(fid);
+      new_region.fids.insert(fid);
+      this->fid2region_id[fid] = new_region.region_id;
+      if (is_debug) printf("expanding fid %d\n", fid);
+
+      // get neighbors, add to stack
+      for (GEO::index_t le = 0; le < this->facets.nb_vertices(fid); le++) {
+        GEO::index_t nfid = this->facets.adjacent(fid, le);
+        if (nfid == GEO::NO_FACET) continue;
+        if (visited_fids.find(nfid) != visited_fids.end()) continue;
+        if (is_skip_se_neighbor(this->fe_sf_fs_pairs_se_only, fid, nfid,
+                                is_debug))
+          continue;
+        if (is_debug)
+          printf("fid %d has neighbor face nfid %d in same region\n", fid,
+                 nfid);
+        one_stack.push_back(nfid);
+      }
+    }  // while stack
+    // save new region
+    this->regions.push_back(new_region);
+    if (is_debug) {
+      printf("region %d has %ld fids: ", new_region.region_id,
+             new_region.fids.size());
+      print_set<int>(new_region.fids, "new_region.fids");
+    }
+  }  // for fids
+}
+
+// called by detect_mark_sharp_features()
 void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
     const std::vector<FeatureEdge>& feature_edges) {
   this->fe_sf_fs_pairs_to_ce_id.clear();
@@ -159,13 +248,129 @@ void SurfaceMesh::update_fe_sf_fs_pairs_to_ce_id(
   }
 }
 
-void SurfaceMesh::collect_fid_centroids(
-    const std::set<int>& given_fids, std::vector<v2int>& one_group_fids) const {
-  one_group_fids.clear();
-  for (const int fid : given_fids) {
-    one_group_fids.push_back(
-        std::pair<Vector3, int>(get_mesh_facet_centroid(*this, fid), fid));
+// EdgeType can be either SE or CE
+aint2 SurfaceMesh::project_to_sf_and_get_FE_if_any(
+    const std::vector<FeatureEdge>& feature_edges,
+    const EdgeType& check_proj_type, Vector3& p, double& sq_dist,
+    bool is_debug) const {
+  // get projection fid and lambdas
+  adouble3 lambda;
+  Vector3 old_p = p;  // for debug
+  int fid = this->aabb_wrapper.project_to_sf_get_nearest_face_with_lambdas(
+      p, sq_dist, lambda[0], lambda[1], lambda[2]);
+  int FE_id = get_FE_given_fid_and_lambdas_if_any(
+      feature_edges, check_proj_type, fid, lambda, is_debug);
+
+  // return format: <SurfaceMesh::fid, FeatureEdge::id>
+  aint2 return_fid_fe_id = {{fid, FE_id}};
+  return return_fid_fe_id;
+}
+
+// EdgeType can be either SE or CE
+// Return fe_id, or -1 if not found
+int SurfaceMesh::get_FE_given_fid_and_lambdas_if_any(
+    const std::vector<FeatureEdge>& feature_edges,
+    const EdgeType& check_proj_type, const int fid,
+    const adouble3& given_lambdas, bool is_debug) const {
+  // if not cache, this loop will be slow
+  if (!feature_edges.empty() && this->sf_fid_to_fe_ids.empty()) {
+    // this->cache_sf_fid_to_fe_ids(feature_edges);
+    printf(
+        "[proj_and_get_FE_if_any] ERROR: sf_fid_to_fe_ids is empty, call "
+        "cache_sf_fid_to_fe_ids() first\n");
+    assert(false);
   }
+
+  // get projection fid and lambdas
+  double lambda[3];
+  lambda[0] = given_lambdas[0];
+  lambda[1] = given_lambdas[1];
+  lambda[2] = given_lambdas[2];
+  return get_triangle_proj_FE_given_lambdas(feature_edges, check_proj_type, fid,
+                                            lambda, is_debug);
+}
+
+// return fe_id, or -1 if not found
+int SurfaceMesh::get_triangle_proj_FE_given_lambdas(
+    const std::vector<FeatureEdge>& feature_edges,
+    const EdgeType& check_proj_type, const int fid, const double* lambda,
+    bool is_debug) const {
+  if (this->sf_fid_to_fe_ids.find(fid) == this->sf_fid_to_fe_ids.end())
+    return -1;
+
+  // loop all possible feature edges
+  for (const int fe_id : this->sf_fid_to_fe_ids.at(fid)) {
+    auto& one_fe = feature_edges.at(fe_id);
+    // can be either SE or CE
+    if (check_proj_type != one_fe.type) continue;
+
+    // if (is_debug && fe_id == 240)
+    //   is_debug = true;
+    // else
+    //   is_debug = false;
+
+    if (is_debug)
+      printf(
+          "--------- [get_tri_FE] found fid: %d, fe_id %d, "
+          "fl_id: %d, type %d, lambda: (%f,%f,%f)\n",
+          fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
+          lambda[2]);
+
+    /////
+    // check if p on the feature edge
+    //
+    // get FE tvids
+    int fe_tvid0 = one_fe.t2vs_group[0];
+    int fe_tvid1 = one_fe.t2vs_group[1];
+    // get face tvids
+    int f_tvids[3] = {-1, -1, -1};
+    GEO::index_t c = this->facets.corners_begin(fid);
+    for (int i = 0; i < 3; i++, c++) {
+      f_tvids[i] = this->sf2tet_vs_mapping.at(this->facet_corners.vertex(c));
+    }
+    if (is_debug)
+      printf("[get_tri_FE] f_tvids: (%d,%d,%d), fe_tvids: (%d, %d)\n ",
+             f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
+
+    // find one tvid on the face that not matches the FE
+    int f_tvid_local_sorted[3] = {-1, -1, -1};
+    for (int i = 0; i < 3; i++) {
+      if (f_tvids[i] == fe_tvid0)
+        f_tvid_local_sorted[0] = i;
+      else if (f_tvids[i] == fe_tvid1)
+        f_tvid_local_sorted[1] = i;
+      else  // not match
+        f_tvid_local_sorted[2] = i;
+    }
+    if (is_debug)
+      printf("[get_tri_FE] f_tvid_local_sorted: (%d,%d,%d)\n",
+             f_tvid_local_sorted[0], f_tvid_local_sorted[1],
+             f_tvid_local_sorted[2]);
+    assert(f_tvid_local_sorted[0] != -1 && f_tvid_local_sorted[1] != -1 &&
+           f_tvid_local_sorted[2] != -1);
+
+    // check if lambda of third f_tvid_local_sorted is 0,
+    // then p is on the feature edge
+    if (lambda[f_tvid_local_sorted[2]] <= SCALAR_ZERO_6) {
+      if (is_debug) {
+        printf(
+            "--------- [get_tri_FE] found on ce, fid: %d, fe_id "
+            "%d, fl_id: %d, type %d, lambda: (%f,%f,%f)\n",
+            fid, fe_id, one_fe.get_fl_id(), one_fe.type, lambda[0], lambda[1],
+            lambda[2]);
+        printf("[get_tri_FE] f_tvids: (%d,%d,%d), fe_tvids: (%d,%d)\n",
+               f_tvids[0], f_tvids[1], f_tvids[2], fe_tvid0, fe_tvid1);
+        printf("[get_tri_FE]  f_tvid_local_sorted: (%d,%d,%d)\n",
+               f_tvid_local_sorted[0], f_tvid_local_sorted[1],
+               f_tvid_local_sorted[2]);
+        printf("[get_tri_FE] found point on fe_id %d, fl_id: %d\n", fe_id,
+               one_fe.get_fl_id(), one_fe.type);
+      }
+      // directly return if found a closed feature edge
+      return fe_id;
+    }
+  }  // for fe_id
+  return -1;
 }
 
 bool AABBWrapper::init_mesh_from_edges(const std::vector<float>& input_vertices,
@@ -212,7 +417,7 @@ bool AABBWrapper::init_mesh_from_edges(const std::vector<float>& input_vertices,
 
 // is_reorder == true => will reorder sf_mesh
 void AABBWrapper::init_sf_mesh_and_tree(GEO::Mesh& _sf_mesh, bool is_reorder) {
-  sf_tree = std::make_shared<GEO::MeshFacetsAABB>(_sf_mesh, is_reorder);
+  sf_tree = std::make_shared<GEO::MeshFacetsAABBLambda>(_sf_mesh, is_reorder);
 }
 
 void AABBWrapper::init_feature_meshes_and_trees(
@@ -236,14 +441,25 @@ void AABBWrapper::init_feature_meshes_and_trees(
   is_se_mesh_exist =
       init_mesh_from_edges(input_vertices, se_edges, se_feids, se_mesh);
   if (!se_edges.empty()) assert(is_se_mesh_exist);
-  se_tree = std::make_shared<GEO::MeshFacetsAABB>(se_mesh, true /*reorder*/);
+  se_tree =
+      std::make_shared<GEO::MeshFacetsAABBLambda>(se_mesh, true /*reorder*/);
 
   // for concave edges
   ce_mesh.clear(false, false);
   is_ce_mesh_exist =
       init_mesh_from_edges(input_vertices, ce_edges, ce_feids, ce_mesh);
   if (!ce_edges.empty()) assert(is_ce_mesh_exist);
-  ce_tree = std::make_shared<GEO::MeshFacetsAABB>(ce_mesh, true /*reorder*/);
+  ce_tree =
+      std::make_shared<GEO::MeshFacetsAABBLambda>(ce_mesh, true /*reorder*/);
+}
+
+void SurfaceMesh::collect_fid_centroids(
+    const std::set<int>& given_fids, std::vector<v2int>& one_group_fids) const {
+  one_group_fids.clear();
+  for (const int fid : given_fids) {
+    one_group_fids.push_back(
+        std::pair<Vector3, int>(get_mesh_facet_centroid(*this, fid), fid));
+  }
 }
 
 /**
@@ -282,18 +498,6 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh& sf_mesh,
                                    const int fid_given, const int k,
                                    std::set<int>& k_ring_fids,
                                    bool is_clear_cur, bool is_debug) {
-  auto is_skip_se_neighbor = [&](const int f, const int nf) {
-    aint2 ref_fs_pair = {{f, nf}};
-    std::sort(ref_fs_pair.begin(), ref_fs_pair.end());
-    if (fe_sf_pairs_not_cross.find(ref_fs_pair) !=
-        fe_sf_pairs_not_cross.end()) {
-      if (is_debug)
-        printf("[K_RING] face %d skip nf %d since sharing a sharp edge \n", f,
-               nf);
-      return true;  // skip checking its neighbor
-    }
-    return false;
-  };
   if (is_debug)
     printf("calling get_k_ring_neighbor_no_se for fid_given: %d \n", fid_given);
   assert(fid_given >= 0);
@@ -311,7 +515,8 @@ void get_k_ring_neighbors_no_cross(const GEO::Mesh& sf_mesh,
       for (GEO::index_t le = 0; le < sf_mesh.facets.nb_vertices(fid); le++) {
         GEO::index_t nfid = sf_mesh.facets.adjacent(fid, le);
         if (nfid == GEO::NO_FACET) continue;
-        if (is_skip_se_neighbor(fid, nfid)) continue;
+        if (is_skip_se_neighbor(fe_sf_pairs_not_cross, fid, nfid, is_debug))
+          continue;
         if (is_debug) printf("fid %d has neighbor face nfid %d\n", fid, nfid);
         k_ring_fids.insert(nfid);
         new_added_fids.insert(nfid);
@@ -368,7 +573,7 @@ void print_one_fe(const int i, const std::vector<aint2>& one_fe_group) {
 
 void print_fe_group(const std::vector<std::vector<aint2>>& fe_groups) {
   printf("[DetectFeatures] fe_groups: \n");
-  FOR(i, fe_groups.size()) {
+  for (int i = 0; i < fe_groups.size(); i++) {
     const auto& one_fe_group = fe_groups.at(i);
     print_one_fe(i, one_fe_group);
   }
@@ -377,6 +582,7 @@ void print_fe_group(const std::vector<std::vector<aint2>>& fe_groups) {
 void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
                         const EdgeType& fe_type,
                         const std::vector<std::vector<aint2>> fe_tet_groups,
+                        const int fl_starts_id,
                         std::vector<FeatureEdge>& feature_edges,
                         std::vector<FeatureLine>& feature_lines,
                         std::set<aint4>& fe_tet_info,
@@ -385,17 +591,20 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
                         std::map<int, std::set<int>>& corner2fe,
                         bool is_debug) {
   auto get_common_vs = [](const aint2& e1, const aint2& e2) {
-    FOR(j, 2) {
+    for (int j = 0; j < 2; j++) {
       if (e1[j] == e2[0] || e1[j] == e2[1]) return e1[j];
     }
     return -1;
   };
   if (is_debug) print_fe_group(fe_tet_groups);
   feature_lines.clear();
-  for (int fl_id = 0; fl_id < fe_tet_groups.size(); fl_id++) {
+  int group_id = 0;      // matching index of fe_tet_groups
+  int fl_id = group_id;  // matching FeatureLine::id
+  if (fl_starts_id != -1) fl_id = fl_starts_id;
+  for (; group_id < fe_tet_groups.size(); group_id++, fl_id++) {
     // Note: one_fe_group is pre-sorted in an order
-    const std::vector<aint2>& one_fe_group = fe_tet_groups[fl_id];
-    if (is_debug) print_one_fe(fl_id, one_fe_group);
+    const std::vector<aint2>& one_fe_group = fe_tet_groups[group_id];
+    if (is_debug) print_one_fe(group_id, one_fe_group);
     // create new feature line
     FeatureLine new_fl(fl_id, fe_type);
     new_fl.length = 0.f;
@@ -431,7 +640,7 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
       fe_tet_info.insert({{t2vs[0], t2vs[1], fe_id, fl_id}});
 
       // update FeatureLine::tvs_neighbors (part1)
-      FOR(j, 2) {
+      for (int j = 0; j < 2; j++) {
         int evid = one_fe[j];
         int evid_another = one_fe[(j + 1) % 2];
         if (new_fl.tvs_neighbors.find(evid) == new_fl.tvs_neighbors.end()) {
@@ -469,7 +678,7 @@ void store_feature_line(const TetMesh& tet_mesh, const SurfaceMesh& sf_mesh,
       // fl is not a loop
       bool is_swap = false;
       // swap 'first' with neighbors[1] == -1
-      FOR(j, 2) {
+      for (int j = 0; j < 2; j++) {
         int evid = fe_first.at(j);
         if (new_fl.tvs_neighbors.find(evid) == new_fl.tvs_neighbors.end())
           assert(false);
@@ -566,7 +775,8 @@ void sample_points_on_feature_line(
 
   if (is_debug) printf("---- selecting random point \n");
   auto& fe_first = feature_edges.at(fl_given.fe_ids.at(0));
-  FL_Sample sample(fe_first.t2vs_pos[0], fe_first.id);  // start from first fe
+  FL_Sample sample(fe_first.t2vs_pos[0],
+                   fe_first.id);  // start from first fe
   sample_recursive_helper(feature_edges, fl_given, sample, 1 /*dir*/,
                           len_random, is_debug);
   if (is_debug)
@@ -575,7 +785,8 @@ void sample_points_on_feature_line(
   assert(fl_given.samples.size() == 1);
 
   // expand samples from init
-  // ninwang: no need to worry about loop, since loop still stores as a vector
+  // ninwang: no need to worry about loop, since loop still stores as a
+  // vector
   if (is_debug) printf("---- expanding samples \n");
   auto sample1 = fl_given.samples.front();  // copy
   auto sample0 = sample1;                   // copy

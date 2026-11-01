@@ -2,12 +2,14 @@ from ._libmat import detect_sharp_features as _detect_sharp_features
 from ._utils import float_matrix, int_matrix
 
 
-def detect_sharp_features(V, F, thres_concave=0.2, thres_convex=40.0):
+def detect_sharp_features(V, F, thres_concave=60.0, thres_convex=55.0):
     """Detect sharp edges, concave edges and corners of a triangle mesh.
 
-    An edge is *sharp* (convex) if the dihedral angle between its two faces
-    deviates from flat by more than `thres_convex` degrees, and *concave* if
-    the surface folds inwards along it by more than `thres_concave`. Feature
+    An edge is *sharp* (convex) if the normals of its two faces differ by more
+    than `thres_convex` degrees and the surface folds outwards along it, and
+    *concave* if they differ by more than `thres_concave` degrees and the
+    surface folds inwards. Edges whose normals differ by less than 15 degrees
+    are always flat. Feature
     edges are grouped into feature lines, split at corners. These are the
     features that a feature-preserving medial axis has to keep.
 
@@ -17,10 +19,11 @@ def detect_sharp_features(V, F, thres_concave=0.2, thres_convex=40.0):
         Vertex positions of a closed, manifold triangle mesh.
     F : (m,3) numpy int array
         Triangles.
-    thres_concave : float, optional (default 0.2)
-        Threshold for concave edges (smaller is more sensitive).
-    thres_convex : float, optional (default 40.0)
-        Dihedral angle threshold in degrees for sharp edges (smaller is more
+    thres_concave : float, optional (default 60.0)
+        Angle threshold in degrees for concave edges (smaller is more
+        sensitive).
+    thres_convex : float, optional (default 55.0)
+        Angle threshold in degrees for sharp edges (smaller is more
         sensitive).
 
     Returns

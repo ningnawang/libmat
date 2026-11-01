@@ -49,6 +49,7 @@ bool TangentPlane::is_same_normal(const Vector3& anormal,
 bool TangentPlane::is_same_tan_pl(const TangentPlane& tan_pl2,
                                   bool is_only_normal,
                                   double eps_p_dist) const {
+  if (tan_pl2.fid == fid) return true;
   if (!is_same_normal(tan_pl2.normal)) {
     // if (is_debug) printf("NOT same normal!!\n");
     return false;
@@ -105,9 +106,8 @@ bool TangentPlane::update_covered_sf_fids(const SurfaceMesh& sf_mesh, int k) {
 /////////////////////////////////////////////////////////////////////////////////////
 // TangentConcaveLine
 /////////////////////////////////////////////////////////////////////////////////////
-TangentConcaveLine::TangentConcaveLine(const SurfaceMesh& sf_mesh, int _id,
+TangentConcaveLine::TangentConcaveLine(const SurfaceMesh& sf_mesh,
                                        const FeatureEdge& fe) {
-  id = _id;
   id_fe = fe.id;
   id_fl = fe.t2vs_group[2];
   t2vs_ids = {{fe.t2vs_group[0], fe.t2vs_group[1]}};
@@ -126,11 +126,12 @@ TangentConcaveLine::TangentConcaveLine(const SurfaceMesh& sf_mesh, int _id,
 
 void TangentConcaveLine::print_info() const {
   printf(
-      "---- TangentConcaveLine: id: %d, id_fe: %d, id_fl: %d, is_deleted, "
-      "energy: %f, energy_over_sq_radius: %f, tan_point (%f,%f,%f), normal: "
-      "(%f,%f,%f) ",
-      id, id_fe, id_fl, is_deleted, energy, energy_over_sq_radius, tan_point[0],
-      tan_point[1], tan_point[2], normal[0], normal[1], normal[2]);
+      "---- TangentConcaveLine: id_fe: %d, id_fl: %d, is_deleted, energy: %f, "
+      "energy_over_sq_radius: %f, tan_point (%f,%f,%f), normal: (%f,%f,%f) ",
+      id_fe, id_fl, is_deleted, energy == DBL_MAX ? 1e10 : energy,
+      energy_over_sq_radius == DBL_MAX ? 1e10 : energy_over_sq_radius,
+      tan_point[0], tan_point[1], tan_point[2], normal[0], normal[1],
+      normal[2]);
   // printf("adj_normals (%f,%f,%f) - (%f,%f,%f), ", adj_normals[0][0],
   //        adj_normals[0][1], adj_normals[0][2], adj_normals[1][0],
   //        adj_normals[1][1], adj_normals[1][2]);
@@ -248,7 +249,7 @@ bool TangentConcaveLine::update_covered_sf_fids(const SurfaceMesh& sf_mesh,
                                                 int k) {
   this->sf_fids_covered_two.clear();
   this->sf_fids_covered_two.resize(2);
-  FOR(i, 2) {  // two adjacent fids
+  for (int i = 0; i < 2; i++) {  // two adjacent fids
     int adj_fid = this->adj_sf_fs_pair[i];
     assert(adj_fid >= 0);
     sf_mesh.collect_kring_neighbors_given_fid(k, adj_fid,
@@ -304,20 +305,24 @@ void MedialSphere::print_ss_info() const {
 void MedialSphere::print_info() const {
   printf("------ MedialSphere Info ------\n");
   printf(
-      "id: %d, is_deleted: %d, dup_cnt: %d, is_on_se: %d, is_on_corner: %d, "
+      "id: %d, is_deleted: %d, prev_id: %d, dup_cnt: %d, is_on_se: %d, "
+      "is_on_corner: %d, "
       "is_on_ce_pre: %d, is_on_ce_pre_or_fix: %d, se_line_id: %d\n",
-      id, is_deleted, dup_cnt, is_on_se(), is_on_corner(), is_on_ce_pre(),
-      is_on_ce_pre_or_fix(), se_line_id);
+      id, is_deleted, prev_id, dup_cnt, is_on_se(), is_on_corner(),
+      is_on_ce_pre(), is_on_ce_pre_or_fix(), se_line_id);
+  if (is_on_se()) printf("se_line_id: %d\n", se_line_id);
+  if (is_on_corner()) print_set<int>(corner_fls, "corner_fls");
   printf(
       "center: (%f,%f,%f), radius: %f, type: %d, is_radius_dilated: %d, "
       "min_sq_dist_2cc: %f\n",
       center[0], center[1], center[2], radius, type, is_radius_dilated,
-      min_sq_dist_2cc);
+      min_sq_dist_2cc == DBL_MAX ? 1e10 : min_sq_dist_2cc);
   print_ss_info();
   printf("pcell: topo_status: %d, covered_sf_fids_in_group: %zu\n",
          pcell.topo_status, covered_sf_fids_in_group.size());
   printf("RT is_rt_valid: %d, rt_change_status: %d\n", is_rt_valid,
          rt_change_status);
+
   // printf("rt_neigh_ids_prev: [");
   // for (const auto rt_neigh_id_prev : rt_neigh_ids_prev)
   //   printf("%d, ", rt_neigh_id_prev);
@@ -327,7 +332,7 @@ void MedialSphere::print_info() const {
   // printf("]\n");
   print_tan_planes();
   print_tan_cc_lines();
-  print_covered_sf_fids_in_group();
+  // print_covered_sf_fids_in_group();
 }
 
 void MedialSphere::print_covered_sf_fids_in_group() const {
@@ -421,8 +426,7 @@ void MedialSphere::update_tan_cc_lines_from_ss_params(
     bool is_update_p, bool is_update_q) {
   assert(is_update_p || is_update_q);
   if (is_update_p) {
-    TangentConcaveLine new_cc_line(sf_mesh, tan_cc_lines.size(),
-                                   fe.at(ss.get_p_fid()));
+    TangentConcaveLine new_cc_line(sf_mesh, fe.at(ss.get_p_fid()));
     new_cc_line.tan_point = ss.p;
     new_cc_line.normal = ss.p_normal;
     new_cc_line.energy = 0.0;
@@ -431,8 +435,7 @@ void MedialSphere::update_tan_cc_lines_from_ss_params(
   }
 
   if (is_update_q) {
-    TangentConcaveLine new_cc_line(sf_mesh, tan_cc_lines.size(),
-                                   fe.at(ss.get_q_fid()));
+    TangentConcaveLine new_cc_line(sf_mesh, fe.at(ss.get_q_fid()));
     new_cc_line.tan_point = ss.q;
     new_cc_line.normal = ss.q_normal;
     new_cc_line.energy = 0.0;
@@ -488,7 +491,6 @@ bool MedialSphere::new_cc_line_no_dup(const TangentConcaveLine& one_cc_line) {
   }
   if (is_added) {
     tan_cc_lines.push_back(one_cc_line);
-    tan_cc_lines.back().id = tan_cc_lines.size() - 1;
     // !!!! prepare for new iterations
     tan_cc_lines.back().energy = DBL_MAX;
     tan_cc_lines.back().energy_over_sq_radius = DBL_MAX;
@@ -711,7 +713,7 @@ void MedialSphere::update_sphere_covered_sf_fids(const SurfaceMesh& sf_mesh,
                               this->covered_sf_fids_in_group, all_saved_fids);
   }
   for (const auto& tan_cc_line : this->tan_cc_lines) {
-    FOR(i, 2) {  // two adjacent fids
+    for (int i = 0; i < 2; i++) {  // two adjacent fids
       int adj_fid = tan_cc_line.adj_sf_fs_pair[i];
       const auto& covered_fids = tan_cc_line.sf_fids_covered_two[i];
       // should already updated
@@ -927,8 +929,8 @@ bool MedialSphere::is_on_ce() const {
   return false;
 }
 bool MedialSphere::is_on_intf() const {
-  if (type == SphereType::T_N || type == SphereType::T_N_c ||
-      type == SphereType::T_N_JUNC)
+  if (type == SphereType::T_3_MORE || type == SphereType::T_N_c ||
+      type == SphereType::T_4_MORE || type == SphereType::T_2_INF)
     return true;
   return false;
 }
@@ -943,7 +945,25 @@ bool MedialSphere::is_on_sheet() const {
   return true;
 }
 bool MedialSphere::is_on_junction() const {
-  if (type == SphereType::T_N_JUNC) return true;
+  if (type == SphereType::T_4_MORE) return true;
+  // SphereType::T_2_INF is an endpoint, not junction
+  // if (type == SphereType::T_2_INF) return true;
+  return false;
+}
+
+bool MedialSphere::is_on_seam_endpoint() const {
+  if (is_on_corner()) return true;
+  if (is_on_junction()) return true;
+  if (type == SphereType::T_2_INF) return true;
+  return false;
+}
+
+bool MedialSphere::is_on_mstruct_junction() const {
+  if (mstruct_jun_id != -1) return true;
+  return false;
+}
+bool MedialSphere::is_on_inf() const {
+  if (type == SphereType::T_1_INF || type == SphereType::T_2_INF) return true;
   return false;
 }
 
@@ -993,7 +1013,7 @@ bool add_new_sphere_validate(std::vector<MedialSphere>& all_medial_spheres,
       new_sphere.tan_cc_lines.size() + new_sphere.tan_planes.size() > 2)
     new_sphere.type = SphereType::T_N_c;
   else if (new_sphere.tan_planes.size() > 2)
-    new_sphere.type = SphereType::T_N;
+    new_sphere.type = SphereType::T_3_MORE;
   if (is_debug)
     printf("[NewSphereAdd Success] new_sphere added %d, old_id: %d, type %d\n",
            new_sphere.id, old_sphere_id, new_sphere.type);
@@ -1110,6 +1130,32 @@ bool is_two_mspheres_on_same_se(const MedialSphere& msphere1,
   return true;
 }
 
+bool is_two_mspheres_on_same_sl_including_corners(
+    const MedialSphere& msphere1, const MedialSphere& msphere2) {
+  if (!msphere1.is_on_extf() || !msphere2.is_on_extf()) return false;
+  if (msphere1.is_on_se() && msphere2.is_on_se()) {
+    if (msphere1.se_line_id != msphere2.se_line_id) return false;
+    return true;
+  }
+  if (msphere1.is_on_corner() && msphere2.is_on_corner()) {
+    if (has_intersection(msphere1.corner_fes, msphere2.corner_fes)) return true;
+    return false;
+  }
+  if (msphere1.is_on_se() && msphere2.is_on_corner()) {
+    if (msphere2.corner_fls.find(msphere1.se_line_id) !=
+        msphere2.corner_fls.end())
+      return true;
+    return false;
+  }
+  if (msphere1.is_on_corner() && msphere2.is_on_se()) {
+    if (msphere1.corner_fls.find(msphere2.se_line_id) !=
+        msphere1.corner_fls.end())
+      return true;
+    return false;
+  }
+  return false;
+}
+
 // must call before update_power_cells()
 void update_se_tangent_planes(const SurfaceMesh& sf_mesh,
                               const std::vector<FeatureEdge>& feature_edges,
@@ -1130,7 +1176,7 @@ void update_se_tangent_planes(const SurfaceMesh& sf_mesh,
         continue;
       }
       const auto fe = feature_edges.at(msphere.se_edge_id);
-      FOR(i, 2) {
+      for (int i = 0; i < 2; i++) {
         // also update TangentPlane::sf_fids_covered
         msphere.new_tan_plane_no_dup(sf_mesh, fe.adj_normals[i], msphere.center,
                                      fe.adj_sf_fs_pair[i],
@@ -1144,7 +1190,7 @@ void update_se_tangent_planes(const SurfaceMesh& sf_mesh,
       for (const auto& fe_id : msphere.corner_fes) {
         assert(fe_id > -1 && fe_id < feature_edges.size());
         const auto fe = feature_edges.at(fe_id);
-        FOR(i, 2) {
+        for (int i = 0; i < 2; i++) {
           // also update TangentPlane::sf_fids_covered
           msphere.new_tan_plane_no_dup(sf_mesh, fe.adj_normals[i],
                                        msphere.center, fe.adj_sf_fs_pair[i],

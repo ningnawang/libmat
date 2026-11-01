@@ -56,7 +56,10 @@ struct simple_pair {
 
 class Thinning {
  public:
-  typedef std::pair<double, int> face_importance;  // (importance, fid)
+  // (importance, fid)
+  // sorted by importance, from low to high
+  // sorted based on std::pair::first and then std::pair::second
+  typedef std::pair<double, int> face_importance;
 
   static void prune(const std::vector<MedialSphere>& all_medial_spheres,
                     MedialMesh& mat, double imp_thres = -1,

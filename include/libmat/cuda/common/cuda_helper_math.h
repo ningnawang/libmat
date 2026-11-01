@@ -1046,6 +1046,9 @@ inline __host__ __device__ uint dot(uint4 a, uint4 b) {
 inline __host__ __device__ float length(float2 v) { return sqrtf(dot(v, v)); }
 inline __host__ __device__ float length(float3 v) { return sqrtf(dot(v, v)); }
 inline __host__ __device__ float length(float4 v) { return sqrtf(dot(v, v)); }
+inline __host__ __device__ float lengthSquared(const float3 &a) {
+  return dot(a, a);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // normalize

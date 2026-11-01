@@ -9,15 +9,9 @@ void MedialFace::print_medial_face() const {
   //     "dual_segment len: %f\n",
   //     (dual_edge_endpoints[0].first -
   //     dual_edge_endpoints[1].first).length());
-  printf("vertices_: (%d,%d,%d), importance: %f \n", vertices_[0], vertices_[1],
+  printf("vertices_: (%d,%d,%d), importance: %f\n", vertices_[0], vertices_[1],
          vertices_[2], importance);
-  if (!tets_.empty()) {
-    printf("tets_: ");
-    for (const auto tid : tets_) {
-      printf("%d, ", tid);
-    }
-    printf("\n");
-  }
+  if (!tets_.empty()) print_set(tets_, "tets_");
 }
 
 void MedialTet::print_medial_tet() const {
@@ -37,12 +31,14 @@ void MedialTet::print_medial_tet() const {
 MedialMesh::MedialMesh() {
   numSpheres_active = numEdges_active = numFaces_active = numTets_active = 0;
   numEdges_no_dup = numFaces_no_dup = 0;
+  is_two_faces_on_the_same_sheet.clear();
 };
 
 MedialMesh::MedialMesh(std::vector<MedialSphere>& all_medial_spheres) {
   vertices = &all_medial_spheres;
   numSpheres_active = numEdges_active = numFaces_active = numTets_active = 0;
   numEdges_no_dup = numFaces_no_dup = 0;
+  is_two_faces_on_the_same_sheet.clear();
 };
 
 MedialMesh::~MedialMesh() { delete vertices; };
@@ -194,14 +190,14 @@ void MedialMesh::compute_faces_meta_data(int fid) {
   MedialFace& mface = faces.at(fid);
   std::array<Vector3, 3> mface_vs_pos;
   int extf_cnt = 0;
-  FOR(i, 3) {
+  for (int i = 0; i < 3; i++) {
     const auto& ms = vertices->at(mface.vertices_[i]);
     mface_vs_pos[i] = ms.center;
     if (ms.is_on_extf()) extf_cnt++;
   }
   // update boundary
   if (extf_cnt > 1) mface.is_on_boundary = true;
-  FOR(i, 3) {
+  for (int i = 0; i < 3; i++) {
     const auto& me = edges.at(mface.edges_[i]);
     if (me.faces_.size() == 1) mface.is_on_boundary = true;
   }
@@ -276,7 +272,7 @@ bool MedialMesh::Face(const aint3& vset, int& fid) {
 
 void MedialMesh::get_face_neighs(const int fid, std::set<int>& f_neighs) const {
   f_neighs.clear();
-  FOR(leid, 3) {
+  for (int leid = 0; leid < 3; leid++) {
     int eid = faces.at(fid).edges_.at(leid);
     for (int nfid : edges.at(eid).faces_) {
       if (nfid == fid) continue;
@@ -287,7 +283,7 @@ void MedialMesh::get_face_neighs(const int fid, std::set<int>& f_neighs) const {
 
 void MedialMesh::get_edge_neighs(const int eid, std::set<int>& e_neighs) const {
   e_neighs.clear();
-  FOR(lvid, 2) {
+  for (int lvid = 0; lvid < 2; lvid++) {
     int vid = edges.at(eid).vertices_.at(lvid);
     for (int neid : vertices->at(vid).edges_) {
       if (neid == eid) continue;
@@ -300,7 +296,8 @@ int MedialMesh::create_edge(const int vid0, const int vid1, int dcnt,
                             int eid  // if not given then auto-increase
 ) {
   // edge already exists
-  // if (Edge(vid0, vid1, eid)) return eid;
+  if (Edge(vid0, vid1, eid))
+    printf("[MAT] edge (%d,%d) already exists\n", vid0, vid1);
   assert(!Edge(vid0, vid1, eid));  // do not handle case when edge exists
   if (eid == -1) eid = edges.size();
   MedialEdge bep;
@@ -549,6 +546,10 @@ void MedialMesh::compute_common_diff_for_medge(const SurfaceMesh& sf_mesh,
   }
 
   // mark medial edge if on external feature
+  //
+  // if (is_two_mspheres_on_same_sl_including_corners(A, B)) {
+  //   medge.is_extf = true;
+  // }
   if (A.is_on_se() && B.is_on_se() && A.se_line_id == B.se_line_id &&
       (medge.v1_non_common_tan_pls.empty() ||
        medge.v2_non_common_tan_pls.empty())) {
@@ -614,6 +615,7 @@ void MedialMesh::generate_medial_edges(const SurfaceMesh& sf_mesh,
     //   me.first[0], me.first[1], me.second);
     // }
 
+    // TODO: deprecate? seems not used anymore
     if (is_compute_common_diff_sfids) {
       // for computing common/diff tangent planes
       compute_common_diff_for_medge(sf_mesh, me, eid);
@@ -723,7 +725,7 @@ void MedialMesh::check_and_store_unthin_tets_in_mat() {
     for (const auto& v_inter : intersections) {
       tet_vids.clear();
       tet_vids.push_back(v_inter);
-      FOR(i, 3) tet_vids.push_back(face.vertices_[i]);
+      for (int i = 0; i < 3; i++) tet_vids.push_back(face.vertices_[i]);
       std::sort(tet_vids.begin(), tet_vids.end());
       assert(tet_vids.size() == 4);
       possible_tets.insert(
@@ -781,7 +783,7 @@ bool is_add_neigh_eid(const MedialMesh& mmesh, int cur_eid, int n_eid) {
   if (cur_msphere.is_on_sheet() && !nxt_msphere.is_on_sheet()) return false;
 
   printf(
-      "[MedialStruc] n_eid %d (%d,%d) has common_tan_pls %zu, "
+      "[MedialStruct] n_eid %d (%d,%d) has common_tan_pls %zu, "
       "A_non_common_tan_pls: %zu \n",
       n_eid, common_vid, nxt_vid, common_tan_pls.size(),
       A_non_common_tan_pls->size());
@@ -886,7 +888,7 @@ bool is_add_neigh_fid(const MedialMesh& mmesh, int cur_fid, int nxt_fid) {
   auto get_mface_join_covered_fid_groups =
       [&](const int fid, std::vector<std::vector<v2int>>& cur_merged_fid_groups,
           bool is_skip_intf) {
-        FOR(lv, 3) {
+        for (int lv = 0; lv < 3; lv++) {
           const auto& msphere =
               mmesh.vertices->at(mmesh.faces.at(fid).vertices_[lv]);
           if (is_skip_intf && msphere.is_on_intf()) continue;
@@ -993,7 +995,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
     // assert(false);
   };
 
-  printf("[MedialStruc] start tracing medial structure ...\n");
+  printf("[MedialStruct] start tracing medial structure ...\n");
   this->mstructure.clear();
   std::set<int> visited;
   std::queue<int> visit_queue;
@@ -1003,13 +1005,13 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
     const auto& mface = this->faces.at(rand_fid);
     if (mface.is_deleted) continue;
     if (is_debug)
-      printf("[MedialStruc] checking mface %d (%d,%d,%d), visited: %zu\n",
+      printf("[MedialStruct] checking mface %d (%d,%d,%d), visited: %zu\n",
              mface.fid, mface.vertices_[0], mface.vertices_[1],
              mface.vertices_[2], visited.size());
     if (visited.find(mface.fid) != visited.end()) continue;
 
     // create a new MedialStruct
-    MedialStruc mstruct(this->mstructure.size(), MedialType::MUNKOWN);
+    MedialStruct mstruct(this->mstructure.size(), MedialType::MUNKOWN);
     mstruct.type = get_medial_structure(mface.fid);
 
     // expand a new medial structure
@@ -1021,7 +1023,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
       if (visited.find(cur_fid) != visited.end()) continue;
       visited.insert(cur_fid);
       mstruct.m_face_ids.insert(cur_fid);
-      this->faces.at(cur_fid).mstruc_id = mstruct.id;
+      this->faces.at(cur_fid).mstruct_id = mstruct.id;
 
       // check if adding next edge to queue
       for (int eid : this->faces.at(cur_fid).edges_) {
@@ -1032,7 +1034,7 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
           // check cur_fid and nxt_fid
           bool is_add = is_add_neigh_fid(*this, cur_fid, nxt_fid);
           if (is_debug)
-            printf("[MedialStruc] cur_fid %d nxt_fid %d is_add %d\n", cur_fid,
+            printf("[MedialStruct] cur_fid %d nxt_fid %d is_add %d\n", cur_fid,
                    nxt_fid, is_add);
           if (!is_add) continue;
           visit_queue.push(nxt_fid);
@@ -1042,18 +1044,18 @@ void MedialMesh::trace_medial_structure(bool is_debug) {
 
     // print
     if (is_debug) {
-      printf("[MedialStruc] saved mstruc %d type %d, fid: (", mstruct.id,
+      printf("[MedialStruct] saved mstruc %d type %d, fid: (", mstruct.id,
              mstruct.type);
       for (const auto fid : mstruct.m_face_ids) printf("%d ", fid);
       printf("), visited %zu/%zu \n", visited.size(), faces.size());
     }
 
-    // save MedialStruc
+    // save MedialStruct
     this->mstructure.push_back(mstruct);
   }  // for faces
 
   if (is_debug)
-    printf("[MedialStruc] mstruc size %zu, visited: %zu, faces: %zu\n",
+    printf("[MedialStruct] mstruc size %zu, visited: %zu, faces: %zu\n",
            this->mstructure.size(), visited.size(), faces.size());
 }
 
@@ -1278,4 +1280,81 @@ int compute_Euler(const MedialMesh& mat) {
   // printf("Euler Characteristic: %d, euler2: %d. euler3 %d \n", euler, euler2,
   //        euler3);
   return euler;
+}
+
+void MedialMesh::subdivide(int num_iterations) {
+  printf("[MedialMesh] subdividing medial mesh with %d iterations ...\n",
+         num_iterations);
+  std::set<int> deleting_fids;
+  std::map<int, aint3> new_fid_map;
+  for (int iter = 0; iter < num_iterations; ++iter) {
+    deleting_fids.clear();
+    new_fid_map.clear();
+    // step 1: find faces to be deleted
+    for (const auto& face : this->faces) deleting_fids.insert(face.fid);
+
+    // step 2: create new faces
+    for (const auto& fid : deleting_fids) {
+      const auto& face = this->faces.at(fid);
+      int v0 = face.vertices_[0];
+      int v1 = face.vertices_[1];
+      int v2 = face.vertices_[2];
+
+      const auto& msphere0 = vertices->at(v0);
+      const auto& msphere1 = vertices->at(v1);
+      const auto& msphere2 = vertices->at(v2);
+
+      // Compute barycenter
+      Vector3 center =
+          (msphere0.center + msphere1.center + msphere2.center) / 3.0;
+      double avg_radius =
+          (msphere0.radius + msphere1.radius + msphere2.radius) / 3.0;
+
+      MedialSphere new_msphere(this->vertices->size(), center, avg_radius,
+                               SphereType::T_UNK);
+      this->vertices->push_back(new_msphere);
+
+      // new edges
+      this->create_edge(v0, new_msphere.id, 1 /*dcnt*/);
+      this->create_edge(v1, new_msphere.id, 1 /*dcnt*/);
+      this->create_edge(v2, new_msphere.id, 1 /*dcnt*/);
+
+      // new triangle faces
+      int f1 = this->create_face({{v0, v1, new_msphere.id}}, 1 /*dcnt*/);
+      int f2 = this->create_face({{v1, v2, new_msphere.id}}, 1 /*dcnt*/);
+      int f3 = this->create_face({{v2, v0, new_msphere.id}}, 1 /*dcnt*/);
+      new_fid_map[fid] = {{f1, f2, f3}};
+    }
+    // step 3: delete old faces
+    for (const auto& del_fid : deleting_fids) this->delete_face(del_fid);
+    assert(new_fid_map.size() == deleting_fids.size());
+    printf(
+        "[MedialMesh] iter %d, new_mmesh has %zu vertices, %zu edges, "
+        "%zu faces\n",
+        iter, this->vertices->size(), this->edges.size(), this->faces.size());
+
+    // step 4: udpate mstructures
+    for (int i = 0; i < this->mstructure.size(); ++i) {
+      assert(this->mstructure[i].id == i);
+      auto& mstruct = this->mstructure[i];
+      if (mstruct.type != MedialType::SHEET) continue;
+      const auto old_mstruct_fids = mstruct.m_face_ids;  // copy
+      for (const auto& old_fid : old_mstruct_fids) {
+        // assert(new_fid_map.find(fid) != new_fid_map.end());
+        if (new_fid_map.find(old_fid) == new_fid_map.end()) {
+          printf(
+              "[MedialMesh] old_fid %d in mstruct %d not found in "
+              "new_fid_map\n",
+              old_fid, mstruct.id);
+          continue;
+        }
+        mstruct.m_face_ids.erase(old_fid);
+        const auto& new_fids = new_fid_map.at(old_fid);
+        for (const auto& new_fid : new_fids) {
+          mstruct.m_face_ids.insert(new_fid);
+          this->faces.at(new_fid).mstruct_id = mstruct.id;
+        }
+      }
+    }  // for mstructure
+  }  // for iterations
 }

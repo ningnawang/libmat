@@ -182,6 +182,7 @@ bool shrink_sphere(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
   if (is_debug) {
     printf("-------p's p_fid %d, k_ring_fids:\n", p_fid);
     print_set<int>(k_ring_fids);
+    printf("fe_sf_fs_pairs size %d\n", fe_sf_fs_pairs.size());
   }
 
   if (!all_finite(c_next)) return false;
@@ -392,9 +393,10 @@ void shrink_spheres(const SurfaceMesh& sf_mesh, const AABBWrapper& aabb_wrapper,
            all_medial_spheres.size());
 }
 
-void pre_and_init_aabb(GEO::Mesh& sf_mesh, AABBWrapper& aabb_wrapper) {
+void pre_and_init_aabb(GEO::Mesh& sf_mesh, AABBWrapper& aabb_wrapper,
+                       bool is_reorder) {
   GEO::compute_normals(sf_mesh);
-  aabb_wrapper.init_sf_mesh_and_tree(sf_mesh, true /*is_reorder*/);
+  aabb_wrapper.init_sf_mesh_and_tree(sf_mesh, is_reorder);
 }
 
 void pre_and_init_feature_aabb(const TetMesh& tet_mesh,
@@ -458,6 +460,44 @@ void init_and_shrink(const SurfaceMesh& sf_mesh, const TetMesh& tet_mesh,
                  true /*is_del_near_ce*/, true /*is_del_near_se*/, is_debug);
 }
 
+void init_and_shrink_given_pins(const SurfaceMesh& sf_mesh,
+                                const TetMesh& tet_mesh,
+                                std::vector<MedialSphere>& all_medial_spheres,
+                                const std::vector<v2int>& surface_pins,
+                                int itr_limit, bool is_debug) {
+  if (is_debug)
+    printf("[shrink_given] calling init_and_shrink_given_pins with pins %d \n",
+           surface_pins.size());
+  assert(surface_pins.size() > 0);
+  all_medial_spheres.clear();
+  std::map<int, std::set<int>> v2fs;  // vid -> fids
+  for (uint f = 0; f < sf_mesh.facets.nb(); f++) {
+    for (uint lv = 0; lv < 3; ++lv) {
+      uint v = sf_mesh.facets.vertex(f, lv);
+      v2fs[v].insert(f);
+    }
+  }
+
+  // shrink spheres
+  for (const auto& pin_pair : surface_pins) {
+    Vector3 p = pin_pair.first;
+    Vector3 p_normal = get_mesh_facet_normal(sf_mesh, pin_pair.second);
+    MedialSphere msphere(all_medial_spheres.size(), p, p_normal,
+                         pin_pair.second);
+    msphere.itr_cnt = 0;  // init spheres
+    add_new_sphere_validate(all_medial_spheres, msphere);
+    if (is_debug)
+      printf("[shrink_given] choosing pin_fid: %d, p: (%f, %f, %f)\n",
+             pin_pair.second, p[0], p[1], p[2]);
+  }
+  if (is_debug)
+    printf("[shrink_given] init %ld medial spheres \n",
+           all_medial_spheres.size());
+  shrink_spheres(sf_mesh, sf_mesh.aabb_wrapper, sf_mesh.fe_sf_fs_pairs,
+                 tet_mesh.feature_edges, all_medial_spheres, itr_limit,
+                 true /*is_del_near_ce*/, true /*is_del_near_se*/, is_debug);
+}
+
 // will update TetMesh::fl2corner_sphere
 int init_corner_spheres(const int num_itr_global, TetMesh& tet_mesh,
                         std::vector<MedialSphere>& all_medial_spheres) {
@@ -487,6 +527,20 @@ int init_corner_spheres(const int num_itr_global, TetMesh& tet_mesh,
   }
   printf("[init_corner] init %ld corner spheres \n", corners_se_tet.size());
   return corners_se_tet.size();
+}
+
+// will update TetMesh::fl2corner_sphere
+void update_corner_fl2corner(TetMesh& tet_mesh,
+                             std::vector<MedialSphere>& all_medial_spheres) {
+  auto& fl2corner_sphere = tet_mesh.fl2corner_sphere;
+  fl2corner_sphere.clear();
+  for (int i = 0; i < all_medial_spheres.size(); i++) {
+    const MedialSphere& msphere = all_medial_spheres[i];
+    if (!msphere.is_on_corner()) continue;
+    assert(msphere.corner_fls.size() > 0);
+    for (const auto& fl_id : msphere.corner_fls)
+      fl2corner_sphere[fl_id].insert(msphere.id);
+  }
 }
 
 // [no use]
@@ -601,6 +655,7 @@ bool update_new_concave_sphere(const SurfaceMesh& sf_mesh,
                                const Vector3& pin_point, const int fe_id,
                                const int sphere_type, MedialSphere& new_sphere,
                                bool is_debug) {
+  assert(fe_id >= 0 && fe_id < feature_edges.size());
   // apply perturbation
   const FeatureEdge& one_fe = feature_edges.at(fe_id);
   const std::array<Vector3, 2>& adj_normals = one_fe.adj_normals;
@@ -734,9 +789,9 @@ void insert_spheres_for_concave_lines_new(
                                           is_debug);
     }
   }
-  if (is_debug)
-    printf("[CC Sphere] created %ld new spheres for concave lines\n",
-           all_medial_spheres.size() - num_sphere);
+  // if (is_debug)
+  printf("[CC Sphere] created %ld new spheres for concave lines\n",
+         all_medial_spheres.size() - num_sphere);
 
   // // step 2: for concave corners
   // for (const auto& cc_corner : cc_corners) {

@@ -131,7 +131,7 @@ void build_surface_context(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
   build_sf_mesh(VN, F, {}, sf_mesh);
   // the AABB tree reorders sf_mesh again, so it must be built before any
   // facet index (e.g. feature edges) is cached
-  pre_and_init_aabb(sf_mesh, sf_mesh.aabb_wrapper);
+  pre_and_init_aabb(sf_mesh, sf_mesh.aabb_wrapper, true /*is_reorder*/);
   sf_mesh.reload_sf2tet_vs_mapping();
   std::map<int, int> tet2sf_vs;
   std::map<int, std::set<int>> sf_vs2fids;
@@ -139,7 +139,8 @@ void build_surface_context(const Eigen::MatrixXd& V, const Eigen::MatrixXi& F,
                       ctx.tet_mesh->tet_vs2sf_fids);
 
   if (detect_features) {
-    detect_mark_sharp_features(ctx.params, sf_mesh, *ctx.tet_mesh);
+    detect_mark_sharp_features(ctx.params, sf_mesh, *ctx.tet_mesh,
+                               false /*is_sf_file_exist*/);
     pre_and_init_feature_aabb(*ctx.tet_mesh, sf_mesh.aabb_wrapper);
   }
 }

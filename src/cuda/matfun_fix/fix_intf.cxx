@@ -135,7 +135,7 @@ bool check_and_fix_intf_by_adding_new_spheres(
   bool is_good = false;
   Vector3 mid_center = (msphere1->center + msphere2->center) / 2;
   MedialSphere new_sphere(all_medial_spheres.size(), mid_center, INIT_RADIUS,
-                          SphereType::T_N, num_itr_global);
+                          SphereType::T_3_MORE, num_itr_global);
   if (is_debug)
     printf("[FIX_INTF] trying to add new_sphere %d\n", new_sphere.id);
 
@@ -423,7 +423,7 @@ int delete_T2_if_TN(const int num_itr_global, const SurfaceMesh& sf_mesh,
       is_to_update = true;
       if (msphere.pcell.ce_covered_lvids.empty()) {
         // only update when not T_2_c
-        msphere.type = SphereType::T_N;
+        msphere.type = SphereType::T_3_MORE;
       }
     }
     // update T_2_c -> T_N_c

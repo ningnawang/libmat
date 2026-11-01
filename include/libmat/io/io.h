@@ -53,7 +53,8 @@ void load_spheres_from_file(const char* filename,
 
 void save_spheres_file(const std::vector<MedialSphere>& all_medial_spheres,
                        const std::string filename, bool is_save_type,
-                       bool is_load_deleted, int num_rpd_itr = -1);
+                       bool is_load_deleted, int num_rpd_itr = -1,
+                       std::string sub_folder_name = "sph");
 
 void load_v2tets(const std::vector<float>& vertices,
                  const std::vector<int>& indices,
@@ -84,8 +85,8 @@ void get_surface_from_tet(const std::vector<float>& tet_vertices,
 bool save_sf_mesh(const std::string sf_path, const GEO::Mesh& sf_mesh);
 bool save_sf_mesh_with_extf(const std::string sf_path,
                             const GEO::Mesh& sf_mesh);
-bool save_sf_mesh_scaled(const std::string sf_path_scaled,
-                         const GEO::Mesh& sf_mesh, const Parameter& param);
+bool save_sf_mesh_scaled_01(const std::string sf_path_scaled,
+                            const GEO::Mesh& sf_mesh, const Parameter& param);
 bool save_sf_mesh_geogram(const std::string sf_path, GEO::Mesh& sf_mesh);
 
 bool is_slice_by_plane(const Vector3& bary, const Parameter& params);
@@ -111,7 +112,6 @@ void get_mat_clean(const MedialMesh& mat, std::vector<Vector4>& vertices,
                    std::vector<std::array<int, 3>>& faces);
 void export_ma_clean(const std::string& maname, const MedialMesh& mat,
                      bool is_use_given_name = false);
-void write_ma_ply(const std::string& maname, const MedialMesh& mat,
-                  bool is_use_given_name = false);
+void write_ma_ply(const std::string& maname, const MedialMesh& mat);
 
 #endif  // __IO_H__

@@ -292,7 +292,7 @@ void load_tet_adj_info(const std::map<int, std::set<int>>& v2tets,
   std::map<std::array<int, 2>, int> f_2tids_visited;
   int fid = n_sf_facets;
   for (uint t = 0; t < nb_v; t++) {
-    FOR(i, 4) {
+    for (int i = 0; i < 4; i++) {
       // matching halplanes inited in ConvexCell::ConvexCell()
       f_vids = {tet_indices[t * 4 + tet_faces_lvid_host[i][0]],
                 tet_indices[t * 4 + tet_faces_lvid_host[i][1]],
@@ -399,11 +399,12 @@ void load_spheres_from_file(const char* filename,
   int dim, n_site;
   int type, is_deleted;
   file >> dim >> n_site;
-  assert(dim == 3 || dim == 4);
   std::cout << "n_site: " << n_site << ", dim: " << dim << std::endl;
+  assert(dim == 3 || dim == 4);
 
   all_medial_spheres.clear();
   for (int i = 0; i < n_site; i++) {
+    bool is_store_msphere = true;
     MedialSphere msphere(all_medial_spheres.size(), Vector3(0, 0, 0),
                          INIT_RADIUS, SphereType::T_UNK);
     file >> msphere.center[0] >> msphere.center[1] >> msphere.center[2];
@@ -413,29 +414,34 @@ void load_spheres_from_file(const char* filename,
       msphere.radius = 1;
     if (is_load_type) {
       file >> type;
-      if (type != SphereType::T_UNK)
-        msphere.type = SphereType(type);  // else as T2 sphere
+      msphere.type = SphereType(type);
+      // // do not load
+      // if (msphere.type == SphereType::T_UNK) is_store_msphere = false;
     }
     if (is_load_deleted) {
       file >> is_deleted;
       msphere.is_deleted = false;
       if (is_deleted) msphere.is_deleted = true;
     }
-    all_medial_spheres.push_back(msphere);
-    // printf("site %d has sphere: (%lf %lf %lf %lf), type: %d\n", i,
-    //        msphere.center[0], msphere.center[1], msphere.center[2],
-    //        msphere.radius, msphere.type);
+    if (is_store_msphere) {
+      all_medial_spheres.push_back(msphere);
+    }
   }
   file.close();
 }
 
 void save_spheres_file(const std::vector<MedialSphere>& all_medial_spheres,
                        const std::string filename, bool is_save_type,
-                       bool is_load_deleted, int num_rpd_itr) {
+                       bool is_load_deleted, int num_rpd_itr,
+                       std::string sub_folder_name) {
+  // std::string folder_name = "../out/" + filename + "/sph/";
+  std::string folder_name = "../out/" + filename + "/" + sub_folder_name + "/";
+  create_dir(folder_name);
   std::string sphere_path =
-      "../out/sph/sph_" + filename + "itr" +
+      folder_name + "sph_" + filename + "itr" +
       (num_rpd_itr == -1 ? get_timestamp() : std::to_string(num_rpd_itr)) +
       ".sph";
+
   int n_site = all_medial_spheres.size();
   std::fstream file;
   file.open(sphere_path, std::ios_base::out);
@@ -716,7 +722,7 @@ void get_surface_from_tet(const std::vector<float>& tet_vertices,
 
 bool save_sf_mesh(const std::string sf_path, const GEO::Mesh& sf_mesh) {
   bool ok = GEO::mesh_save(sf_mesh, sf_path);
-  std::cout << "saving sf_mesh ok: " << ok << std::endl;
+  std::cout << "saving sf_mesh at " << sf_path << ", ok: " << ok << std::endl;
   return ok;
 }
 
@@ -760,8 +766,8 @@ bool save_sf_mesh_with_extf(const std::string sf_path,
   return true;
 }
 
-bool save_sf_mesh_scaled(const std::string sf_path_scaled,
-                         const GEO::Mesh& sf_mesh, const Parameter& params) {
+bool save_sf_mesh_scaled_01(const std::string sf_path_scaled,
+                            const GEO::Mesh& sf_mesh, const Parameter& params) {
   // load vertices from sf_mesh
   std::vector<std::array<float, 3>> vertices(sf_mesh.vertices.nb());
   for (uint v = 0; v < sf_mesh.vertices.nb(); ++v) {
@@ -863,7 +869,7 @@ void renormalize_matfp(const Parameter& params, MedialMesh& mmesh_matfp) {
 /* # .ma format
  * numVertices numEdges numFaces
  * v x y z r flag_type flag_delete
- * e v1 v2 flag_delete
+ * e v1 v2 flag_type flag_delete
  * f v1 v2 v3
  */
 void load_matfp(const std::string& ma_path,
@@ -902,15 +908,17 @@ void load_matfp(const std::string& ma_path,
   mat.vertices = &all_medial_spheres;
   int e1, e2;
   for (int e = 0; e < num_es; e++) {
-    ma_file >> ch >> e1 >> e2 >> is_deleted;
+    ma_file >> ch >> e1 >> e2 >> type >> is_deleted;
     if (is_deleted) continue;
     // printf("ma e %d has (%d,%d)\n", e, e1, e2);
-    mat.create_edge(e1, e2);
+    int eid = mat.create_edge(e1, e2);
+    if (type == 1) mat.edges.at(eid).is_intf = true;
+    if (type == 2) mat.edges.at(eid).is_extf = true;
   }
 
   int f1, f2, f3;
   for (int f = 0; f < num_fs; f++) {
-    ma_file >> ch >> f1 >> f2 >> f3;
+    ma_file >> ch >> f1 >> f2 >> f3 >> is_deleted;
     // printf("ma f %d has (%d,%d,%d)\n", f, f1, f2, f3);
     aint3 fvs = {{f1, f2, f3}};
     mat.create_face(fvs);
@@ -983,8 +991,10 @@ void load_mat_clean(const std::string& ma_path,
  * f v1 v2 v3 flag_delete
  */
 void export_ma(const std::string& maname, const MedialMesh& mat) {
+  std::string folder_name = "../out/" + maname + "/mat/";
+  create_dir(folder_name);
   std::string ma_name_full =
-      "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+      folder_name + "mat_full_" + maname + "_" + get_timestamp() + ".ma";
 
   std::ofstream fout(ma_name_full);
   fout << mat.vertices->size() << " " << mat.numEdges_no_dup << " "
@@ -1022,6 +1032,7 @@ void export_ma(const std::string& maname, const MedialMesh& mat) {
     } else {
       fout << " " << 0;
     }
+    fout << " " << 0;  // never delete
     fout << std::endl;
   }
 
@@ -1031,6 +1042,7 @@ void export_ma(const std::string& maname, const MedialMesh& mat) {
     if (mat_f.is_deleted) continue;
     fout << "f";
     for (uint v = 0; v < 3; v++) fout << " " << mat_f.vertices_[v];
+    fout << " " << 0;  // never delete
     fout << std::endl;
   }
   fout.close();
@@ -1053,8 +1065,12 @@ void export_ma_given(const std::string& maname,
                      const std::vector<std::array<int, 3>>& mat_faces,
                      bool is_use_given_name) {
   std::string ma_name_full = maname;
-  if (!is_use_given_name)
-    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+  if (!is_use_given_name) {
+    std::string folder_name = "../out/" + maname + "/mat/";
+    create_dir(folder_name);
+    ma_name_full =
+        folder_name + "mat_" + maname + "_" + get_timestamp() + ".ma";
+  }
 
   std::ofstream fout;
   fout.open(ma_name_full, std::ofstream::out | std::ofstream::app);  //   append
@@ -1172,8 +1188,12 @@ void get_mat_clean(const MedialMesh& mat, std::vector<Vector4>& vertices,
 void export_ma_clean(const std::string& maname, const MedialMesh& mat,
                      bool is_use_given_name) {
   std::string ma_name_full = maname;
-  if (!is_use_given_name)
-    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ma";
+  if (!is_use_given_name) {
+    std::string folder_name = "../out/" + maname + "/mat/";
+    create_dir(folder_name);
+    ma_name_full =
+        folder_name + "mat_" + maname + "_" + get_timestamp() + ".ma";
+  }
   printf("start saving mat .m file: %s \n", ma_name_full.c_str());
 
   std::vector<Vector4> vertices;
@@ -1185,13 +1205,18 @@ void export_ma_clean(const std::string& maname, const MedialMesh& mat,
   export_ma_given(maname, vertices, edges, faces, true);
 }
 
-// no use
+// [no use]
 // some vertices/faces are deleted
 void write_ma_ply(const std::string& maname, const MedialMesh& mat,
                   bool is_use_given_name) {
   std::string ma_name_full = maname;
-  if (!is_use_given_name)
-    ma_name_full = "../out/mat/mat_" + maname + "_" + get_timestamp() + ".ply";
+  if (!is_use_given_name) {
+    std::string folder_name = "../out/" + maname + "/mat/";
+    create_dir(folder_name);
+    ma_name_full =
+        folder_name + "mat_" + maname + "_" + get_timestamp() + ".ply";
+  }
+
   printf("start saving mat .ply file: %s \n", ma_name_full.c_str());
 
   std::map<int, int> map_vertices;  // mat vertex tag to new ply

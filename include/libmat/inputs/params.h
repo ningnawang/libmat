@@ -22,7 +22,13 @@ struct Parameter {
   // will be updated by function get_RT_vertex_neighbors()
   int site_k = 90;
 
-  // For ideal mface area = mface_rel_len * bbox_diag_l
+  // For surface poisson disk sampling = sf_face_len * bbox_diag_l
+  float sf_face_len = 1. / 20.;
+
+  // For remove_close_medial_spheres()
+  float clean_sphere_thres_rel = 1. / 300.f;
+
+  // For ideal mface len = mface_rel_len * bbox_diag_l
   float mface_rel_len = 1. / 30.;
 
   // For adding spheres on feature edges if too long
@@ -50,9 +56,20 @@ struct Parameter {
   double cc_len_eps_rel = 1. / 70.;
   double cc_normal_eps = 20;  // [no use]
 
-  // Threshold for detecting sharp/concave edges and corners
-  double thres_concave = 0.2;  // smaller more sensative
-  double thres_convex = 40.;   // smaller more sensative
+  // Threshold for detecting sharp/concave edges and corners [0,180]
+  // convex, bigger angle more convex, so smaller threshold more sensative
+  double thres_convex = 55.;
+  // concave, bigger angle more concave, so smaller threshold more sensative
+  double thres_concave = 60.;
+
+  // for checking INTF spheres
+  double SphereType_T1_INF_VARIANCE = 0.25;
+  double SphereType_T2_INF_VARIANCE = 0.5;
+
+  bool is_run_cad = true;
+  bool is_run_organic = false;
+  bool is_run_weak = false;
+  bool is_sample_rpd = true;
 };
 
 //----------------------------------------------------------------------------

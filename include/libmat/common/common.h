@@ -20,8 +20,6 @@
 #define RANDOM_INT(l, h) \
   (l + std::rand() % (h - l))  // random int in [l, h)
                                // (https://stackoverflow.com/a/7560146)
-#undef FOR  // geogram defines it too (with index_t)
-#define FOR(I, UPPERBND) for (int I = 0; I < int(UPPERBND); ++I)
 
 typedef double Scalar;        // use for calculating Euler
 typedef unsigned char uchar;  // local indices with special values
@@ -32,6 +30,7 @@ typedef std::array<int, 4> aint4;
 typedef std::array<int, 5> aint5;
 typedef std::array<double, 3> adouble2;
 typedef std::array<double, 3> adouble3;  // for gui
+typedef std::array<float, 3> afloat3;
 
 // === Math utilities
 constexpr double PI = 3.14159265358979323846;

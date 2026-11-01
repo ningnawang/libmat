@@ -11,7 +11,7 @@ args = parse_args(__doc__)
 
 V, F = libmat.read_surface_mesh(data("mesh_69058.obj"))
 E, E_type, E_line, corners, corner_type = libmat.detect_sharp_features(
-    V, F, thres_concave=0.2, thres_convex=40.0)
+    V, F, thres_concave=60.0, thres_convex=55.0)
 print(f"{np.sum(E_type == 1)} sharp edges, {np.sum(E_type == 2)} concave edges")
 print(f"{len(np.unique(E_line))} feature lines")
 print(f"{np.sum(corner_type == 1)} sharp corners, "

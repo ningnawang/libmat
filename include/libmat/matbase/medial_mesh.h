@@ -12,10 +12,16 @@ enum MedialType {
   JUNCTION = 3
 };
 
-class MedialStruc {
+class MedialStruct {
  public:
-  MedialStruc(int _id, MedialType _t) : id(_id), type(_t){};
-  ~MedialStruc(){};
+  MedialStruct(int _id, MedialType _t) : id(_id), type(_t) {};
+  ~MedialStruct() {};
+  inline void print_info() {
+    printf("----- MedialStruct, id %d, type %d \n", id, type);
+    if (!m_face_ids.empty()) print_set(m_face_ids, "m_face_ids");
+    if (!m_edge_ids.empty()) print_set(m_edge_ids, "m_edge_ids");
+    if (!m_sphere_ids.empty()) print_set(m_sphere_ids, "m_sphere_ids");
+  }
 
  public:
   int id;
@@ -25,6 +31,8 @@ class MedialStruc {
   std::set<int> m_sphere_ids;  // MedialSphere::id
 };
 
+enum MedialEdgeType { INTF = 1, EXTF = 2, ESHEET = 0, EOTHER = -1 };
+
 class MedialEdge {
  public:
   int eid;
@@ -32,12 +40,15 @@ class MedialEdge {
   aint2 vertices_;
   std::set<int> faces_;  // triangle list
   bool is_deleted = false;
+  ///////////////////
   bool is_intf = false;
   bool is_extf = false;
   bool is_on_same_sheet = false;  // including is_intf
+  // TODO: replace all above
+  MedialEdgeType type = MedialEdgeType::EOTHER;
 
   // for medial structure
-  int mstruc_id = -1;  // MedialStruc::id
+  int mstruct_id = -1;  // MedialStruct::id
   std::vector<TangentPlane> common_tan_pls;
   // order may NOT matches MedialEdge::vertices_
   // we want to make sure v1 is on internal feature as possible
@@ -67,8 +78,11 @@ class MedialFace {
   std::set<int> tets_;  // neighboring tetrahedrons
   bool is_deleted = false;
 
+  // for type
+  bool is_on_same_sheet = false;
+
   // for medial structure
-  int mstruc_id = -1;  // MedialStruc::id
+  int mstruct_id = -1;  // MedialStruct::id
 
   void print_medial_face() const;
 
@@ -145,7 +159,18 @@ class MedialMesh {
   std::vector<MedialEdge> edges;
   std::vector<MedialFace> faces;
   std::vector<MedialTet> tets;  // the one to remove!!!
-  std::vector<MedialStruc> mstructure;
+  std::vector<MedialStruct> mstructure;
+
+  // (mfid_min, mfid_max) -> int
+  // -1: not visited
+  // 0: not on the same sheet
+  // 1: on the same sheet
+  //
+  // stored as a upper triangular matrix with size n,
+  // given two sorted MedialFace:id indices (mfid_min, mfid_max),
+  // we can get the index for the matrix by calling get_upper_tri_matrix_idx()
+  // updated by RPD3D_Wrapper::cluster_mface_adj_type()
+  std::vector<int> is_two_faces_on_the_same_sheet;
 
   int numSpheres_active;
   int numEdges_active;
@@ -194,6 +219,9 @@ class MedialMesh {
   void generate_medial_edges(const SurfaceMesh& sf_mesh,
                              bool is_update_tan_pls);
   void generate_medial_tets();
+
+  // to subdivide medial faces by adding new center points
+  void subdivide(int num_iterations);
 
   // void sort_dual_edges_all(const GEO::Mesh& sf_mesh);
   // void sort_dual_edges(const GEO::Mesh& sf_mesh, MedialFace& mface);
