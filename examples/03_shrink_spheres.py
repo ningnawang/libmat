@@ -8,7 +8,7 @@ import libmat
 from _common import data, output, parse_args, polyscope_or_none
 
 args = parse_args(__doc__, num_spheres=dict(type=int, default=2000),
-                  mesh=dict(default=data("lblock.obj")))
+                  mesh=dict(default=data("mesh_69058.obj")))
 
 V, F = libmat.read_surface_mesh(args.mesh)
 C, R, types = libmat.shrink_spheres(V, F, num_spheres=args.num_spheres,

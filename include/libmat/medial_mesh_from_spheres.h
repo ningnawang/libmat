@@ -4,8 +4,8 @@
 namespace libmat {
 
 // [CUDA] Compute the medial mesh connecting a set of medial spheres, as the
-// dual of their power diagram restricted to the input tet mesh (RPD),
-// following MATFP/MATTopo: two spheres are connected by an edge if their
+// dual of their power diagram restricted to the input tet mesh (RPD): two
+// spheres are connected by an edge if their
 // restricted power cells share a face, and three spheres span a medial face
 // if their restricted power cells share an edge.
 //

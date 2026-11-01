@@ -9,7 +9,7 @@ from _common import data, parse_args, polyscope_or_none
 
 args = parse_args(__doc__)
 
-V, F = libmat.read_surface_mesh(data("lblock.obj"))
+V, F = libmat.read_surface_mesh(data("mesh_69058.obj"))
 C, R, _ = libmat.shrink_spheres(V, F, num_spheres=1000)
 T, E, valid = libmat.regular_triangulation(C, R)
 print(f"{len(C)} spheres, {(~valid).sum()} hidden")

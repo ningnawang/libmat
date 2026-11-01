@@ -8,7 +8,7 @@ All functions take and return numpy arrays, and are available directly from the 
 
 ```python
 import libmat
-V, F = libmat.read_surface_mesh("data/lblock.obj")
+V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
 C, R, types = libmat.shrink_spheres(V, F)
 ```
 
@@ -27,7 +27,7 @@ Every function has a C++ counterpart with the same name in namespace `libmat`, d
 
 | function | description |
 | --- | --- |
-| [`normalize_vertices`](normalize_vertices.md) | Normalize into [0, 1000]^3 like MATFP/MATTopo |
+| [`normalize_vertices`](normalize_vertices.md) | Normalize into [0, 1000]^3, the internal frame |
 | [`extract_surface`](extract_surface.md) | Boundary surface of a tet mesh |
 | [`detect_sharp_features`](detect_sharp_features.md) | Sharp / concave edges, feature lines and corners |
 

@@ -4,7 +4,8 @@
 namespace libmat {
 
 struct ShrinkSpheresOptions {
-  // number of random surface samples, one sphere is shrunk per sample
+  // number of random surface samples, one sphere is shrunk per sample; at
+  // most one sample per triangle, so at most #F spheres
   int num_spheres = 1000;
   // detect sharp/concave features first and let spheres stop at them
   bool preserve_features = true;
@@ -19,8 +20,8 @@ struct ShrinkSpheresOptions {
 
 // Sample medial spheres with the ball-shrinking algorithm [Ma et al. 2012]:
 // a sphere touching the surface at a random sample p (with inward normal n)
-// is shrunk until it is maximal inside the shape. Sphere types follow the
-// MATFP/MATTopo convention (see SphereType in libmat/matbase/medial_sphere.h).
+// is shrunk until it is maximal inside the shape. Sphere types are the
+// values of SphereType in libmat/matbase/medial_sphere.h.
 //
 // Inputs:
 //   V  #V by 3 vertex positions of a closed triangle mesh

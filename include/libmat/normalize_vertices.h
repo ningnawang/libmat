@@ -4,8 +4,8 @@
 namespace libmat {
 
 // Map vertices into the box [0, scale]^3 (uniform scaling, the longest side
-// of the bounding box becomes `scale`). This is the normalization used by
-// MATFP/MATTopo (scale = 1000):
+// of the bounding box becomes `scale`). LibMAT works internally with
+// scale = 1000:
 //
 //   VN = (V - offset) * factor
 //

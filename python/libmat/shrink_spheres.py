@@ -1,8 +1,8 @@
 from ._libmat import shrink_spheres as _shrink_spheres
 from ._utils import float_matrix, int_matrix
 
-#: Names of the sphere types returned by `shrink_spheres` (MATFP/MATTopo
-#: `SphereType`).
+#: Names of the sphere types returned by `shrink_spheres` (`SphereType` in
+#: libmat/matbase/medial_sphere.h).
 SPHERE_TYPES = {
     -3: "T_1_N (corner)",
     -2: "T_1_2 (sharp edge)",
@@ -27,7 +27,7 @@ def shrink_spheres(V, F, num_spheres=1000, preserve_features=True,
     surface at a second point and becomes maximal inside the shape
     [Ma et al. 2012]. Its center lies (approximately) on the medial axis.
     With `preserve_features=True`, sharp and concave features are detected
-    first and spheres stop at concave edges, as in MATFP/MATTopo.
+    first and spheres stop at concave edges.
 
     Parameters
     ----------
@@ -66,8 +66,9 @@ def shrink_spheres(V, F, num_spheres=1000, preserve_features=True,
 
     Notes
     -----
-    Internally the mesh is normalized to `[0, 1000]^3`, the scale MATFP and
-    MATTopo were tuned for; outputs are mapped back to the input coordinates.
+    Internally the mesh is normalized to `[0, 1000]^3`, the scale the default
+    parameters are tuned for; outputs are mapped back to the input
+    coordinates.
 
     C++: `void libmat::shrink_spheres(V, F, options, C, R, types)` in
     `<libmat/shrink_spheres.h>`.
@@ -76,7 +77,7 @@ def shrink_spheres(V, F, num_spheres=1000, preserve_features=True,
     --------
     ```python
     import libmat
-    V, F = libmat.read_surface_mesh("data/lblock.obj")
+    V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
     C, R, types = libmat.shrink_spheres(V, F, num_spheres=1000)
     print(C.shape, R.min(), R.max())
     ```

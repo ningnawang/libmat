@@ -3,7 +3,7 @@
 Every function lives in its own module and is re-exported here, e.g.::
 
     import libmat
-    V, F = libmat.read_surface_mesh("data/lblock.obj")
+    V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
     C, R, types = libmat.shrink_spheres(V, F, num_spheres=500)
 """
 from ._libmat import __version__, has_cuda, set_verbose, get_verbose

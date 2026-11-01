@@ -4,7 +4,7 @@
 
 namespace libmat {
 
-// Read a medial mesh from a .ma file (the format of MATFP, MATTopo, Q-MAT):
+// Read a medial mesh from a .ma file:
 //
 //   #V #E #F
 //   v x y z r      (#V lines)

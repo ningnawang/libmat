@@ -33,7 +33,7 @@ def write_ma(path, V, R, E=None, F=None):
     --------
     ```python
     import libmat
-    V, F = libmat.read_surface_mesh("data/lblock.obj")
+    V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
     C, R, _ = libmat.shrink_spheres(V, F, num_spheres=500)
     libmat.write_ma("spheres.ma", C, R)   # spheres only, no edges/faces
     ```

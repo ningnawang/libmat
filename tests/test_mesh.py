@@ -41,3 +41,13 @@ def test_detect_sharp_features_lblock(data_path):
     assert np.allclose(V[concave.ravel()][:, :2], 1.0)
     # sharp and concave lines have different ids
     assert not set(E_line[E_type == 1]) & set(E_line[E_type == 2])
+
+
+def test_detect_sharp_features_mesh_69058(data_path):
+    # a real input of MATFP: a closed CAD part with 12 sharp lines, 8 corners
+    V, F = libmat.read_surface_mesh(data_path("mesh_69058.obj"))
+    assert V.shape == (66, 3) and F.shape == (128, 3)
+    E, E_type, E_line, corners, corner_type = libmat.detect_sharp_features(V, F)
+    assert len(E) == 40 and np.all(E_type == 1)
+    assert len(np.unique(E_line)) == 12
+    assert len(corners) == 8

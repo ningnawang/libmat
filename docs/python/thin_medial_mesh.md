@@ -12,7 +12,7 @@ title: thin_medial_mesh
 ```cpp
 #include <libmat/thin_medial_mesh.h>
 
-// Thinning of a medial mesh as in MATTopo: medial tetrahedra (four vertices
+// Topology-preserving thinning of a medial mesh: medial tetrahedra (four vertices
 // whose four triangles are all medial faces) are removed by collapsing
 // tet-face simple pairs in order of increasing face importance, then faces of
 // those tets with importance below `threshold` are pruned through their free
@@ -23,8 +23,8 @@ title: thin_medial_mesh
 //   R           #V sphere radii
 //   E           #E by 2 medial edges
 //   F           #F by 3 medial faces
-//   importance  #F importance of each face (MATTopo uses the length of the
-//               dual power-diagram edge over the average sphere diameter)
+//   importance  #F importance of each face (e.g. the length of the dual
+//               power-diagram edge over the average sphere diameter)
 //   threshold   faces with importance >= threshold are kept
 // Outputs:
 //   E_out  #E' by 2 remaining edges (indices into C)

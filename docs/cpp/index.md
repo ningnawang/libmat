@@ -34,7 +34,7 @@ Eigen::MatrixXd V, C;
 Eigen::MatrixXi F;
 Eigen::VectorXd R;
 Eigen::VectorXi types;
-libmat::read_surface_mesh("data/lblock.obj", V, F);
+libmat::read_surface_mesh("data/mesh_69058.obj", V, F);
 
 libmat::ShrinkSpheresOptions options;
 options.num_spheres = 2000;
@@ -46,8 +46,8 @@ function is shown at the bottom of its page in the Python API.
 
 ## Low-level modules
 
-The functional API is a thin layer over the modules of MATFP/MATTopo, which
-remain available for writing full pipelines:
+The functional API is a thin layer over lower-level modules, which remain
+available for writing full pipelines:
 
 ```text
 include/libmat/
@@ -64,7 +64,7 @@ include/libmat/
     ├── common/         CUDA helpers
     ├── rpd3d/          restricted power diagram on the GPU (RPD3D_GPU), kNN
     ├── dist2mat/       GPU distance to medial primitives
-    ├── matfun_fix/     topology / feature / geometry fixes of MATTopo
+    ├── matfun_fix/     topology / feature / geometry fixes
     └── io/             RPD export (Houdini)
 src/                    implementations, same layout
 ```

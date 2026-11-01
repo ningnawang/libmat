@@ -33,8 +33,8 @@ def read_surface_mesh(path):
     --------
     ```python
     import libmat
-    V, F = libmat.read_surface_mesh("data/lblock.obj")
-    print(V.shape, F.shape)   # (1402, 3) (2800, 3)
+    V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
+    print(V.shape, F.shape)   # (66, 3) (128, 3)
     ```
     """
     return _read_surface_mesh(str(path))

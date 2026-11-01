@@ -10,10 +10,10 @@ def normalize_vertices(V, scale=1000.0):
 
         VN = (V - offset) * factor
 
-    This is the normalization of MATFP/MATTopo (`scale = 1000`). The
-    functions of libmat normalize their inputs internally and return results
-    in the input coordinates, so you only need this function to compare with
-    results produced by those pipelines (e.g. `.ma` files).
+    LibMAT works internally in `[0, 1000]^3` (`scale = 1000`). Its functions
+    normalize their inputs and return results in the input coordinates, so
+    you only need this function to compare with data stored in that
+    normalized frame (e.g. `.ma` files).
 
     Parameters
     ----------

@@ -8,8 +8,8 @@ def detect_sharp_features(V, F, thres_concave=0.2, thres_convex=40.0):
     An edge is *sharp* (convex) if the dihedral angle between its two faces
     deviates from flat by more than `thres_convex` degrees, and *concave* if
     the surface folds inwards along it by more than `thres_concave`. Feature
-    edges are grouped into feature lines, split at corners. These features
-    are what MATFP/MATTopo preserve in the medial axis.
+    edges are grouped into feature lines, split at corners. These are the
+    features that a feature-preserving medial axis has to keep.
 
     Parameters
     ----------
@@ -50,7 +50,7 @@ def detect_sharp_features(V, F, thres_concave=0.2, thres_convex=40.0):
     ```python
     import numpy as np
     import libmat
-    V, F = libmat.read_surface_mesh("data/lblock.obj")
+    V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
     E, E_type, E_line, corners, corner_type = libmat.detect_sharp_features(V, F)
     print("sharp edges:  ", np.sum(E_type == 1))
     print("concave edges:", np.sum(E_type == 2))

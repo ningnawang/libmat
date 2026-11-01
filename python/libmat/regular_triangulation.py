@@ -28,8 +28,9 @@ def regular_triangulation(C, R):
 
     Notes
     -----
-    MATFP/MATTopo use this triangulation to find the neighbors of each
-    medial sphere before clipping its power cell against the input shape.
+    The restricted power diagram uses this triangulation to find the
+    neighbors of each medial sphere before clipping its power cell against
+    the input shape.
 
     C++: `void libmat::regular_triangulation(C, R, T, E, valid)` in
     `<libmat/regular_triangulation.h>`.
@@ -38,7 +39,7 @@ def regular_triangulation(C, R):
     --------
     ```python
     import libmat
-    V, F = libmat.read_surface_mesh("data/lblock.obj")
+    V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
     C, R, _ = libmat.shrink_spheres(V, F, num_spheres=1000)
     T, E, valid = libmat.regular_triangulation(C, R)
     print(len(E), "neighboring pairs,", (~valid).sum(), "hidden spheres")

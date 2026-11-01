@@ -6,16 +6,13 @@ tetrahedral mesh.
 
 📖 **Documentation: https://ningnawang.github.io/libmat** (built from `docs/`)
 
-Starter code is from the paper "[MATFP: Computing Medial Axis Transform with Feature Preservation via Restricted Power Diagram](https://github.com/ningnawang/MATFP)".
-The extended work "[MATTopo: Topology-preserving Medial Axis Transform with Restricted Power Diagram](https://github.com/ningnawang/mattopo)" relies on this repo using tag **v0.0.1**.
-
 ```python
 import numpy as np
 import libmat
 
-V, F = libmat.read_surface_mesh("data/lblock.obj")
+V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
 E, E_type, E_line, corners, corner_type = libmat.detect_sharp_features(V, F)
-C, R, types = libmat.shrink_spheres(V, F, num_spheres=2000)   # medial spheres
+C, R, types = libmat.shrink_spheres(V, F)    # medial spheres, one per triangle
 T, E_rt, valid = libmat.regular_triangulation(C, R)            # power diagram dual
 
 MV, MR, ME, MF = libmat.read_ma("data/bug.ma")                 # a medial mesh
@@ -61,7 +58,7 @@ Every function exists in Python (`libmat.<name>`, numpy in / out) and in C++
 | --- | --- | --- |
 | `read_tet_mesh`, `read_surface_mesh` | read meshes | CPU |
 | `read_ma`, `write_ma` | read / write medial meshes (`.ma`) | CPU |
-| `normalize_vertices` | MATFP/MATTopo normalization to `[0, 1000]^3` | CPU |
+| `normalize_vertices` | normalization to `[0, 1000]^3` (the internal frame) | CPU |
 | `extract_surface` | boundary surface of a tet mesh | CPU |
 | `detect_sharp_features` | sharp / concave edges, feature lines, corners | CPU |
 | `shrink_spheres` | medial spheres (ball-shrinking) | CPU |
@@ -76,7 +73,7 @@ Every function exists in Python (`libmat.<name>`, numpy in / out) and in C++
 ```text
 include/libmat/      public headers
   <function>.h       functional API (one function per header)
-  common/ inputs/ matbase/ matfun/ io/ rpd3d/     CPU modules of MATFP/MATTopo
+  common/ inputs/ matbase/ matfun/ io/ rpd3d/     lower-level CPU modules
   cuda/              CUDA modules: rpd3d (GPU RPD), dist2mat, matfun_fix, io
 src/                 implementations (src/api: functional API, src/cuda: CUDA)
 python/              python package (python/libmat) and pybind11 bindings
@@ -93,7 +90,7 @@ the documentation locally with `pip install ".[docs]" && mkdocs serve`.
 
 ## Credit
 
-If you use LibMAT in your research, please cite:
+If LibMAT is helpful in your research, please cite us!
 
 ```bibtex
 @misc{libmat,
@@ -104,26 +101,33 @@ If you use LibMAT in your research, please cite:
 }
 ```
 
-and the papers whose methods you use:
+LibMAT is built upon the following papers:
 
-- **MATFP**: Ningna Wang, Bin Wang, Wenping Wang, Xiaohu Guo.
-  *Computing Medial Axis Transform with Feature Preservation via Restricted
-  Power Diagram*. ACM Transactions on Graphics (SIGGRAPH Asia 2022).
-  [Project](https://ningnawang.github.io/projects/2022_matfp/) ·
-  [arXiv](https://arxiv.org/abs/2210.13676) ·
-  [Code](https://github.com/ningnawang/MATFP)
-- **MATTopo**: Ningna Wang, Hui Huang, Shibo Song, Bin Wang, Wenping Wang,
-  Xiaohu Guo. *MATTopo: Topology-preserving Medial Axis Transform with
-  Restricted Power Diagram*. ACM Transactions on Graphics (SIGGRAPH Asia 2024).
+- Ningna Wang, Rui Xu, Yibo Yin, Zichun Zhong, Taku Komura, Wenping Wang,
+  Xiaohu Guo. *MATStruct: High-quality Medial Mesh Computation via
+  Structure-aware Variational Optimization*. SIGGRAPH Asia 2025 Conference
+  Papers.
+  [Project](https://ningnawang.github.io/projects/2025_matstruct/) ·
+  [arXiv](https://arxiv.org/abs/2510.10751) ·
+  [Code](https://github.com/ningnawang/MATStruct)
+- Ningna Wang, Hui Huang, Shibo Song, Bin Wang, Wenping Wang, Xiaohu Guo.
+  *MATTopo: Topology-preserving Medial Axis Transform with Restricted Power
+  Diagram*. ACM Transactions on Graphics (SIGGRAPH Asia 2024).
   [Paper](https://doi.org/10.1145/3687763) ·
   [Project](https://ningnawang.github.io/projects/2024_mattopo/) ·
   [arXiv](https://arxiv.org/abs/2403.18761) ·
   [Code](https://github.com/ningnawang/mattopo)
-- **Shrinking ball**
-  ([`shrink_spheres`](https://ningnawang.github.io/libmat/python/shrink_spheres/)):
-  Jaehwan Ma, Sang Won Bae, Sunghee Choi. *3D medial axis point approximation
+- Ningna Wang, Bin Wang, Wenping Wang, Xiaohu Guo. *Computing Medial Axis
+  Transform with Feature Preservation via Restricted Power Diagram*. ACM
+  Transactions on Graphics (SIGGRAPH Asia 2022).
+  [Project](https://ningnawang.github.io/projects/2022_matfp/) ·
+  [arXiv](https://arxiv.org/abs/2210.13676) ·
+  [Code](https://github.com/ningnawang/MATFP)
+- Jaehwan Ma, Sang Won Bae, Sunghee Choi. *3D medial axis point approximation
   using nearest neighbors and the normal field*. The Visual Computer, 2012.
   [Paper](https://doi.org/10.1007/s00371-011-0594-7)
+
+The code of the MATTopo paper uses LibMAT at tag `v0.0.1`.
 
 LibMAT is released under the GPL-3.0 license.
 

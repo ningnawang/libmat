@@ -9,7 +9,7 @@ from _common import data, parse_args, polyscope_or_none
 
 args = parse_args(__doc__)
 
-V, F = libmat.read_surface_mesh(data("lblock.obj"))
+V, F = libmat.read_surface_mesh(data("mesh_69058.obj"))
 E, E_type, E_line, corners, corner_type = libmat.detect_sharp_features(
     V, F, thres_concave=0.2, thres_convex=40.0)
 print(f"{np.sum(E_type == 1)} sharp edges, {np.sum(E_type == 2)} concave edges")

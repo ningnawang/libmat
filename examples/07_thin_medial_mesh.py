@@ -1,4 +1,4 @@
-"""Topology-preserving thinning of a medial mesh (as in MATTopo).
+"""Topology-preserving thinning of a medial mesh.
 
 A small medial mesh with a medial tet (4 spheres whose 4 triangles are all
 medial faces) attached to a sheet. Thinning removes the tet and the faces of
@@ -37,7 +37,7 @@ E_out, F_out = libmat.thin_medial_mesh(C, R, None, F, importance, threshold=0.5)
 
 
 def euler(E, F):
-    """V - E + F - T, counting medial tets as (filled) 3-cells like MATTopo."""
+    """V - E + F - T, counting medial tets as (filled) 3-cells."""
     faces = {tuple(sorted(f)) for f in F}
     verts = np.unique(np.concatenate([E.ravel(), F.ravel()]))
     tets = {tuple(sorted(f + (d,))) for f in faces for d in verts

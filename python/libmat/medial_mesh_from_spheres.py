@@ -7,10 +7,9 @@ def medial_mesh_from_spheres(V, T, C, R):
     """Connect medial spheres into a medial mesh with the restricted power diagram (CUDA).
 
     The power diagram of the spheres is clipped by the input tet mesh on the
-    GPU (restricted power diagram, RPD). Following MATFP/MATTopo, two spheres
-    are connected by a medial edge when their restricted power cells share a
-    face, and three spheres span a medial face when their cells share an
-    edge.
+    GPU (restricted power diagram, RPD). Two spheres are connected by a medial
+    edge when their restricted power cells share a face, and three spheres
+    span a medial face when their cells share an edge.
 
     **Requires a build with CUDA** (`LIBMAT_WITH_CUDA=ON`).
 

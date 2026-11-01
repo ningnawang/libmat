@@ -23,7 +23,7 @@ CATEGORIES = {
         ("write_ma", "Write a medial mesh (.ma)"),
     ],
     "Mesh processing": [
-        ("normalize_vertices", "Normalize into [0, 1000]^3 like MATFP/MATTopo"),
+        ("normalize_vertices", "Normalize into [0, 1000]^3, the internal frame"),
         ("extract_surface", "Boundary surface of a tet mesh"),
         ("detect_sharp_features", "Sharp / concave edges, feature lines and corners"),
     ],
@@ -79,7 +79,7 @@ def index():
              "All functions take and return numpy arrays, and are available "
              "directly from the `libmat` module:", "",
              "```python", "import libmat",
-             'V, F = libmat.read_surface_mesh("data/lblock.obj")',
+             'V, F = libmat.read_surface_mesh("data/mesh_69058.obj")',
              "C, R, types = libmat.shrink_spheres(V, F)", "```", "",
              "Every function has a C++ counterpart with the same name in "
              "namespace `libmat`, declared in `<libmat/<name>.h>`.", ""]

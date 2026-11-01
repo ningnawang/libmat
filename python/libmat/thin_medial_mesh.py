@@ -6,8 +6,8 @@ def thin_medial_mesh(C, R, E, F, importance, threshold):
     """Remove medial tets and unimportant faces by topology-preserving thinning.
 
     Medial meshes computed from a power diagram may contain *medial tets*:
-    four spheres whose four triangles are all medial faces. Following
-    MATTopo, each tet is removed by collapsing a tet-face simple pair (the
+    four spheres whose four triangles are all medial faces. Each tet is
+    removed by collapsing a tet-face simple pair (the
     face with the smallest importance first); then, among the faces of those
     tets, faces with `importance < threshold` are pruned through their free
     edges (face-edge simple pairs). Collapsing simple pairs does not change
@@ -24,7 +24,7 @@ def thin_medial_mesh(C, R, E, F, importance, threshold):
     F : (f,3) numpy int array
         Medial faces.
     importance : (f,) numpy double array
-        Importance of each face. MATTopo uses the length of the dual edge of
+        Importance of each face, for example the length of the dual edge of
         the restricted power diagram over the average sphere diameter, as
         returned by `medial_mesh_from_spheres`.
     threshold : float

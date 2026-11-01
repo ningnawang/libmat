@@ -4,7 +4,7 @@ from ._libmat import read_ma as _read_ma
 def read_ma(path):
     """Read a medial mesh from a `.ma` file.
 
-    The `.ma` format is used by MATFP, MATTopo and Q-MAT:
+    A `.ma` file stores a medial mesh as plain text:
 
         #V #E #F
         v x y z r      (one line per medial sphere)

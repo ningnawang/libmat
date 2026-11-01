@@ -12,7 +12,7 @@ title: read_ma
 ```cpp
 #include <libmat/read_ma.h>
 
-// Read a medial mesh from a .ma file (the format of MATFP, MATTopo, Q-MAT):
+// Read a medial mesh from a .ma file:
 //
 //   #V #E #F
 //   v x y z r      (#V lines)

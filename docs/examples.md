@@ -58,7 +58,7 @@ python examples/03_shrink_spheres.py
 --8<-- "examples/06_distance_to_medial_mesh.py"
 ```
 
-## Topology-preserving thinning of a medial mesh (as in MATTopo)
+## Topology-preserving thinning of a medial mesh
 
 `examples/07_thin_medial_mesh.py`
 
