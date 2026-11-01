@@ -20,6 +20,7 @@ dist/
 
 # docs
 site/
+.wrangler/
 
 # example outputs
 examples/output/

@@ -1,5 +1,9 @@
-# Build the documentation website and publish it to GitHub Pages
-# (Settings > Pages > Source: "GitHub Actions").
+# Build the documentation website and publish it on Cloudflare Workers
+# (static files only): https://libmat.ningnawang.workers.dev
+#
+# One-time setup: add the repository secrets CLOUDFLARE_API_TOKEN (an API
+# token from the "Edit Cloudflare Workers" template) and CLOUDFLARE_ACCOUNT_ID.
+# The Worker itself is configured in wrangler.jsonc.
 name: docs
 
 on:
@@ -9,11 +13,9 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -23,16 +25,8 @@ jobs:
       # the API pages are generated from the python sources, no build needed
       - run: pip install mkdocs-material "mkdocstrings[python]" ruff
       - run: mkdocs build --strict
-      - uses: actions/upload-pages-artifact@v5
+      - uses: cloudflare/wrangler-action@v4
         with:
-          path: site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

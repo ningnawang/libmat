@@ -1,0 +1,14 @@
+// Cloudflare Worker serving the documentation website (static files only,
+// no server code): https://libmat.ningnawang.workers.dev
+//
+//   mkdocs build && npx wrangler deploy
+//
+// Deployed by .github/workflows/docs.yml on every push to main.
+{
+  "name": "libmat",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./site",
+    "not_found_handling": "404-page"
+  }
+}

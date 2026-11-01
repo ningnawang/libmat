@@ -3,10 +3,11 @@
 #   pip install ".[docs]"        # mkdocs-material, mkdocstrings
 #   python docs/gen_api_pages.py # after adding a function
 #   mkdocs serve                 # http://127.0.0.1:8000
-#   mkdocs gh-deploy             # publish to GitHub pages
+#   npx wrangler deploy          # publish to Cloudflare, see wrangler.jsonc
 site_name: LibMAT
 site_description: A C++/CUDA library for the 3D medial axis transform, with python bindings
 site_author: Ningna Wang
+site_url: https://libmat.ningnawang.workers.dev/
 repo_url: https://github.com/ningnawang/libmat
 repo_name: ningnawang/libmat
 edit_uri: edit/main/docs/

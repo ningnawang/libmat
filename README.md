@@ -4,7 +4,7 @@ A C++ library, with an optional CUDA part and Python bindings, for computing
 the **3D medial axis transform** (MAT) of a shape given as a triangle or
 tetrahedral mesh.
 
-📖 **Documentation: https://ningnawang.github.io/libmat** (built from `docs/`)
+📖 **Documentation: https://libmat.ningnawang.workers.dev** (built from `docs/`)
 
 ```python
 import numpy as np
@@ -46,7 +46,7 @@ cmake --build build -j
 ```
 
 and in your project `target_link_libraries(my_app PRIVATE libmat::libmat)`.
-See the [installation page](https://ningnawang.github.io/libmat/installation/)
+See the [installation page](https://libmat.ningnawang.workers.dev/installation/)
 for all options.
 
 ## Functions

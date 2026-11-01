@@ -1,7 +1,3 @@
----
-title: LibMAT
----
-
 # LibMAT
 
 **LibMAT** is a C++ library, with an optional CUDA part and Python bindings,

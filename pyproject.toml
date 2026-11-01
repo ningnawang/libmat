@@ -29,7 +29,7 @@ docs = ["mkdocs-material", "mkdocstrings[python]", "ruff"]
 
 [project.urls]
 Homepage = "https://github.com/ningnawang/libmat"
-Documentation = "https://ningnawang.github.io/libmat"
+Documentation = "https://libmat.ningnawang.workers.dev"
 
 [tool.scikit-build]
 cmake.version = ">=3.18"
