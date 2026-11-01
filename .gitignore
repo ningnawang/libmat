@@ -6,4 +6,20 @@ extern/geogram*
 houdini*/*
 out*/*
 *.DS_Store*
-*data/*
+
+# local research data; the curated example files in data/ are tracked
+data/*/
+
+# python
+__pycache__/
+*.egg-info/
+*.so
+*.pyd
+dist/
+.pytest_cache/
+
+# docs
+site/
+
+# example outputs
+examples/output/

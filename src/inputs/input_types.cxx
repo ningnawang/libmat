@@ -1,4 +1,4 @@
-#include "input_types.h"
+#include "libmat/inputs/input_types.h"
 
 void ConcaveCorner::print_info() const {
   printf("---- ConcaveCorner corner_tvid: %d, adj_fe_ids: [", tvid);

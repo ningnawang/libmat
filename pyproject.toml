@@ -1,0 +1,45 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "libmat"
+version = "0.1.0"
+description = "A C++/CUDA library for the 3D medial axis transform, with python bindings"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [{ name = "Ningna Wang" }]
+keywords = ["medial axis", "medial axis transform", "geometry processing", "power diagram"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: C++",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+viz = ["polyscope"]
+test = ["pytest"]
+docs = ["mkdocs-material", "mkdocstrings[python]", "ruff"]
+
+[project.urls]
+Homepage = "https://github.com/ningnawang/libmat"
+Documentation = "https://ningnawang.github.io/libmat"
+
+[tool.scikit-build]
+cmake.version = ">=3.18"
+cmake.build-type = "Release"
+wheel.packages = ["python/libmat"]
+# keep the build tree (and the downloaded geogram) between pip installs
+build-dir = "build/{wheel_tag}"
+sdist.exclude = ["data/*/", "legacy/", "build*/", "out/"]
+
+[tool.scikit-build.cmake.define]
+LIBMAT_BUILD_PYTHON = "ON"
+# LIBMAT_WITH_CUDA=ON pip install .   builds the CUDA modules
+LIBMAT_WITH_CUDA = { env = "LIBMAT_WITH_CUDA", default = "OFF" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

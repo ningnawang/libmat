@@ -1,9 +1,9 @@
-#include "medial_sphere.h"
+#include "libmat/matbase/medial_sphere.h"
 
 #include <assert.h>
 #include <geogram/basic/process.h>
 
-#include "common_cxx.h"
+#include "libmat/common/common_cxx.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 // TangentPlane

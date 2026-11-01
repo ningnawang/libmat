@@ -1,4 +1,4 @@
-#include "medial_mesh.h"
+#include "libmat/matbase/medial_mesh.h"
 
 #include <assert.h>
 
