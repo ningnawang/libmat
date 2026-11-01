@@ -12,7 +12,7 @@ If you use our library in your research paper, please cite us! You can use the b
 ```
 @misc{libmat,
   title = {{LibMAT}: A C++ Library for Medial Axis Transform},
-  author = {Ningna Wang},
+  author = {Ningna Wang and others},
   howpublished = "\url{https://github.com/ningnawang/libmat}",
   year = {2024}
 }
