@@ -5,6 +5,8 @@
 #     (x86_64 macOS targets have SSE3 anyway)
 #   - zlib: do not redefine fdopen() on macOS, which breaks the stdio.h of
 #     the macOS 15 SDK (the same change as zlib 1.2.12)
+#   - PoissonRecon: fix members that do not exist in template code that is
+#     never instantiated, which clang >= 19 (Apple clang 17) rejects
 # Patching twice is a no-op.
 # ###############################################################################
 
@@ -20,3 +22,7 @@ libmat_patch_file(cmake/platforms/Darwin-clang.cmake
 	"# Enable SSE3 instruction set\nadd_flags(CMAKE_CXX_FLAGS -msse3)\nadd_flags(CMAKE_C_FLAGS -msse3)\n" "")
 libmat_patch_file(src/lib/geogram/third_party/zlib/zutil.h
 	"#if defined(MACOS) || defined(TARGET_OS_MAC)" "#if defined(MACOS)")
+libmat_patch_file(src/lib/geogram/third_party/PoissonRecon/SparseMatrix.inl
+	"Resize(this->m_N, this->m_M);" "Resize(this->rows);")
+libmat_patch_file(src/lib/geogram/third_party/PoissonRecon/PlyVertexMini.h
+	"point-p.value" "point-p.point")
