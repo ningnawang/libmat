@@ -1,7 +1,7 @@
 # ###############################################################################
 # Third-party dependencies of libmat
-#   - geogram  (v1.7.9 downloaded, built statically; set LIBMAT_GEOGRAM_DIR
-#               to use an existing checkout)
+#   - geogram  (v1.7.9 downloaded and patched by patch_geogram.cmake, built
+#               statically; set LIBMAT_GEOGRAM_DIR to use an existing checkout)
 #   - CGAL     (system, header-only, downloaded if missing; needs Boost
 #               headers, and uses GMP/MPFR unless CGAL_DISABLE_GMP=ON)
 #   - Eigen3   (system, downloaded if missing)
@@ -24,6 +24,8 @@ if(NOT TARGET geogram)
             GIT_REPOSITORY https://github.com/alicevision/geogram.git
             GIT_TAG v1.7.9
             GIT_SHALLOW TRUE
+            PATCH_COMMAND ${CMAKE_COMMAND} -DGEOGRAM_DIR=<SOURCE_DIR>
+                -P ${CMAKE_CURRENT_LIST_DIR}/patch_geogram.cmake
             SOURCE_SUBDIR do-not-add-subdirectory
         )
         FetchContent_MakeAvailable(geogram)
