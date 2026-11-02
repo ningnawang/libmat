@@ -67,6 +67,20 @@ def test_distance_cuda_unavailable():
                                        np.ones(1), device="cuda")
 
 
+def test_distance_cuda_matches_cpu(data_path):
+    if not libmat.has_cuda():
+        pytest.skip("built without CUDA")
+    SV, SF = libmat.read_surface_mesh(data_path("bug.obj"))
+    V, R, E, F = libmat.read_ma(data_path("bug.ma"))
+    D, _, _ = libmat.distance_to_medial_mesh(SV, V, R, E, F, device="cpu")
+    Dg, prim_type, _ = libmat.distance_to_medial_mesh(SV, V, R, E, F,
+                                                      device="cuda")
+    # the GPU kernels work in single precision, and ties between primitives
+    # may be broken differently, but the distances agree
+    assert np.allclose(Dg, D, atol=1e-4 * np.abs(D).max())
+    assert set(np.unique(prim_type)) <= {0, 1, 2}
+
+
 def test_slab_tangent_triangles():
     C = np.array([[0., 0, 0], [1, 0, 0], [0, 1, 0]])
     R = np.array([0.1, 0.1, 0.1])
@@ -133,3 +147,17 @@ def test_medial_mesh_from_spheres_requires_cuda(data_path):
     V, T = libmat.read_tet_mesh(data_path("lblock.tet"))
     with pytest.raises(RuntimeError):
         libmat.medial_mesh_from_spheres(V, T, np.zeros((1, 3)), np.ones(1))
+
+
+def test_medial_mesh_from_spheres_cuda(data_path):
+    if not libmat.has_cuda():
+        pytest.skip("built without CUDA")
+    V, T = libmat.read_tet_mesh(data_path("lblock.tet"))
+    SV, SF, _ = libmat.extract_surface(V, T)
+    C, R, _ = libmat.shrink_spheres(SV, SF, num_spheres=1000)
+    E, F, importance = libmat.medial_mesh_from_spheres(V, T, C, R)
+    assert len(F) > 0 and len(importance) == len(F)
+    assert E.max() < len(C) and F.max() < len(C)
+    E, F = libmat.thin_medial_mesh(C, R, E, F, importance, 0.3)
+    # the medial axis of the (solid) L-block is contractible
+    assert len(C) - len(E) + len(F) == 1

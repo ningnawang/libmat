@@ -48,6 +48,16 @@ if(NOT TARGET CGAL::CGAL)
             SOURCE_SUBDIR do-not-add-subdirectory
         )
         FetchContent_MakeAvailable(cgal)
+        # without GMP/MPFR CGAL falls back to Boost.Multiprecision
+        if(NOT DEFINED CGAL_DISABLE_GMP)
+            find_path(LIBMAT_GMP_INCLUDE_DIR gmp.h)
+            find_library(LIBMAT_GMP_LIBRARY gmp)
+            find_library(LIBMAT_MPFR_LIBRARY mpfr)
+            if(NOT LIBMAT_GMP_INCLUDE_DIR OR NOT LIBMAT_GMP_LIBRARY OR NOT LIBMAT_MPFR_LIBRARY)
+                message(STATUS "GMP/MPFR not found, building CGAL without them")
+                set(CGAL_DISABLE_GMP ON)
+            endif()
+        endif()
         find_package(CGAL REQUIRED PATHS ${cgal_SOURCE_DIR} NO_DEFAULT_PATH)
     endif()
 endif()
@@ -75,7 +85,10 @@ endif()
 # nlohmann_json (only used by the CUDA IO module)
 if(LIBMAT_WITH_CUDA AND NOT TARGET nlohmann_json::nlohmann_json)
     FetchContent_Declare(json
-        URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+        # 3.12 is the first release whose CMakeLists accepts CMake >= 4
+        URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+        URL_HASH SHA256=42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
     FetchContent_MakeAvailable(json)
 endif()
