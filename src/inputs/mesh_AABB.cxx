@@ -43,7 +43,7 @@
  *
  */
 
-#include "mesh_AABB.h"
+#include "libmat/inputs/mesh_AABB.h"
 
 #include <geogram/basic/geometry_nd.h>
 #include <geogram/mesh/mesh_geometry.h>

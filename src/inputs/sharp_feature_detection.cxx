@@ -1,4 +1,4 @@
-#include "sharp_feature_detection.h"
+#include "libmat/inputs/sharp_feature_detection.h"
 
 void load_local_from_mesh(const GEO::Mesh& mesh, std::vector<Vector3>& points,
                           std::vector<Vector3i>& faces) {

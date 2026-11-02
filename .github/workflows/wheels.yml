@@ -1,0 +1,84 @@
+# Build the PyPI wheels (CPU only) and the sdist, and publish them to PyPI
+# when a GitHub release is published, so that `pip install libmat` works.
+#
+# One-time setup: on pypi.org add a trusted publisher for the project libmat
+# (repository ningnawang/libmat, workflow wheels.yml, environment pypi); for
+# test uploads do the same on test.pypi.org with environment testpypi and run
+# this workflow by hand with "Upload to TestPyPI" checked.
+name: wheels
+
+on:
+  workflow_dispatch:
+    inputs:
+      testpypi:
+        description: "Upload to TestPyPI"
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - CMakeLists.txt
+      - cmake/**
+      - pyproject.toml
+      - python/**
+      - .github/workflows/wheels.yml
+  release:
+    types: [published]
+
+jobs:
+  build_wheels:
+    name: wheels (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # linux x86_64, macOS x86_64, macOS arm64 (geogram 1.7 has no
+        # linux ARM support)
+        os: [ubuntu-latest, macos-15-intel, macos-15]
+    steps:
+      - uses: actions/checkout@v7
+      # settings (python versions, tests, CGAL setup) are in pyproject.toml
+      - uses: pypa/cibuildwheel@v4.3.5
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  build_sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: pipx run build --sdist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish_testpypi:
+    needs: [build_wheels, build_sdist]
+    if: github.event_name == 'workflow_dispatch' && inputs.testpypi
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish_pypi:
+    needs: [build_wheels, build_sdist]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1

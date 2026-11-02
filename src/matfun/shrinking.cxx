@@ -11,7 +11,7 @@
  * @copyright Copyright (c) 2022
  *
  */
-#include "shrinking.h"
+#include "libmat/matfun/shrinking.h"
 
 #include <stdlib.h>
 

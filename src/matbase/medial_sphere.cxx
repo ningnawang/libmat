@@ -1,9 +1,9 @@
-#include "medial_sphere.h"
+#include "libmat/matbase/medial_sphere.h"
 
 #include <assert.h>
 #include <geogram/basic/process.h>
 
-#include "common_cxx.h"
+#include "libmat/common/common_cxx.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 // TangentPlane
@@ -255,6 +255,7 @@ bool TangentConcaveLine::update_covered_sf_fids(const SurfaceMesh& sf_mesh,
     sf_mesh.collect_kring_neighbors_given_fid(k, adj_fid,
                                               this->sf_fids_covered_two[i]);
   }
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1356,6 +1357,7 @@ void A_B_spheres_common_diff_tangent_info_from_surface(
     for (const auto& one_v2int : one_v2int_group) {
       if (one_v2int.second == fid_given) return one_v2int.first;
     }
+    return Vector3(0., 0., 0.);  // fid_given not in the group
   };
 
   auto filter_v2fid_given_fids = [&](const std::vector<v2int>& one_v2int_group,

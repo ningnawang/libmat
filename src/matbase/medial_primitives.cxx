@@ -1,4 +1,4 @@
-#include "medial_primitives.h"
+#include "libmat/matbase/medial_primitives.h"
 
 Cone::Cone(Vector3 c0, double r0, Vector3 c1, double r1) {
   Vector3 c0c1 = c1 - c0;

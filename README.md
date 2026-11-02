@@ -1,15 +1,98 @@
 # LibMAT
-Some commonly used libraries for computing the 3D medial axis transform (MAT) given a 3D triangle mesh (or tetrahedral mesh).
 
-Starter code is from the paper "[MATFP: Computing Medial Axis Transform with Feature Preservation via Restricted Power Diagram](https://github.com/ningnawang/MATFP)".
+A C++ library, with an optional CUDA part and Python bindings, for computing
+the **3D medial axis transform** (MAT) of a shape given as a triangle or
+tetrahedral mesh.
 
-The extended work "[MATTopo: Topology-preserving Medial Axis Transform with Restricted Power Diagram](https://github.com/ningnawang/mattopo)" heavily replies on this repo using tag **v0.0.1**.
+📖 **Documentation: https://libmat.ningnawang.workers.dev** (built from `docs/`)
 
+```python
+import numpy as np
+import libmat
 
-## Attribution
-If you use our library in your research paper, please cite us! You can use the bibtex block below:
+V, F = libmat.read_surface_mesh("data/mesh_69058.obj")
+E, E_type, E_line, corners, corner_type = libmat.detect_sharp_features(V, F)
+C, R, types = libmat.shrink_spheres(V, F)    # medial spheres, one per triangle
+T, E_rt, valid = libmat.regular_triangulation(C, R)            # power diagram dual
 
+MV, MR, ME, MF = libmat.read_ma("data/bug.ma")                 # a medial mesh
+SV, SF = libmat.read_surface_mesh("data/bug.obj")
+D, prim_type, prim_id = libmat.distance_to_medial_mesh(SV, MV, MR, ME, MF)
+print("one-sided Hausdorff distance:", np.abs(D).max())
 ```
+
+## Installation
+
+```bash
+python -m pip install libmat
+```
+
+installs a prebuilt CPU version (Linux x86_64, macOS Intel / Apple silicon,
+Python ≥ 3.10).
+
+To build from source you need a C++17 compiler, CMake ≥ 3.18 and the Boost
+headers; CGAL, geogram, Eigen and pybind11 are downloaded if missing.
+
+```bash
+pip install .                         # CPU version
+LIBMAT_WITH_CUDA=ON pip install .     # + CUDA modules (needs the CUDA toolkit)
+```
+
+C++ only:
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release [-DLIBMAT_WITH_CUDA=ON]
+cmake --build build -j
+```
+
+and in your project `target_link_libraries(my_app PRIVATE libmat::libmat)`.
+See the [installation page](https://libmat.ningnawang.workers.dev/installation/)
+for all options.
+
+## Functions
+
+Every function exists in Python (`libmat.<name>`, numpy in / out) and in C++
+(`libmat::<name>` in `<libmat/<name>.h>`, Eigen in / out).
+
+| function | | |
+| --- | --- | --- |
+| `read_tet_mesh`, `read_surface_mesh` | read meshes | CPU |
+| `read_ma`, `write_ma` | read / write medial meshes (`.ma`) | CPU |
+| `normalize_vertices` | normalization to `[0, 1000]^3` (the internal frame) | CPU |
+| `extract_surface` | boundary surface of a tet mesh | CPU |
+| `detect_sharp_features` | sharp / concave edges, feature lines, corners | CPU |
+| `shrink_spheres` | medial spheres (ball-shrinking) | CPU |
+| `regular_triangulation` | power diagram neighbors of spheres (CGAL) | CPU |
+| `slab_tangent_triangles` | triangles tangent to medial slabs | CPU |
+| `distance_to_medial_mesh` | signed distance to a medial mesh | CPU / CUDA |
+| `thin_medial_mesh` | topology-preserving thinning | CPU |
+| `medial_mesh_from_spheres` | medial mesh from spheres via the restricted power diagram | CUDA |
+
+## Repository layout
+
+```text
+include/libmat/      public headers
+  <function>.h       functional API (one function per header)
+  common/ inputs/ matbase/ matfun/ io/ rpd3d/     lower-level CPU modules
+  cuda/              CUDA modules: rpd3d (GPU RPD), dist2mat, matfun_fix, io
+src/                 implementations (src/api: functional API, src/cuda: CUDA)
+python/              python package (python/libmat) and pybind11 bindings
+examples/            python example scripts
+tests/               python tests (pytest)
+docs/, mkdocs.yml    documentation website
+data/                example meshes
+apps/viewer/         polyscope viewer (C++, -DLIBMAT_BUILD_VIEWER=ON)
+legacy/              unused code kept for reference (not built)
+```
+
+Run the tests with `pip install ".[test]" && python -m pytest tests`, and
+the documentation locally with `pip install ".[docs]" && mkdocs serve`.
+
+## Credit
+
+If LibMAT is helpful in your research, please cite us!
+
+```bibtex
 @misc{libmat,
   title = {{LibMAT}: A C++ Library for Medial Axis Transform},
   author = {Ningna Wang and others},
@@ -18,51 +101,55 @@ If you use our library in your research paper, please cite us! You can use the b
 }
 ```
 
-## 1. Lib using GPU (set option **LIBMAT_IS_USE_GPU** as ON)
+LibMAT is built upon the following papers:
 
-### 1.1. dist2mat 
-Given a 3D sample, compute its closest medial element (sphere/cone/slab) on the given medial mesh.
+- Ningna Wang, Rui Xu, Yibo Yin, Zichun Zhong, Taku Komura, Wenping Wang,
+  Xiaohu Guo. *MATStruct: High-quality Medial Mesh Computation via
+  Structure-aware Variational Optimization*. SIGGRAPH Asia 2025 Conference
+  Papers.
+  [Project](https://ningnawang.github.io/projects/2025_matstruct/) ·
+  [arXiv](https://arxiv.org/abs/2510.10751) ·
+  [Code](https://github.com/ningnawang/MATStruct)
+- Ningna Wang, Hui Huang, Shibo Song, Bin Wang, Wenping Wang, Xiaohu Guo.
+  *MATTopo: Topology-preserving Medial Axis Transform with Restricted Power
+  Diagram*. ACM Transactions on Graphics (SIGGRAPH Asia 2024).
+  [Paper](https://doi.org/10.1145/3687763) ·
+  [Project](https://ningnawang.github.io/projects/2024_mattopo/) ·
+  [arXiv](https://arxiv.org/abs/2403.18761) ·
+  [Code](https://github.com/ningnawang/mattopo)
+- Ningna Wang, Bin Wang, Wenping Wang, Xiaohu Guo. *Computing Medial Axis
+  Transform with Feature Preservation via Restricted Power Diagram*. ACM
+  Transactions on Graphics (SIGGRAPH Asia 2022).
+  [Project](https://ningnawang.github.io/projects/2022_matfp/) ·
+  [arXiv](https://arxiv.org/abs/2210.13676) ·
+  [Code](https://github.com/ningnawang/MATFP)
+- Jaehwan Ma, Sang Won Bae, Sunghee Choi. *3D medial axis point approximation
+  using nearest neighbors and the normal field*. The Visual Computer, 2012.
+  [Paper](https://doi.org/10.1007/s00371-011-0594-7)
 
-### 1.2. rpd3d & rpd3d_api
-Libs and APIs for computing 3D RPD using CUDA.
+The code of the MATTopo paper uses LibMAT at tag `v0.0.1`.
 
-### 1.3. matfun_fix
-- fix_common
-- fix_topo
-- fix_extf
-- fix_intf
-- fix_geo
+LibMAT is released under the GPL-3.0 license.
 
-### 1.4. IO_CUDA
-Some IO related libs related to CUDA 3D RPD output.
+## Contribute
 
-## 2. Lib NOT using GPU (set option **LIBMAT_IS_USE_GPU** as OFF)
-### 2.1. inputs
-- SurfaceMesh (extends GEO::Mesh)
-- TetMesh
-- AABBWrapper
-- Sharp/Concave Feature Detection
+We hope LibMAT is useful for your work, and we would love your help to make it
+better.
 
-### 2.2. matbase
-- medial_sphere
-- medial_primitives
-- medial_mesh
+LibMAT is a young library, and we want contributing to it to be as easy as
+possible. You can add a new function, improve an existing one, or fix a bug,
+and open a pull request. A new function usually consists of a header and a
+source file (`include/libmat/<name>.h`, `src/api/<name>.cpp`), a binding
+(`python/bindings/`), a Python wrapper with its docstring
+(`python/libmat/<name>.py`) and a test (`tests/`).
 
+Please don't let that list stop you: we will gladly review your code with you
+and adapt it to the conventions of the library, and the tests will tell us if
+anything breaks. If you have code from a past project that is related to the
+medial axis or to geometry processing and is not in LibMAT yet, we encourage
+you to submit it as it is. Contributors are credited in the documentation of
+the functions they write and on the documentation home page.
 
-### 2.4. matfun
-- shrinking
-- updating (sphere-optimization)
-- thinning
+## Contributors
 
-### 2.3. IO_CXX
-Some IO related libs.
-
-### 2.5. rpd3d_base
-- 3D triangulation using CGAL
-- ConvexCellHost
-
-## TODO list:
-1. ~~Update CMakeLists.txt to remove some unused external dependencies, such as `polyscope`.~~
-2. Enable platform check.
-4. Add more tests.
-5. Write more docs. 
+None yet: be the first!

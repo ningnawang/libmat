@@ -1,4 +1,4 @@
-#include "updating.h"
+#include "libmat/matfun/updating.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Helper Functions
@@ -615,9 +615,9 @@ double get_closest_concave_point_V2(const double alpha3, const Vector3& m1,
                                     Vector3& nN, bool is_debug) {
   // step 1: find the closest point on segment (m1, m2) to theta
   //
-  // pN is the projection of theta on line (m1, m2)
-  double sq_dist = DBL_MAX;
-  project_point_onto_line(theta, m1, m2, pN, sq_dist);
+  // pN is the projection of theta on segment (m1, m2)
+  double dist = DBL_MAX;
+  project_point_onto_segment(theta, m1, m2, pN, dist);
   nN = GEO::normalize(pN - theta);
   double E =
       TangentConcaveLine::get_energy_value(theta, radius, alpha3, pN, nN);

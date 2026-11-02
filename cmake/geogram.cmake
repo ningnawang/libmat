@@ -1,40 +1,27 @@
 # ###############################################################################
-# Find Geogram and build it as part of the current build
+# Build geogram (from LIBMAT_GEOGRAM_DIR) as a static library, so that the
+# python extension module is self-contained.
 # ###############################################################################
 
 if(TARGET geogram)
 	return()
 endif()
 
-# ###############################################################################
-if(LIBMAT_MODULE_EXTERNAL)
-	set(GEOGRAM_SEARCH_PATHS ${LIBMAT_MODULE_EXTERNAL})
-else()
-	set(GEOGRAM_SEARCH_PATHS
-		${GEOGRAM_INSTALL_PREFIX}
-		"$ENV{GEOGRAM_INSTALL_PREFIX}"
-		"/usr/local/"
-		"$ENV{PROGRAMFILES}/Geogram"
-		"$ENV{PROGRAMW6432}/Geogram"
-		"$ENV{HOME}/.local/")
-endif()
-
-find_path(GEOGRAM_SOURCE_INCLUDE_DIR
-	geogram/basic/common.h
-	PATHS ${GEOGRAM_SEARCH_PATHS}
-	PATH_SUFFIXES geogram/src/lib
-)
-
-set(GEOGRAM_ROOT ${GEOGRAM_SOURCE_INCLUDE_DIR}/../..)
+set(GEOGRAM_SOURCE_INCLUDE_DIR "${LIBMAT_GEOGRAM_DIR}/src/lib")
 
 # ###############################################################################
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(VORPALINE_ARCH_64 TRUE CACHE BOOL "" FORCE)
 	set(VORPALINE_PLATFORM Win-vs-generic CACHE STRING "" FORCE)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	set(VORPALINE_PLATFORM Linux64-gcc-dynamic CACHE STRING "" FORCE)
+	if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+		# geogram 1.7.x uses x86 assembly for its atomics on any Linux
+		message(FATAL_ERROR "geogram 1.7.9 does not build on Linux ARM: "
+			"libmat supports Linux x86_64 and macOS (Intel and Apple silicon)")
+	endif()
+	set(VORPALINE_PLATFORM Linux64-gcc CACHE STRING "" FORCE)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	set(VORPALINE_PLATFORM Darwin-clang-dynamic CACHE STRING "" FORCE)
+	set(VORPALINE_PLATFORM Darwin-clang CACHE STRING "" FORCE)
 endif()
 
 option(GEOGRAM_WITH_GRAPHICS "Viewers and geogram_gfx library" OFF)
@@ -49,31 +36,24 @@ option(GEOGRAM_WITH_FPG "Predicate generator (Sylvain Pion's FPG)" OFF)
 option(GEOGRAM_USE_SYSTEM_GLFW3 "Use the version of GLFW3 installed in the system if found" OFF)
 
 # ###############################################################################
-add_subdirectory(${GEOGRAM_ROOT} geogram)
+# geogram asks for CMake 2.8, which CMake >= 4 refuses unless told otherwise
+if(NOT DEFINED CMAKE_POLICY_VERSION_MINIMUM)
+	set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+	set(LIBMAT_UNSET_POLICY_VERSION_MINIMUM TRUE)
+endif()
+add_subdirectory(${LIBMAT_GEOGRAM_DIR} ${CMAKE_BINARY_DIR}/geogram EXCLUDE_FROM_ALL)
+if(LIBMAT_UNSET_POLICY_VERSION_MINIMUM)
+	unset(CMAKE_POLICY_VERSION_MINIMUM)
+endif()
 target_include_directories(geogram SYSTEM PUBLIC ${GEOGRAM_SOURCE_INCLUDE_DIR})
+add_library(geogram::geogram ALIAS geogram)
 
-# if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-# 	set_target_properties(geogram PROPERTIES COMPILE_FLAGS -fopenmp LINK_FLAGS -fopenmp)
-# 	target_compile_options(geogram PUBLIC -fopenmp)
-# 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-
-# 	find_package(OpenMP REQUIRED)
-
-# 	if(NOT TARGET OpenMP::OpenMP_CXX)
-# 		add_library(OpenMP_TARGET INTERFACE)
-# 		add_library(OpenMP::OpenMP_CXX ALIAS OpenMP_TARGET)
-# 		target_compile_options(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
-# 		find_package(Threads REQUIRED)
-# 		target_link_libraries(OpenMP_TARGET INTERFACE Threads::Threads)
-# 		target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
-# 	endif()
-
-# 	add_library(geogram_wrapper INTERFACE)
-# 	add_library(geogram::geogram ALIAS geogram_wrapper)
-# 	target_link_libraries(geogram_wrapper INTERFACE geogram OpenMP::OpenMP_CXX)
-# else()
-	add_library(geogram::geogram ALIAS geogram)
-# endif()
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	# geogram is compiled with -fopenmp on Linux, so whatever links the static
+	# library also needs the OpenMP runtime (plain signature, as geogram uses)
+	find_package(OpenMP REQUIRED COMPONENTS CXX)
+	target_link_libraries(geogram OpenMP::OpenMP_CXX)
+endif()
 
 # ###############################################################################
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -91,13 +71,4 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 	# we want M_PI etc...
 	target_compile_definitions(geogram INTERFACE -D_USE_MATH_DEFINES)
-
-	if(NOT VORPALINE_BUILD_DYNAMIC)
-		# If we use static library, we link with the static C++ runtime.
-		foreach(config ${CMAKE_CONFIGURATION_TYPES})
-			string(TOUPPER ${config} config)
-			string(REPLACE /MD /MT CMAKE_C_FLAGS_${config} "${CMAKE_C_FLAGS_${config}}")
-			string(REPLACE /MD /MT CMAKE_CXX_FLAGS_${config} "${CMAKE_CXX_FLAGS_${config}}")
-		endforeach()
-	endif()
 endif()

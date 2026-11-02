@@ -1,0 +1,111 @@
+# Documentation website of libmat.
+#
+#   pip install ".[docs]"        # mkdocs-material, mkdocstrings
+#   python docs/gen_api_pages.py # after adding a function
+#   mkdocs serve                 # http://127.0.0.1:8000
+#   npx wrangler deploy          # publish to Cloudflare, see wrangler.jsonc
+site_name: LibMAT
+site_description: A C++/CUDA library for the 3D medial axis transform, with python bindings
+site_author: Ningna Wang
+site_url: https://libmat.ningnawang.workers.dev/
+repo_url: https://github.com/ningnawang/libmat
+repo_name: ningnawang/libmat
+edit_uri: edit/main/docs/
+exclude_docs: |
+  gen_api_pages.py
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - toc.integrate
+    - navigation.indexes
+    - search.highlight
+    - content.code.copy
+
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - javascripts/home_link.js
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [python]
+          options:
+            docstring_style: numpy
+            heading_level: 2
+            show_root_heading: false
+            show_root_full_path: false
+            line_length: 80
+            show_root_toc_entry: false
+            show_source: false
+            show_signature: true
+            separate_signature: true
+            show_signature_annotations: false
+            docstring_section_style: table
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Examples: examples.md
+  - C++ library: cpp/index.md
+  - Python API:
+      - python/index.md
+      - Input / output:
+          - read_tet_mesh: python/read_tet_mesh.md
+          - read_surface_mesh: python/read_surface_mesh.md
+          - read_ma: python/read_ma.md
+          - write_ma: python/write_ma.md
+      - Mesh processing:
+          - normalize_vertices: python/normalize_vertices.md
+          - extract_surface: python/extract_surface.md
+          - detect_sharp_features: python/detect_sharp_features.md
+      - Medial spheres:
+          - shrink_spheres: python/shrink_spheres.md
+          - regular_triangulation: python/regular_triangulation.md
+      - Medial mesh:
+          - slab_tangent_triangles: python/slab_tangent_triangles.md
+          - distance_to_medial_mesh: python/distance_to_medial_mesh.md
+          - thin_medial_mesh: python/thin_medial_mesh.md
+          - medial_mesh_from_spheres: python/medial_mesh_from_spheres.md

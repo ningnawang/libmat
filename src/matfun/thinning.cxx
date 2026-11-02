@@ -1,4 +1,4 @@
-#include "thinning.h"
+#include "libmat/matfun/thinning.h"
 
 // helper funtion to load mface's importance
 void Thinning::compute_face_importance(const MedialMesh& mat, MedialFace& face,
@@ -160,6 +160,7 @@ void Thinning::prune_tets_while_iteration(
 
   while (true) {
     if (is_debug) printf("still %d mat tets to prune \n", mat.numTets_active);
+    bool is_pruned = false;
     for (const auto& imp_pair : imp_queue) {
       double f_imp = imp_pair.first;
       int fid = imp_pair.second;
@@ -186,11 +187,19 @@ void Thinning::prune_tets_while_iteration(
       // taking care of dup_cnt
       if (is_dup_cnt)
         postprocess_dupcnt_tet_face(mat, tid, fid, is_debug /*is_debug*/);
+      is_pruned = true;
       break;
     }  // for imp_queue
 
     // break while loop once we have all tets cleaned
     if (mat.numTets_active == 0) break;
+    // no tet has a free face left (e.g. a closed complex of tets),
+    // stop instead of looping forever
+    if (!is_pruned) {
+      printf("[Prune] %d mat tets have no free face, stop pruning tets\n",
+             mat.numTets_active);
+      break;
+    }
   }  // while true
 }
 
